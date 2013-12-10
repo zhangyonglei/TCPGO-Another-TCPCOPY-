@@ -16,6 +16,8 @@ public:
 	virtual ~session_manager();
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
+	
+	int dispatch_ip_pkg(const u_char* ip_pkg);
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
