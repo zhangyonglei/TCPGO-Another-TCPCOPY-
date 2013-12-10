@@ -1,0 +1,11 @@
+Debug/
+horos
+*.o
+*~
+*.sh
+*.d
+*.log
+INSTALL
+missing
+.deps/
+.svn/

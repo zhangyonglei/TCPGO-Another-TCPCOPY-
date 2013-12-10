@@ -1,0 +1,96 @@
+/*********************************************
+ * main.c
+ * Author: kamuszhou www.dogeye.net
+ * Created on: Dec 9, 2013
+ ********************************************/
+
+#include <getopt.h>
+#include "misc.h"
+#include "cutelogger.h"
+#include "session_manager.h"
+
+using namespace std;
+
+string  g_pcap_file_path;
+session_manager g_session_manager;
+
+static void output_help();
+static void output_version();
+static void run();
+
+int main(int argc, char **argv)
+{
+	int ch;
+	int option_index;
+	struct option long_options[] = {
+			{"pcapfile", required_argument, NULL,  'f' },
+			{"help", no_argument, NULL, 'h'},
+			{"version", no_argument, NULL,  'v' },
+			{0, 0, 0, 0}
+	};
+
+	while (true) {
+		ch = getopt_long(argc, argv, "f:hv",
+				long_options, &option_index);
+		if (ch == -1)
+			break;
+
+		switch (ch) {
+		case 'f':
+			g_pcap_file_path = optarg;
+			break;
+
+		case 'h':
+			output_help();
+			break;
+
+		case 'v':
+			output_version();
+			break;
+
+		case '?':
+			break;
+
+		default:
+			cout << "getopt_long returned character code " << ch << ".\n";
+		}
+	}
+
+	if (optind < argc) {
+		cout << "unrecognized ARGV-elements:  ";
+		while (optind < argc)
+			cout << argv[optind++] << " ";
+		cout << endl;
+	}
+
+	if (argc == 1)
+	{
+		output_help();
+	}
+	else
+	{
+		run();
+	}
+
+	return 0;
+}
+
+static void output_version()
+{
+	cout << "Horoscope v0.1\n";
+	cout << "This tool is aimed to replay captured client's requests to server and\n";
+	cout << "analyze the exchanging traffic between the emulated clients and server.\n";
+	cout << "Author: kamuszhou www.dogeye.net.\n";
+	cout << "Copyright by Tencent Dec 9 2013 to " << __DATE__ <<endl;
+}
+
+static void output_help()
+{
+	cout << "Usage: \n";
+	cout << "horos -f pcap_file_path.\n";
+}
+
+static void run()
+{
+	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+}
