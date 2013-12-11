@@ -10,27 +10,38 @@
 #include "misc.h"
 
 /**
+ * calculate the IPv4 header checksum.
+ */
+unsigned short calc_ip_checksum(const unsigned short buff[], int len_ip_header);
+
+/**
  *@param pcap The pcap handler.
  *@param frame The package captured on level 2.
  *@return The start address of IP package.
  */
 const unsigned char* strip_l2head(pcap_t *pcap, const unsigned char *frame);
 
+/**
+ * detect the level2 header length in a ungraceful way. 
+ */
+int detect_l2head_len(const unsigned char *frame);
+
 /* ip_pack is the starting address of a IP package. */
 #define ip_package_parser(ip_pack)    struct iphdr *iphdr;   \
 		struct tcphdr *tcphdr;                                     \
 		unsigned char *tcp_content;                               \
-		int iphdr_len, ip_content_len, tcphdr_len, tcp_content_len;     \
+		int ip_tot_len, iphdr_len, ip_content_len, tcphdr_len, tcp_content_len;     \
 		\
 		iphdr = (struct iphdr*)(ip_pack);                                   \
+		ip_tot_len = ntohs(iphdr->tot_len);                                 \
 		iphdr_len = iphdr->ihl << 2;                                          \
-		ip_content_len = ntohs(iphdr->tot_len) - (iphdr->ihl << 2);                \
-		tcphdr = (struct tcphdr*)((unsigned char*)iphdr + (iphdr->ihl << 2));   \
+		ip_content_len = ip_tot_len - iphdr_len;                \
+		tcphdr = (struct tcphdr*)((unsigned char*)iphdr + iphdr_len);   \
 		tcphdr_len = tcphdr->doff << 2;                                                            \
-		tcp_content = (unsigned char*)tcphdr + (tcphdr->doff << 2);                \
-		tcp_content_len = ip_content_len -  (tcphdr->doff << 2);                       \
+		tcp_content = (unsigned char*)tcphdr + tcphdr_len;                \
+		tcp_content_len = ip_content_len - tcphdr_len;                       \
 		tcp_content_len = tcp_content_len; tcphdr_len = tcphdr_len;     \
-		iphdr_len = iphdr_len; tcp_content = tcp_content;       /* suppress the warning: set but not used */
+		ip_tot_len = ip_tot_len; iphdr_len = iphdr_len; tcp_content = tcp_content;/* suppress the warning: set but not used */
 
 #define ip_package_clone(ip_pack)  ({   \
 		int  tot_len;                                        \

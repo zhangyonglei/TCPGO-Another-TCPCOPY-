@@ -1,11 +1,12 @@
 Debug/
+.svn/
 horos
 *.o
 *~
 *.sh
 *.d
 *.log
+.gdbinit
 INSTALL
 missing
 .deps/
-.svn/

@@ -8,6 +8,7 @@
 #include "misc.h"
 #include "cutelogger.h"
 #include "session_manager.h"
+#include "postoffice.h"
 
 using namespace std;
 
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
 
 		default:
 			cout << "getopt_long returned character code " << ch << ".\n";
+			break;
 		}
 	}
 
@@ -78,10 +80,9 @@ int main(int argc, char **argv)
 static void output_version()
 {
 	cout << "Horoscope v0.1\n";
-	cout << "This tool is aimed to replay captured client's requests to server and\n";
-	cout << "analyze the exchanging traffic between the emulated clients and server.\n";
+	cout << "This tool is aimed to replay captured client's requests to server.\n";
 	cout << "Author: kamuszhou www.dogeye.net.\n";
-	cout << "Copyright by Tencent Dec 9 2013 to " << __DATE__ <<endl;
+	cout << "Copyright by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
 }
 
 static void output_help()
@@ -92,5 +93,6 @@ static void output_help()
 
 static void run()
 {
-	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	g_postman.recv();
+//	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
 }

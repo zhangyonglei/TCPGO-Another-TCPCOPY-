@@ -19,6 +19,8 @@ vpath %.h . $(public_dirs)
 
 .PHONY : test clean
 
+all : $(projname)
+
 $(projname) : $(objects)
 	g++ $(LINKFLAGS) -o $@ $^	
 	
