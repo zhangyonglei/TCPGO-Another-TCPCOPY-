@@ -45,6 +45,7 @@
 #include <assert.h>
 #include <regex.h>
 #include <stdint.h>
+#include <memory.h>
 
 // other libraries
 #include <pcap.h>

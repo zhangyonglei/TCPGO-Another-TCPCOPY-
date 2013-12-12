@@ -1,6 +1,7 @@
 /*********************************************
  * cutelogger.cpp
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * website: www.dogeye.net
  * Created on: Dec 10, 2013
  ********************************************/
 

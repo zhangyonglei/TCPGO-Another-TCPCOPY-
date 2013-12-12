@@ -1,6 +1,7 @@
 /*********************************************
  * sessionmanager.h
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
 
@@ -17,7 +18,11 @@ public:
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
 	
-	int dispatch_ip_pkg(const u_char* ip_pkg);
+private:
+	/**
+	 * IP packet will be dispatched to corresponding TCP session.
+	 */
+	int dispatch_ip_pkt(const u_char* ip_pkt);
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;

@@ -1,6 +1,7 @@
 /*********************************************
  * main.c
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
 
@@ -93,6 +94,5 @@ static void output_help()
 
 static void run()
 {
-	g_postman.recv();
-//	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
 }

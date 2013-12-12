@@ -1,6 +1,7 @@
 /*********************************************
  * utils.cpp
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * website: www.dogeye.net
  * Created on: Dec 10, 2013
  ********************************************/
 
@@ -8,6 +9,15 @@
 #define _UTILS_H_
 
 #include "misc.h"
+
+/**
+ * the following four macros are copied from book "Linux Kernel Development 3rd Edition"
+ * To get around the problem of number wraparound.
+ */
+#define time_after(unknown, known) ((long)(known) - (long)(unknown) < 0)
+#define time_before(unknown, known) ((long)(unknown) - (long)(known) < 0)
+#define time_after_eq(unknown, known) ((long)(unknown) - (long)(known) >= 0)
+#define time_before_eq(unknown, known) ((long)(known) - (long)(unknown) >= 0)
 
 /**
  * calculate the IPv4 header checksum.
@@ -27,7 +37,8 @@ const unsigned char* strip_l2head(pcap_t *pcap, const unsigned char *frame);
 int detect_l2head_len(const unsigned char *frame);
 
 /* ip_pack is the starting address of a IP package. */
-#define ip_package_parser(ip_pack)    struct iphdr *iphdr;   \
+#define ip_packet_parser(ip_pack)        \
+        struct iphdr *iphdr;   \
 		struct tcphdr *tcphdr;                                     \
 		unsigned char *tcp_content;                               \
 		int ip_tot_len, iphdr_len, ip_content_len, tcphdr_len, tcp_content_len;     \
@@ -43,11 +54,13 @@ int detect_l2head_len(const unsigned char *frame);
 		tcp_content_len = tcp_content_len; tcphdr_len = tcphdr_len;     \
 		ip_tot_len = ip_tot_len; iphdr_len = iphdr_len; tcp_content = tcp_content;/* suppress the warning: set but not used */
 
-#define ip_package_clone(ip_pack)  ({   \
+#define ip_packet_clone(ip_pack)  ({   \
 		int  tot_len;                                        \
 		char  *pack_clone;                     \
+		struct iphdr *iphdr;                  \
+		iphdr = (struct iphdr*)ip_pack;       \
 		tot_len = ntohs(iphdr->tot_len);    \
-		pack_clone = malloc(tot_len);        \
+		pack_clone = new char[tot_len];        \
 		memcpy(pack_clone, ip_pack, tot_len);    \
 		pack_clone;   })
 

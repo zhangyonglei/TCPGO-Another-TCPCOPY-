@@ -1,6 +1,7 @@
 /*********************************************
  * tcpsession.cpp
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
 
@@ -13,17 +14,23 @@ tcpsession::tcpsession() {
 tcpsession::~tcpsession() {
 }
 
-void tcpsession::append_ip_sample(const unsigned char* ippkg)
+void tcpsession::append_ip_sample(const unsigned char* ippkt)
 {
 	struct iphdr* iphdr; 
-	mem_t mem;
+	ip_pkt pkt;
 	int len;
 	
-	assert(NULL!=ippkg);
-	iphdr = (struct iphdr*)ippkg;
+	assert(NULL!=ippkt);
+	iphdr = (struct iphdr*)ippkt;
 	len = ntohs(iphdr->tot_len);
 
-	_ippkgs_samples.push_back(mem);
-	_ippkgs_samples.back().cp(ippkg, len);
+	_ippkts_samples.push_back(pkt);
+	_ippkts_samples.back().cp(ippkt);
 }
+
+int tcpsession::verify()
+{
+
+}
+
 
