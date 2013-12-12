@@ -1,5 +1,7 @@
 Debug/
 .svn/
+.metadata/
+.settings/
 horos
 *.o
 *~
