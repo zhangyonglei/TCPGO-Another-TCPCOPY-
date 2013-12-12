@@ -18,6 +18,8 @@ public:
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
 	
+	int loop();
+
 private:
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.

@@ -77,6 +77,15 @@ int session_manager::dispatch_ip_pkt(const u_char* ip_pkt)
 	return 0;
 }
 
+int session_manager::loop()
+{
+	std::map<uint64_t, tcpsession>::iterator ite;
+	for (ite = _sessions.begin(); ite != _sessions.end(); ++ite)
+	{
+		ite->second.verify();
+	}
+}
+
 session_manager::~session_manager()
 {
 }

@@ -95,4 +95,5 @@ static void output_help()
 static void run()
 {
 	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	g_session_manager.loop();
 }

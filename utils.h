@@ -11,13 +11,10 @@
 #include "misc.h"
 
 /**
- * the following four macros are copied from book "Linux Kernel Development 3rd Edition"
- * To get around the problem of number wraparound.
+ * the following macro is inspired by the book "Linux Kernel Development 3rd Edition" Page 214.
+ * It gets around the problem of number wraparound.
  */
-#define time_after(unknown, known) ((long)(known) - (long)(unknown) < 0)
-#define time_before(unknown, known) ((long)(unknown) - (long)(known) < 0)
-#define time_after_eq(unknown, known) ((long)(unknown) - (long)(known) >= 0)
-#define time_before_eq(unknown, known) ((long)(known) - (long)(unknown) >= 0)
+#define seq_before(unknown, known) ((int)(unknown) - (int)(known) < 0)
 
 /**
  * calculate the IPv4 header checksum.

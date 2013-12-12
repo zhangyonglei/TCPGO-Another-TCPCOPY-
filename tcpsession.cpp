@@ -30,7 +30,7 @@ void tcpsession::append_ip_sample(const unsigned char* ippkt)
 
 int tcpsession::verify()
 {
-
+	_ippkts_samples.sort();
 }
 
 
