@@ -9,7 +9,7 @@
 #define _TCPSESSION_H_
 
 #include <list>
-#include "ippkt.h"
+#include "ip_pkt.h"
 
 class tcpsession {
 public:

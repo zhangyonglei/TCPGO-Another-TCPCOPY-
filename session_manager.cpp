@@ -8,7 +8,7 @@
 #include <fstream>
 #include "session_manager.h"
 #include "utils.h"
-#include "cutelogger.h"
+#include "cute_logger.h"
 
 using namespace std;
 

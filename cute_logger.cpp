@@ -5,7 +5,7 @@
  * Created on: Dec 10, 2013
  ********************************************/
 
-#include "cutelogger.h"
+#include "cute_logger.h"
 
 cute_logger g_logger;
 

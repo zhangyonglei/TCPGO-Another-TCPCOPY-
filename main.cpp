@@ -7,7 +7,7 @@
 
 #include <getopt.h>
 #include "misc.h"
-#include "cutelogger.h"
+#include "cute_logger.h"
 #include "session_manager.h"
 #include "postoffice.h"
 
