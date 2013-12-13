@@ -18,8 +18,8 @@ postoffice g_postman;
 
 postoffice::postoffice()
 {
-	int on;
-	int ret;
+	int32_t on;
+	int32_t ret;
 
 	// used to send IPs package on IP level.
 	_send_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -47,9 +47,11 @@ postoffice::postoffice()
 	return;
 
 _err:
-	strerror_r(errno, _buff, sizeof(_buff));
-	g_logger.printf("%s\n", _buff);
-	cerr << _buff << endl;
+    // I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
+	//strerror_r(errno, _buff, sizeof(_buff));
+	//g_logger.printf("%s\n", _buff);
+
+	perror("root permission is required ");
 	abort();
 }
 
@@ -59,9 +61,9 @@ postoffice::~postoffice()
 	close(_recv_fd);
 }
 
-int postoffice::send(const unsigned char* data, int len)
+int32_t postoffice::send(const uint8_t* data, int32_t len)
 {
-	int ret;
+	int32_t ret;
 	ret = sendto(_send_fd, data, len, MSG_DONTWAIT,
 			(const struct sockaddr *)&_svr_addr, sizeof(_svr_addr));
 	if (ret == len)
@@ -72,7 +74,7 @@ int postoffice::send(const unsigned char* data, int len)
 
 void postoffice::recv()
 {
-	int ret;
+	int32_t ret;
 
 	ret = ::recv(_recv_fd, _buff, sizeof(_buff), 0);
 
@@ -100,14 +102,14 @@ void postoffice::recv()
 	}
 }
 
-void postoffice::set_svr_port(unsigned short port)
+void postoffice::set_svr_port(uint16_t port)
 {
 	_svr_port = htons(port);
 }
 
-int postoffice::set_svr_addr(const char* addr)
+int32_t postoffice::set_svr_addr(const char* addr)
 {
-	int ret;
+	int32_t ret;
 	assert(addr != NULL);
     memset(&_svr_addr, 0, sizeof(_svr_addr));
     _svr_addr.sin_family = AF_INET;

@@ -51,10 +51,10 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 				g_logger.printf("%d truncated packets are detected.\n", ++truncated_pkt_count);
 				continue;
 			} else {
-			        ip_pkt = strip_l2head(pcap, pkt_data);
+				ip_pkt = strip_l2head(pcap, pkt_data);
 				ts = pkt_hdr.ts;
 				if (ip_pkt != NULL) {
-						dispatch_ip_pkt(ip_pkt);
+					dispatch_ip_pkt(ip_pkt);
 				}
 			}
 		} else {
@@ -68,21 +68,39 @@ int session_manager::dispatch_ip_pkt(const u_char* ip_pkt)
 {
 	int ret;
 	uint64_t key;
+	std::map<uint64_t, tcpsession>::iterator ite;
+
 	ip_packet_parser(ip_pkt);
 	key = mk_sess_key(iphdr->saddr, tcphdr->dest);
 
-	tcpsession& session = _sessions[key];
-	session.append_ip_sample(ip_pkt);
+	tcpsession session(iphdr->saddr, tcphdr->source);
+	ite = (_sessions.insert(std::pair<uint64_t, tcpsession>(key, session))).first;
+	ite->second.append_ip_sample(ip_pkt);
 
-	return 0;
+	ret = 0;
+
+	return ret;
 }
 
 int session_manager::loop()
 {
+	int i;
+	int healthy;
 	std::map<uint64_t, tcpsession>::iterator ite;
+	i = 0;
+
 	for (ite = _sessions.begin(); ite != _sessions.end(); ++ite)
 	{
-		ite->second.verify();
+		g_logger.printf("check the %dth tcpsession.\n", ++i);
+		healthy = ite->second.check_health();
+		if (healthy == 0)
+		{
+			g_logger.printf("OKAY!\n");
+		}
+		else
+		{
+			g_logger.printf("SICK!\n");
+		}
 	}
 }
 

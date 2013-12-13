@@ -9,27 +9,34 @@
 #define _TCPSESSION_H_
 
 #include <list>
+#include "misc.h"
 #include "ip_pkt.h"
 
 class tcpsession {
 public:
-	tcpsession();
+	/**
+	 *@param port in network byte order.
+	 */
+	tcpsession(uint32_t ip, uint16_t port);
 	virtual ~tcpsession();
 
 	/**
 	 * add a ip packet to this session as a sample.
 	 */
-	void append_ip_sample(const unsigned char* ippkt);
-
+	void append_ip_sample(const uint8_t* ippkt);
 
 	/**
 	 * @return return 0 if this session is healthy, return error code otherwise.
 	 */
-	int verify();
+	int check_health();
 
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
 	std::list<ip_pkt>  _ippkts_received;   ///< The ip packages received from the server will be saved here.
+
+	uint32_t _client_src_ip_num;
+	std::string _client_src_ip_str;
+	uint16_t _client_src_port;      ///< in host byte order
 };
 
 #endif /* _TCPSESSION_H_ */

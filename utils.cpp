@@ -14,20 +14,20 @@ struct eth_hdr
 	uint16_t  _type;
 };
 
-unsigned short calc_ip_checksum(const unsigned char* ip, int len)
+uint16_t calc_ip_checksum(const uint8_t* iphdr, int32_t hdrlen)
 {
-	unsigned int sum = 0;
+	uint32_t sum = 0;
 
-	while(len > 1){
-		sum += *(unsigned short*)ip;
-		ip += 2;
+	while(hdrlen > 1){
+		sum += *(uint16_t*)iphdr;
+		iphdr += 2;
 		if(sum & 0x80000000)   /* if high order bit set, fold */
 			sum = (sum & 0xFFFF) + (sum >> 16);
-		len -= 2;
+		hdrlen -= 2;
 	}
 
-	if(len)       /* take care of left over byte */
-		sum += (unsigned short) *(unsigned char *)ip;
+	if(hdrlen)       /* take care of left over byte */
+		sum += (uint16_t) *(uint8_t *)iphdr;
 
 	while(sum>>16)
 		sum = (sum & 0xFFFF) + (sum >> 16);
@@ -35,35 +35,9 @@ unsigned short calc_ip_checksum(const unsigned char* ip, int len)
 	return ~sum;
 }
 
-/*
-unsigned short calc_ip_checksum(const unsigned short buff[], int len_ip_header)
+const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame)
 {
-	int i;
-	unsigned short word16;
-	unsigned int sum;
-
-	sum = 0;
-
-	// make 16 bit words out of every two adjacent 8 bit words in the packet
-	// and add them up
-	for (i=0;i<len_ip_header;i=i+2){
-		word16 =((buff[i]<<8)&0xFF00)+(buff[i+1]&0xFF);
-		sum = sum + (unsigned int) word16;	
-	}
-
-	// take only 16 bits out of the 32 bit sum and add up the carries
-	while (sum>>16)
-		sum = (sum & 0xFFFF)+(sum >> 16);
-
-	// one's complement the result
-	sum = ~sum;
-
-	return sum;
-}*/
-
-const unsigned char* strip_l2head(pcap_t *pcap, const unsigned char *frame)
-{
-	int l2_len;
+	int32_t l2_len;
 	struct eth_hdr *ethhdr;
 
 	l2_len = -1;
@@ -99,25 +73,25 @@ const unsigned char* strip_l2head(pcap_t *pcap, const unsigned char *frame)
 	}
 }
 
-int detect_l2head_len(const unsigned char *frame)
+int32_t detect_l2head_len(const uint8_t *frame)
 {
 	struct iphdr* iphdr;
-	char buff[60];
-	int len;
-	unsigned short sum, checksum;
-	int offsets[4] = {14, 0, 18};
+	int8_t buff[60];
+	int32_t len;
+	uint16_t sum, checksum;
+	int32_t offsets[4] = {14, 0, 18};
 
-	for (int i = 0; i < sizeof(offsets)/sizeof(int); i++)
+	for (int32_t i = 0; i < sizeof(offsets)/sizeof(int32_t); i++)
 	{
 		iphdr = (struct iphdr*)(frame + offsets[i]);
 		if (iphdr->version != 4)
 			continue;
 		len = iphdr->ihl << 2;
 		memcpy(buff, iphdr, len);
-		sum = *(unsigned short*)(buff+10);
+		sum = *(uint16_t*)(buff+10);
 		buff[10] = 0;
 		buff[11] = 0;
-		checksum = calc_ip_checksum((unsigned char*)buff, len);
+		checksum = calc_ip_checksum((uint8_t*)buff, len);
 		if (checksum == sum)
 			return offsets[i];
 	}

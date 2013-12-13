@@ -14,18 +14,20 @@ class ip_pkt {
 public:
 	ip_pkt();
 	ip_pkt(const ip_pkt& ip_pkg);
-	ip_pkt(const unsigned char* ip_pkt);
+	ip_pkt(const uint8_t* ip_pkt);
 
 	/**
 	 * copy the ip packet pointed by parameter ip_pkt.
 	 * the function's behavior is undefined if called with a invalid ip packet address.
 	 * @ip_pkt point to the starting address of valid IP packet.
 	 */
-	void cp(const unsigned char* ip_pkt);
+	void cp(const uint8_t* ip_pkt);
 
 	const ip_pkt& operator=(const ip_pkt& ip_pkt);
 
 	bool operator<(const ip_pkt& challenger)const;
+	bool operator>(const ip_pkt& challenger)const;
+	bool operator==(const ip_pkt& challenger)const;
 
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.
@@ -35,18 +37,19 @@ public:
 	virtual ~ip_pkt();
 
 private:
-	unsigned char *_pkt;   ///< the starting address of the IP packet.
+	uint8_t *_pkt;   ///< the starting address of the IP packet.
 
-	int  _tot_len;               ///< the IP packet total length.
+	int32_t  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header
-	const unsigned char *_ip_content;  ///< pointer to the ip content excluding the ip header.
-	int  _ihl;                   ///< the IP header length.
+	const uint8_t *_ip_content;  ///< pointer to the ip content excluding the ip header.
+	int32_t  _ihl;                   ///< the IP header length.
 
 	struct tcphdr *_tcphdr;      ///< pointer to the tcp header.
-	const unsigned char *_tcp_content; ///< pointer to the tcp content.
+	const uint8_t *_tcp_content; ///< pointer to the tcp content.
+	int32_t _tcp_content_len;        ///< the length of the tcp content AKA playload.
 
-	unsigned int _seq;         ///< tcp's sequence number. In host byte order.
-	unsigned int _ack_seq;     ///< tcp's acknoledgement sequence. In host byte order.
+	uint32_t _seq;         ///< tcp's sequence number. In host byte order.
+	uint32_t _ack_seq;     ///< tcp's acknoledgement sequence. In host byte order.
 
 	bool _ack_flag;              ///< if the ack is set or not.
 	bool _rst_flag;              ///< reset flag.
