@@ -12,28 +12,27 @@
 
 using namespace std;
 
-session_manager::session_manager()
-{
+session_manager::session_manager() {
 }
 
-int session_manager::read_from_capfile(const string& path, const string& filter)
-{
-	char  ebuf[1024];
-	pcap_t  *pcap;
+int session_manager::read_from_capfile(const string& path,
+		const string& filter) {
+	char ebuf[1024];
+	pcap_t *pcap;
 	const u_char *pkt_data;
 	const u_char *ip_pkt;
-	struct bpf_program  fp;
-	struct pcap_pkthdr  pkt_hdr;
+	struct bpf_program fp;
+	struct pcap_pkthdr pkt_hdr;
 	struct timeval ts;
 
 	if ((pcap = pcap_open_offline(path.c_str(), ebuf)) == NULL) {
-		cerr << ebuf <<endl;
+		cerr << ebuf << endl;
 		return -1;
 	}
 
 	if (!filter.empty()) {
 		if (pcap_compile(pcap, &fp, filter.c_str(), 0, 0) == -1) {
-			cerr << pcap_geterr(pcap) <<endl;
+			cerr << pcap_geterr(pcap) << endl;
 			return -1;
 		}
 		if (pcap_setfilter(pcap, &fp) == -1) {
@@ -48,7 +47,8 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 		pkt_data = pcap_next(pcap, &pkt_hdr);
 		if (pkt_data != NULL) {
 			if (pkt_hdr.caplen < pkt_hdr.len) {
-				g_logger.printf("%d truncated packets are detected.\n", ++truncated_pkt_count);
+				g_logger.printf("%d truncated packets are detected.\n",
+						++truncated_pkt_count);
 				continue;
 			} else {
 				ip_pkt = strip_l2head(pcap, pkt_data);
@@ -64,8 +64,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	pcap_close(pcap);
 }
 
-int session_manager::dispatch_ip_pkt(const u_char* ip_pkt)
-{
+int session_manager::dispatch_ip_pkt(const u_char* ip_pkt) {
 	int ret;
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;
@@ -82,29 +81,30 @@ int session_manager::dispatch_ip_pkt(const u_char* ip_pkt)
 	return ret;
 }
 
-int session_manager::loop()
-{
-	int i;
-	int healthy;
+int session_manager::loop() {
+	int integrity, total_sess_count, sick_sess_count;
 	std::map<uint64_t, tcpsession>::iterator ite;
-	i = 0;
 
-	for (ite = _sessions.begin(); ite != _sessions.end(); ++ite)
-	{
-		g_logger.printf("check the %dth tcpsession.\n", ++i);
-		healthy = ite->second.check_health();
-		if (healthy == 0)
-		{
-			g_logger.printf("OKAY!\n");
+	total_sess_count = 0;
+	sick_sess_count = 0;
+
+	for (ite = _sessions.begin(); ite != _sessions.end();) {
+		//g_logger.printf("check the %dth tcpsession.\n", ++i);
+		total_sess_count++;
+		integrity = ite->second.check_samples_integrity();
+		if (integrity == 0) {
+			//g_logger.printf("OKAY!\n");
+			++ite;
+		} else {
+			//g_logger.printf("SICK!\n");
+			sick_sess_count++;
+			_sessions.erase(ite++);
 		}
-		else
-		{
-			g_logger.printf("SICK!\n");
-		}
+
 	}
+	g_logger.printf("total %d sessions, %d of them are sick and are dropped.\n", total_sess_count, sick_sess_count);
 }
 
-session_manager::~session_manager()
-{
+session_manager::~session_manager() {
 }
 

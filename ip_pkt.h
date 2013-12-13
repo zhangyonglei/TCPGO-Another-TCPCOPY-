@@ -36,8 +36,49 @@ public:
 
 	virtual ~ip_pkt();
 
+public:
+	int32_t get_tot_len()
+	{
+		return _tot_len;
+	}
+
+	int32_t get_tcp_content_len()
+	{
+		return _tcp_content_len;
+	}
+
+	uint32_t get_seq()
+	{
+		return _seq;
+	}
+
+	uint32_t get_ack_seq()
+	{
+		return _ack_seq;
+	}
+
+	bool is_ack_set()
+	{
+		return _ack_flag;
+	}
+
+	bool is_rst_set()
+	{
+		return _rst_flag;
+	}
+
+	bool is_syn_set()
+	{
+		return _syn_flag;
+	}
+
+	bool is_fin_set()
+	{
+		return _fin_flag;
+	}
+
 private:
-	uint8_t *_pkt;   ///< the starting address of the IP packet.
+	const uint8_t *_pkt;   ///< the starting address of the IP packet.
 
 	int32_t  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header

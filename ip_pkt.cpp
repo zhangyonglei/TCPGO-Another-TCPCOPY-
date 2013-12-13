@@ -23,7 +23,7 @@ ip_pkt::ip_pkt(const ip_pkt& pkt)
 
 	_pkt = new uint8_t[pkt._tot_len];
 	assert(_pkt != NULL);
-	memcpy(_pkt, pkt._pkt, pkt._tot_len);
+	memcpy((char*)_pkt, pkt._pkt, pkt._tot_len);
 	warm_up();
 }
 
@@ -95,7 +95,7 @@ void ip_pkt::cp(const uint8_t* ip_pkt)
 	delete []_pkt;
 	_pkt = new uint8_t[ip_tot_len];
 	assert(NULL != _pkt);
-	memcpy(_pkt, ip_pkt, ip_tot_len);
+	memcpy((char*)_pkt, ip_pkt, ip_tot_len);
 	warm_up();
 }
 
