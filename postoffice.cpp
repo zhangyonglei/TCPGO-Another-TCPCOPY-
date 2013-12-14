@@ -14,17 +14,20 @@
 
 using namespace std;
 
-postoffice g_postman;
+postoffice g_postoffice;
 
 postoffice::postoffice()
 {
-	int32_t on;
-	int32_t ret;
+	int on, ret, flags;
+	const char* err_hint;
+
+	err_hint = "";
 
 	// used to send IPs package on IP level.
 	_send_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	if (_send_fd == -1)
 	{
+		err_hint = "root permission is required ";
 		goto _err;
 	}
 
@@ -37,6 +40,18 @@ postoffice::postoffice()
 	_recv_fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
 	if (_recv_fd == -1)
 	{
+		err_hint = "root permission is required ";
+		goto _err;
+	}
+
+	flags = fcntl(_recv_fd, F_GETFL, 0);
+	if (flags < 0)
+	{
+		goto _err;
+	}
+
+	if (fcntl(_recv_fd, F_SETFL, flags|O_NONBLOCK) < 0)
+	{
 		goto _err;
 	}
 
@@ -47,11 +62,11 @@ postoffice::postoffice()
 	return;
 
 _err:
-    // I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
+	// I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
 	//strerror_r(errno, _buff, sizeof(_buff));
 	//g_logger.printf("%s\n", _buff);
 
-	perror("root permission is required ");
+	perror(err_hint);
 	abort();
 }
 
@@ -95,8 +110,8 @@ void postoffice::recv()
 
 	// now inform the listeners the coming ip package.
 	for (list<recv_evt_listener*>::const_iterator ite = _listeners.begin();
-		ite != _listeners.end();
-		++ite)
+			ite != _listeners.end();
+			++ite)
 	{
 		(*ite)->check(_buff);
 	}
@@ -111,13 +126,13 @@ int32_t postoffice::set_svr_addr(const char* addr)
 {
 	int32_t ret;
 	assert(addr != NULL);
-    memset(&_svr_addr, 0, sizeof(_svr_addr));
-    _svr_addr.sin_family = AF_INET;
-    ret = inet_aton(addr, &_svr_addr.sin_addr);
-    if (INADDR_NONE == ret)
-    	return -1;
-    else
-    	return 0;
+	memset(&_svr_addr, 0, sizeof(_svr_addr));
+	_svr_addr.sin_family = AF_INET;
+	ret = inet_aton(addr, &_svr_addr.sin_addr);
+	if (INADDR_NONE == ret)
+		return -1;
+	else
+		return 0;
 }
 
 void postoffice::append_recv_evt_listener(recv_evt_listener* listener)

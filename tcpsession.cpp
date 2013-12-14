@@ -45,7 +45,8 @@ int32_t tcpsession::check_samples_integrity()
 
 	i = 0;
 	std::list<ip_pkt>::iterator ite;
-	// reomve the packet without tcp playload.
+	// reomve the packet without tcp playload. e.g. the tcp keep-alive segments which are
+	// used to elicit an ACK from the receiver.
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
 		if(0 == ite->get_tcp_content_len() && !ite->is_fin_set() && ite->is_ack_set()
@@ -61,14 +62,16 @@ int32_t tcpsession::check_samples_integrity()
 
 	size_saved = _ippkts_samples.size();
 	if (0 == size_saved)
+	{
 		goto _err;
+	}
 	_ippkts_samples.sort();
 	_ippkts_samples.unique();   // remove duplicates.
 	size_now = _ippkts_samples.size();
 	if (size_now != size_saved)
 	{
-		g_logger.printf("tcpsession:%s:%hu has %d duplicated packets dropped.\n",
-				_client_src_ip_str.c_str(), _client_src_port, size_saved - size_now);
+	//	g_logger.printf("tcpsession:%s:%hu has %d duplicated packets dropped.\n",
+	//			_client_src_ip_str.c_str(), _client_src_port, size_saved - size_now);
 	}
 
 	ite = _ippkts_samples.begin();
@@ -120,8 +123,6 @@ int32_t tcpsession::check_samples_integrity()
 	return 0;
 
 _err:
-	g_logger.printf("samples in tcpsession:%s:%hu are not consecutive.\n",
-			_client_src_ip_str.c_str(), _client_src_port);
 	return 1;
 }
 

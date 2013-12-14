@@ -21,20 +21,20 @@ public:
 	cute_logger();
 	~cute_logger();
 
-	inline int32_t printf(const char* format, ...);
-	inline int32_t flush();
+	inline int printf(const char* format, ...);
+	inline int flush();
 
 private:
-	int32_t _vprintf(const char* format, va_list argptr);
+	int _vprintf(const char* format, va_list argptr);
 
 private:
 	FILE*      _stream;
 	bool       _on;
 };
 
-int32_t cute_logger::printf(const char* format, ...)
+int cute_logger::printf(const char* format, ...)
 {
-	int32_t ret;
+	int ret;
 	va_list ap;
 
 	ret = 0;
@@ -48,9 +48,9 @@ int32_t cute_logger::printf(const char* format, ...)
 	return ret;
 }
 
-int32_t cute_logger::flush()
+int cute_logger::flush()
 {
-	int32_t ret;
+	int ret;
 
 	ret = 0;
 	if (_on)

@@ -96,6 +96,8 @@ private:
 	bool _rst_flag;              ///< reset flag.
 	bool _syn_flag;              ///< self-explanatory.
 	bool _fin_flag;              ///< no explanation.
+
+	std::string _client_ip_addr;
 };
 
 #endif /* _IPPKG_H_ */

@@ -10,6 +10,7 @@
 #include "cute_logger.h"
 #include "session_manager.h"
 #include "postoffice.h"
+#include <vector>
 
 using namespace std;
 
@@ -19,6 +20,11 @@ session_manager g_session_manager;
 static void output_help();
 static void output_version();
 static void run();
+
+void call2(vector<int>& vec)
+{
+	vec.clear();
+}
 
 int main(int argc, char **argv)
 {
@@ -31,9 +37,16 @@ int main(int argc, char **argv)
 			{0, 0, 0, 0}
 	};
 
+	vector<int> vec;
+	vec.push_back(1);
+	vec.push_back(5);
+	vec.push_back(3);
+	vec.push_back(2);
+	call2(vec);
+	vec.push_back(1111);
+
 	while (true) {
-		ch = getopt_long(argc, argv, "f:hv",
-				long_options, &option_index);
+		ch = getopt_long(argc, argv, "f:hv", long_options, &option_index);
 		if (ch == -1)
 			break;
 

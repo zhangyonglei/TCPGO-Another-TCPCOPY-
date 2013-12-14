@@ -11,7 +11,7 @@
 #include <list>
 
 class postoffice;
-extern postoffice g_postman;
+extern postoffice g_postoffice;
 
 /**
  * This interface is employed by class postoffice to
