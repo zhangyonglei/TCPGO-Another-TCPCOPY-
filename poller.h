@@ -10,6 +10,9 @@
 
 #include <map>
 
+class poller;
+extern poller g_poller;
+
 class evt_workhorse
 {
 public:

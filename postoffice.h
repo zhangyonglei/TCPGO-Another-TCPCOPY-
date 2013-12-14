@@ -8,49 +8,56 @@
 #ifndef _POSTMAN_H_
 #define _POSTMAN_H_
 
-#include <list>
+#include <map>
+#include "utils.h"
+#include "poller.h"
+#include "ip_pkt.h"
 
 class postoffice;
 extern postoffice g_postoffice;
 
-/**
- * This interface is employed by class postoffice to
- * inform the coming packet received from datalink.
- */
-class recv_evt_listener
+class postoffice_callback_interface
+		: public evt_workhorse
 {
 public:
-	virtual int check(const char *ip_pkt) = 0;
-	virtual ~recv_evt_listener(){};
+	/**
+	 * @return returns the ip packet that is expected to be sent soon.
+	 */
+	virtual const ip_pkt* send_this_packet() = 0;
+
+	/**
+	 * @param ip_pkt points to the coming packet.
+	 */
+	virtual void got_a_packet(const ip_pkt *pkt) = 0;
 };
 
 /**
  * This class is in charge of sending IP packets and receiving
  * datalink level packets.
  */
-class postoffice {
+class postoffice : public evt_workhorse
+{
 public:
 	postoffice();
 	virtual ~postoffice();
 
-	/**
-	 * @return return 0 on success, otherwise return -1 on error.
-	 */
-	int send(const unsigned char* data, int len);
+	void get_ready();
+
+	void register_callback(uint64_t key, postoffice_callback_interface* callback);
+	void deregister_callback(uint64_t key);
+
+	virtual void pollin_handler(int fd);
+	virtual void pollout_handler(int fd);
 
 	/**
 	 *@param port in host byte order.
 	 */
 	void set_svr_port(unsigned short port);
 
-	void recv();
-
 	/**
 	 * @param addr The dest IP address in c-string.
 	 */
 	int set_svr_addr(const char* addr);
-
-	void append_recv_evt_listener(recv_evt_listener* listener);
 
 private:
 	struct sockaddr_in  _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
@@ -58,8 +65,9 @@ private:
 	int  _send_fd;   ///< The raw socket file descriptor used to send IP packets. on level 3.
 	int  _recv_fd;   ///< The raw socket file descriptor created on datalink level to sniff traffic. on level 2.
 	char  _buff[8192];   ///< self-explanatory.
+	int _l2hdr_len;   ///< it's usually 14.
 
-	std::list<recv_evt_listener*> _listeners;  ///< listeners will be informed the outbound traffic.
+	std::map<uint64_t, postoffice_callback_interface*> _callbacks;  ///< I'm tired, i don't wanna leave comments.
 };
 
 #endif /* _POSTMAN_H_ */

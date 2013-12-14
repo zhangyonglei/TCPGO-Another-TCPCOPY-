@@ -32,7 +32,7 @@ const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame);
 /**
  * detect the level2 header length in a ungraceful way. 
  */
-int32_t detect_l2head_len(const uint8_t *frame);
+int detect_l2head_len(const char *frame);
 
 /* ip_pack is the starting address of a IP package. */
 #define ip_packet_parser(ip_pack)        \
@@ -62,6 +62,7 @@ int32_t detect_l2head_len(const uint8_t *frame);
 		memcpy(pack_clone, ip_pack, tot_len);    \
 		pack_clone;   })
 
+/* port is in network byte order*/
 #define mk_sess_key(ip, port) ({    \
 		uint64_t   k;                            \
 		uint32_t *ptr;                       \

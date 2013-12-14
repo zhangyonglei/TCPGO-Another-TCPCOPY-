@@ -21,7 +21,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port) {
 tcpsession::~tcpsession() {
 }
 
-void tcpsession::append_ip_sample(const uint8_t* ippkt)
+void tcpsession::append_ip_sample(const char* ippkt)
 {
 	struct iphdr* iphdr; 
 	ip_pkt pkt;

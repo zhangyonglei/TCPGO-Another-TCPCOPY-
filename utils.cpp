@@ -73,7 +73,7 @@ const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame)
 	}
 }
 
-int32_t detect_l2head_len(const uint8_t *frame)
+int detect_l2head_len(const char *frame)
 {
 	struct iphdr* iphdr;
 	int8_t buff[60];

@@ -10,21 +10,15 @@
 #include "cute_logger.h"
 #include "session_manager.h"
 #include "postoffice.h"
-#include <vector>
+#include "poller.h"
 
 using namespace std;
 
 string  g_pcap_file_path;
-session_manager g_session_manager;
 
 static void output_help();
 static void output_version();
 static void run();
-
-void call2(vector<int>& vec)
-{
-	vec.clear();
-}
 
 int main(int argc, char **argv)
 {
@@ -36,14 +30,6 @@ int main(int argc, char **argv)
 			{"version", no_argument, NULL,  'v' },
 			{0, 0, 0, 0}
 	};
-
-	vector<int> vec;
-	vec.push_back(1);
-	vec.push_back(5);
-	vec.push_back(3);
-	vec.push_back(2);
-	call2(vec);
-	vec.push_back(1111);
 
 	while (true) {
 		ch = getopt_long(argc, argv, "f:hv", long_options, &option_index);
@@ -108,5 +94,7 @@ static void output_help()
 static void run()
 {
 	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
-	g_session_manager.loop();
+	g_session_manager.get_ready();
+	g_postoffice.get_ready();
+	g_poller.run();   // thw word starts from now on ...........
 }

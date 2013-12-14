@@ -11,6 +11,8 @@
 
 #define MAX_EVENTS_COUNT 8
 
+poller g_poller;
+
 poller::poller()
 {
 	_epoll_fd = epoll_create(1);
@@ -77,24 +79,27 @@ void poller::run()
 	evt_workhorse *workhorse;
 	struct epoll_event  events[MAX_EVENTS_COUNT];
 
-	nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100);
-	if (nfds == -1 && errno == EINTR)
+	while(true)
 	{
-		perror("epoll_pwait");
-		abort();
-	}
-
-	for (n = 0; n < nfds; ++n)
-	{
-		fd = events[n].data.fd;
-		workhorse = _workhorses.at(fd);
-		if (events[n].events | EPOLLIN)
+		nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100);
+		if (nfds == -1 && errno == EINTR)
 		{
-			workhorse->pollin_handler(fd);
+			perror("epoll_pwait");
+			abort();
 		}
-		if (events[n].events | EPOLLOUT)
+
+		for (n = 0; n < nfds; ++n)
 		{
-			workhorse->pollout_handler(fd);
+			fd = events[n].data.fd;
+			workhorse = _workhorses.at(fd);
+			if (events[n].events | EPOLLIN)
+			{
+				workhorse->pollin_handler(fd);
+			}
+			if (events[n].events | EPOLLOUT)
+			{
+				workhorse->pollout_handler(fd);
+			}
 		}
 	}
 }
