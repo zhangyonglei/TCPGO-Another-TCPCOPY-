@@ -23,7 +23,7 @@ public:
 	/**
 	 * add a ip packet to this session as a sample.
 	 */
-	void append_ip_sample(const uint8_t* ippkt);
+	void append_ip_sample(const char* ippkt);
 
 	/**
 	 * This function will also remove ack packets without playload.

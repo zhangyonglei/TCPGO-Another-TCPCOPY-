@@ -21,16 +21,16 @@ ip_pkt::ip_pkt(const ip_pkt& pkt)
 		return;
 	}
 
-	_pkt = new uint8_t[pkt._tot_len];
+	_pkt = new char[pkt._tot_len];
 	assert(_pkt != NULL);
 	memcpy((char*)_pkt, pkt._pkt, pkt._tot_len);
 	warm_up();
 }
 
-ip_pkt::ip_pkt(const uint8_t* ip_pkt)
+ip_pkt::ip_pkt(const char* pkt)
 {
 	_pkt = NULL;
-	cp(ip_pkt);
+	cp(pkt);
 }
 
 ip_pkt::~ip_pkt()
@@ -88,19 +88,34 @@ bool ip_pkt::operator==(const ip_pkt& ip_pkt)const
 		return false;
 }
 
-void ip_pkt::cp(const uint8_t* ip_pkt)
+void ip_pkt::cp(const char* pkt)
 {
-	assert(NULL != ip_pkt);
-	ip_packet_parser(ip_pkt);
+	assert(NULL != pkt);
+	ip_packet_parser(pkt);
 	delete []_pkt;
-	_pkt = new uint8_t[ip_tot_len];
+	_pkt = new char[ip_tot_len];
 	assert(NULL != _pkt);
-	memcpy((char*)_pkt, ip_pkt, ip_tot_len);
+	memcpy((char*)_pkt, pkt, ip_tot_len);
 	warm_up();
+}
+
+void ip_pkt::swap(ip_pkt& pkt)
+{
+	const char* tmp;
+
+	tmp = _pkt;
+	_pkt = pkt._pkt;
+	pkt._pkt = tmp;
+
+	warm_up();
+	pkt.warm_up();
 }
 
 void ip_pkt::warm_up()
 {
+	if(NULL == _pkt)
+		return;
+
 	ip_packet_parser(_pkt);
 
 	_tot_len = ip_tot_len;

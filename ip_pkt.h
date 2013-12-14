@@ -13,17 +13,19 @@
 class ip_pkt {
 public:
 	ip_pkt();
-	ip_pkt(const ip_pkt& ip_pkg);
-	ip_pkt(const uint8_t* ip_pkt);
+	ip_pkt(const ip_pkt& pkt);
+	ip_pkt(const char* pkt);
 
 	/**
 	 * copy the ip packet pointed by parameter ip_pkt.
 	 * the function's behavior is undefined if called with a invalid ip packet address.
 	 * @ip_pkt point to the starting address of valid IP packet.
 	 */
-	void cp(const uint8_t* ip_pkt);
+	void cp(const char* pkt);
 
-	const ip_pkt& operator=(const ip_pkt& ip_pkt);
+	void swap(ip_pkt& pkt);
+
+	const ip_pkt& operator=(const ip_pkt& pkt);
 
 	bool operator<(const ip_pkt& challenger)const;
 	bool operator>(const ip_pkt& challenger)const;
@@ -37,48 +39,53 @@ public:
 	virtual ~ip_pkt();
 
 public:
-	int32_t get_tot_len()
+	const char* get_starting_addr()const
+	{
+		return _pkt;
+	}
+	
+	int32_t get_tot_len()const
 	{
 		return _tot_len;
 	}
 
-	int32_t get_tcp_content_len()
+	int32_t get_tcp_content_len()const
 	{
 		return _tcp_content_len;
 	}
 
-	uint32_t get_seq()
+	uint32_t get_seq()const
 	{
 		return _seq;
 	}
 
-	uint32_t get_ack_seq()
+	uint32_t get_ack_seq()const
 	{
 		return _ack_seq;
 	}
 
-	bool is_ack_set()
+	bool is_ack_set()const
 	{
 		return _ack_flag;
 	}
 
-	bool is_rst_set()
+	bool is_rst_set()const
 	{
 		return _rst_flag;
 	}
 
-	bool is_syn_set()
+	bool is_syn_set()const
 	{
 		return _syn_flag;
 	}
 
-	bool is_fin_set()
+	bool is_fin_set()const
 	{
 		return _fin_flag;
 	}
 
 private:
-	const uint8_t *_pkt;   ///< the starting address of the IP packet.
+	const char *_pkt;   ///< the starting address of the IP packet.
 
 	int32_t  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header
