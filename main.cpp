@@ -10,6 +10,7 @@
 #include "cute_logger.h"
 #include "session_manager.h"
 #include "postoffice.h"
+#include "thetimer.h"
 #include "poller.h"
 
 using namespace std;
@@ -94,6 +95,7 @@ static void output_help()
 static void run()
 {
 	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	g_timer.get_ready();
 	g_session_manager.get_ready();
 	g_postoffice.get_ready();
 	g_poller.run();   // thw word starts from now on ...........
