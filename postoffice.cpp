@@ -192,7 +192,7 @@ void postoffice::pollout_handler(int fd)
 		callback = ite->second;
 		do
 		{
-			pkt = callback->send_this_packet();
+			pkt = callback->pls_send_this_packet();
 			if (NULL == pkt)
 			{
 				break;
@@ -202,7 +202,10 @@ void postoffice::pollout_handler(int fd)
 			tot_len = pkt->get_tot_len();
 			ret = send(_send_fd, starting_addr, tot_len, MSG_DONTWAIT);
 			if (ret < 0 && errno == EINTR)
+			{
+				perror("send ");
 				return;
+			}
 		}while(true);
 	}
 }
@@ -216,9 +219,7 @@ int32_t postoffice::set_svr_addr(const char* addr)
 {
 	int32_t ret;
 	assert(addr != NULL);
-	memset(&_svr_addr, 0, sizeof(_svr_addr));
-	_svr_addr.sin_family = AF_INET;
-	ret = inet_aton(addr, &_svr_addr.sin_addr);
+	ret = inet_aton(addr, &_svr_addr);
 	if (INADDR_NONE == ret)
 		return -1;
 	else

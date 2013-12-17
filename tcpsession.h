@@ -10,9 +10,11 @@
 
 #include <list>
 #include "misc.h"
+#include "postoffice.h"
 #include "ip_pkt.h"
 
-class tcpsession {
+class tcpsession : public postoffice_callback_interface
+{
 public:
 	/**
 	 *@param port in network byte order.
@@ -31,9 +33,18 @@ public:
 	 */
 	int check_samples_integrity();
 
+public:
+	virtual const ip_pkt* pls_send_this_packet();
+
+	virtual void got_a_packet(const ip_pkt *pkt);
+
+
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
-	std::list<ip_pkt>  _ippkts_received;   ///< The ip packages received from the server will be saved here.
+	std::list<ip_pkt>::iterator  _ite_next_avaliable;
+
+	// reserved for the possible future version if i can still play with this stuff.
+//	std::list<ip_pkt>  _ippkts_received;   // The ip packages received from the server will be saved here.
 
 	uint32_t _client_src_ip_num;
 	std::string _client_src_ip_str;

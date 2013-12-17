@@ -33,7 +33,20 @@ public:
 
 	void register_evt(int fd, poll_type type, evt_workhorse* workhorse);
 	void deregister_evt(int fd);
-	void run();
+
+	/**
+	 * Why this method is called big bang?
+	 * GOOD QUESTION. That's 'cos:
+	 * Our whole universe was in a hot dense state,
+	 * Then nearly fourteen billion years ago expansion started. Wait...
+     * The Earth began to cool.
+	 * The autotrophs began to drool.
+	 * Neanderthals developed tools.
+	 * We built a wall. (We built the pyramids.)
+	 * Math, science, history, unraveling the mystery,
+	 * That all started with a big bang!
+	 */
+	void bigbang();
 
 private:
 	int _epoll_fd;

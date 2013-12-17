@@ -82,12 +82,12 @@ bool ip_pkt::operator>(const ip_pkt& challenger)const
 }
 
 bool ip_pkt::operator==(const ip_pkt& ip_pkt)const
-{
+		{
 	if (!(*this < ip_pkt) && !(ip_pkt < *this))
 		return true;
 	else
 		return false;
-}
+		}
 
 void ip_pkt::cp(const char* pkt)
 {
@@ -149,7 +149,7 @@ uint16_t ip_pkt::reset_tcp_checksum()
 {
 	uint16_t old_checksum, new_checksum;
 	char *ptr;
-	
+
 	ptr = (char*)_tcphdr + 16;  // 16 is the offset of checksum in tcp header
 	old_checksum = *(uint16_t*)(ptr);
 	memset(ptr, 0, 2);
@@ -169,4 +169,24 @@ uint16_t ip_pkt::reset_ip_checksum()
 	memset(ptr, 0, 2);
 	new_checksum = calc_ip_checksum(_iphdr);
 	memcpy(ptr, &new_checksum, 2);
+}
+
+void ip_pkt::rebuild(const char* addr, unsigned short port)
+{
+	int ret;
+	struct in_addr inaddr;
+	memset(&inaddr, 0, sizeof(inaddr));
+	ret = inet_aton(addr, &inaddr);
+	if (ret < 0)
+	{
+		perror(addr);
+		abort();
+	}
+
+	_iphdr->daddr = *(uint32_t*)&inaddr;
+	_tcphdr->dest = htons(port);
+	_tcphdr->window = htons(65535);
+	warm_up();
+	reset_ip_checksum();
+	reset_tcp_checksum();
 }

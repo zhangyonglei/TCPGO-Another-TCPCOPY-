@@ -72,6 +72,7 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt) {
 	int ret;
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;
+	std::pair<std::map<uint64_t, tcpsession>::iterator, bool>  ugly_pair;
 
 	ip_packet_parser(ip_pkt);
 	key = mk_sess_key(iphdr->saddr, tcphdr->dest);
@@ -81,8 +82,13 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt) {
 	// either the newly inserted element or to the element with an equivalent key in the map. The pair::second
 	// element in the pair is set to true if a new element was inserted or false if an equivalent key already
 	// existed. (copied from c++ references to clarify the obfuscated map::insert return value.)
-	ite = (_sessions.insert(std::pair<uint64_t, tcpsession>(key, session))).first;
+	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
+	ite = ugly_pair.first;
 	ite->second.append_ip_sample((const char*)ip_pkt);
+	if (ugly_pair.second)
+	{
+		g_postoffice.register_callback(key, &ite->second);
+	}
 
 	ret = 0;
 
