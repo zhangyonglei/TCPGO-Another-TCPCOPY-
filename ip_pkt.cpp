@@ -36,6 +36,7 @@ ip_pkt::ip_pkt(const char* pkt)
 ip_pkt::~ip_pkt()
 {
 	delete _pkt;
+	_pkt = NULL;
 }
 
 const ip_pkt& ip_pkt::operator=(const ip_pkt& ip_pkt)

@@ -117,29 +117,29 @@ public:
 		return _fin_flag;
 	}
 
-	const std::string get_src_addr()
+	const std::string get_src_addr()const
 	{
 		return _src_addr;
 	}
 
-	const std::string get_dst_addr()
+	const std::string get_dst_addr()const
 	{
 		return _dst_addr;
 	}
 
 	// in host byte order
-	uint16_t get_src_port()
+	uint16_t get_src_port()const
 	{
 		return ntohs(_tcphdr->source);
 	}
 
 	// in host byte order
-	uint16_t get_dst_port()
+	uint16_t get_dst_port()const
 	{
 		return ntohs(_tcphdr->dest);
 	}
 
-	uint32_t get_seq_number()
+	uint32_t get_seq_number()const
 	{
 		return ntohl(_tcphdr->seq);
 	}
