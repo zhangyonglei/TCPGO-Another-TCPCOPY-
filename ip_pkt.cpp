@@ -101,7 +101,7 @@ void ip_pkt::cp(const char* pkt)
 
 void ip_pkt::swap(ip_pkt& pkt)
 {
-	const char* tmp;
+	char* tmp;
 
 	tmp = _pkt;
 	_pkt = pkt._pkt;
@@ -119,12 +119,13 @@ void ip_pkt::warm_up()
 	ip_packet_parser(_pkt);
 
 	_tot_len = ip_tot_len;
-	_iphdr = iphdr;
-	_ip_content = (const uint8_t*)(_pkt + iphdr_len);
-	_ihl = iphdr_len;
+	_iphdr = (struct iphdr*)iphdr;
+	_ip_content = _pkt + iphdr_len;
+	_iphdr_len = iphdr_len;
 
-	_tcphdr = tcphdr;
-	_tcp_content = tcp_content;
+	_tcphdr = (struct tcphdr*)tcphdr;
+	_tcphdr_len = tcphdr_len;
+	_tcp_content = (char*)tcp_content;
 	_tcp_content_len = tcp_content_len;
 
 	_seq = ntohl(tcphdr->seq);
@@ -134,4 +135,37 @@ void ip_pkt::warm_up()
 	_rst_flag = _tcphdr->rst;
 	_syn_flag = _tcphdr->syn;
 	_fin_flag = _tcphdr->fin;
+
+	struct in_addr inaddr;
+	inaddr.s_addr = _iphdr->saddr;
+	_src_addr = inet_ntoa(inaddr);
+	inaddr.s_addr = _iphdr->daddr;
+	_dst_addr = inet_ntoa(inaddr);
+}
+
+
+uint16_t ip_pkt::reset_tcp_checksum()
+{
+	uint16_t old_checksum, new_checksum;
+	char *ptr;
+	
+	ptr = (char*)_tcphdr + 16;  // 16 is the offset of checksum in tcp header
+	old_checksum = *(uint16_t*)(ptr);
+	memset(ptr, 0, 2);
+	new_checksum = calc_tcp_checksum(_iphdr, _tcphdr);
+	memcpy(ptr, &new_checksum, 2);
+
+	return old_checksum;
+}
+
+uint16_t ip_pkt::reset_ip_checksum()
+{
+	uint16_t old_checksum, new_checksum;
+	char *ptr;
+
+	ptr = (char*)_iphdr + 10; // 10 is the offset of checksum in ip header
+	old_checksum = *(uint16_t*)(ptr);
+	memset(ptr, 0, 2);
+	new_checksum = calc_ip_checksum(_iphdr);
+	memcpy(ptr, &new_checksum, 2);
 }

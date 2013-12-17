@@ -118,6 +118,7 @@ void postoffice::pollin_handler(int fd)
 	int ret;
 	uint64_t key;
 	uint16_t src_port;
+	char *ptr_ippkt;
 	postoffice_callback_interface* callback;
 	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
 
@@ -139,7 +140,8 @@ void postoffice::pollin_handler(int fd)
 			}
 		}
 
-		ip_packet_parser(_buff + _l2hdr_len);
+		ptr_ippkt = _buff + _l2hdr_len;
+		ip_packet_parser(ptr_ippkt);
 		// ip_packet_parser(_buff);
 
 		// ignore the un-expected packages.
@@ -167,7 +169,7 @@ void postoffice::pollin_handler(int fd)
 		ite = _callbacks.find(key);
 		if (ite != _callbacks.end())
 		{
-			ip_pkt pkt(_buff);
+			ip_pkt pkt(ptr_ippkt);
 			ite->second->got_a_packet(&pkt);
 		}
 	}

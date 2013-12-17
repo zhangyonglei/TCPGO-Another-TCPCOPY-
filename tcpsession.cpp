@@ -49,10 +49,31 @@ int32_t tcpsession::check_samples_integrity()
 	// used to elicit an ACK from the receiver.
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
-		if(0 == ite->get_tcp_content_len() && !ite->is_fin_set() && ite->is_ack_set()
-				&& !ite->is_syn_set() && !ite->is_rst_set())
+		///////////////testing code, remove me later.
+		uint16_t sum;
+		sum = ite->reset_tcp_checksum();
+		sum = ite->reset_tcp_checksum();
+
+		int tot_len = ite->get_tot_len();
+		int tcp_content_len = ite->get_tcp_content_len();
+		int iphdr_len = ite->get_iphdr_len();
+		int tcphdr_len = ite->get_tcphdr_len();
+		bool fin_set = ite->is_fin_set();
+		bool ack_set = ite->is_ack_set();
+		bool sin_set = ite->is_syn_set();
+		bool rst_set = ite->is_rst_set();
+
+		// remove usefuless samples
+		if (0 == tcp_content_len && !fin_set && !rst_set && ack_set)
 		{
 			_ippkts_samples.erase(ite++);
+		}
+		// remove  corrupted sample, this case occurs rarely.
+		else if (tot_len != iphdr_len + tcphdr_len + tcp_content_len)
+		{
+			std::cerr << "detected corrupted ip packet." << ite->get_src_addr() << " : " << ite->get_src_port()
+					<< " --> " <<ite->get_dst_addr() << " : " << ite->get_dst_port() << std::endl;
+			++ite;
 		}
 		else
 		{
@@ -111,13 +132,6 @@ int32_t tcpsession::check_samples_integrity()
 			_ippkts_samples.erase(++ite, _ippkts_samples.end());
 			return 0;
 		}
-
-		///////////////////////// testing code for debug ///////////////
-		//		if (ite->get_tcp_content_len() != 0 && ite->is_fin_set())
-		//		{
-		//			size_saved = size_now;
-		//			std::cout <<"aaaaaaaaaaaaaaaaaaaa\n";
-		//		}
 	}
 
 	return 0;
