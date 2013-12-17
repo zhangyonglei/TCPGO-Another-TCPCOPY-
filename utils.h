@@ -19,15 +19,22 @@
 
 /**
  * calculate the IPv4 header checksum.
+ * note it's the caller's responsibility to set IP Header Checksum((char*)iphdr[10,11]) to zero.
  */
-unsigned short calc_ip_checksum(const unsigned short iphdr[], int32_t len);
+uint16_t calc_ip_checksum(const struct iphdr *iphdr);
+
+/**
+ * calculate the checksum of tcp over IPv4.
+ * note it's the caller's responsibility to set TCP Header Checksum((char*)tcphdr[16, 17] to zero.
+ */
+uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr);
 
 /**
  *@param pcap The pcap handler.
  *@param frame The package captured on level 2.
  *@return The start address of IP package.
  */
-const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame);
+const char* strip_l2head(pcap_t *pcap, const char *frame);
 
 /**
  * detect the level2 header length in a ungraceful way. 
@@ -36,25 +43,25 @@ int detect_l2head_len(const char *frame);
 
 /* ip_pack is the starting address of a IP package. */
 #define ip_packet_parser(ip_pack)        \
-        struct iphdr *iphdr;   \
-		struct tcphdr *tcphdr;                                     \
-		uint8_t *tcp_content;                               \
+        const struct iphdr *iphdr;   \
+		const struct tcphdr *tcphdr;                                     \
+		const char *tcp_content;                               \
 		int32_t ip_tot_len, iphdr_len, ip_content_len, tcphdr_len, tcp_content_len;     \
 		\
-		iphdr = (struct iphdr*)(ip_pack);                                   \
+		iphdr = (const struct iphdr*)(ip_pack);                                   \
 		ip_tot_len = ntohs(iphdr->tot_len);                                 \
 		iphdr_len = iphdr->ihl << 2;                                          \
 		ip_content_len = ip_tot_len - iphdr_len;                \
-		tcphdr = (struct tcphdr*)((uint8_t*)iphdr + iphdr_len);   \
+		tcphdr = (const struct tcphdr*)((const char*)iphdr + iphdr_len);   \
 		tcphdr_len = tcphdr->doff << 2;                                                            \
-		tcp_content = (uint8_t*)tcphdr + tcphdr_len;                \
+		tcp_content = (const char*)tcphdr + tcphdr_len;                \
 		tcp_content_len = ip_content_len - tcphdr_len;                       \
 		tcp_content_len = tcp_content_len; tcphdr_len = tcphdr_len;     \
 		ip_tot_len = ip_tot_len; iphdr_len = iphdr_len; tcp_content = tcp_content;/* suppress the warning: set but not used */
 
 #define ip_packet_clone(ip_pack)  ({   \
-		int32_t  tot_len;                                        \
-		int8_t  *pack_clone;                     \
+		int  tot_len;                                        \
+		char  *pack_clone;                     \
 		struct iphdr *iphdr;                  \
 		iphdr = (struct iphdr*)ip_pack;       \
 		tot_len = ntohs(iphdr->tot_len);    \

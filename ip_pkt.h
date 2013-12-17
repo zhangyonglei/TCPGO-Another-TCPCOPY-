@@ -39,17 +39,49 @@ public:
 	virtual ~ip_pkt();
 
 public:
+	/**
+	 * return the previous tcp checksum, and new tcp checksum is calculated and set.
+	 * note: in network byte order.
+	 */
+	uint16_t reset_tcp_checksum();
+
+	/**
+	 * return the previous ip checksum, and new tcp checksum is calculated and set.
+	 * note: in network byte order.
+	 */
+	uint16_t reset_ip_checksum();
+	
+	const struct iphdr* get_iphdr()const
+	{
+		return _iphdr;
+	}
+
+	const struct tcphdr* get_tcphdr()const
+	{
+		return _tcphdr;
+	}
+	
 	const char* get_starting_addr()const
 	{
 		return _pkt;
 	}
 	
-	int32_t get_tot_len()const
+	int get_tot_len()const
 	{
 		return _tot_len;
 	}
 
-	int32_t get_tcp_content_len()const
+	int get_iphdr_len()const
+	{
+		return _iphdr_len;
+	}
+
+	int get_tcphdr_len()const
+	{
+		return _tcphdr_len;
+	}
+
+	int get_tcp_content_len()const
 	{
 		return _tcp_content_len;
 	}
@@ -84,17 +116,45 @@ public:
 		return _fin_flag;
 	}
 
-private:
-	const char *_pkt;   ///< the starting address of the IP packet.
+	const std::string get_src_addr()
+	{
+		return _src_addr;
+	}
 
-	int32_t  _tot_len;               ///< the IP packet total length.
+	const std::string get_dst_addr()
+	{
+		return _dst_addr;
+	}
+
+	// in host byte order
+	uint16_t get_src_port()
+	{
+		return ntohs(_tcphdr->source);
+	}
+
+	// in host byte order
+	uint16_t get_dst_port()
+	{
+		return ntohs(_tcphdr->dest);
+	}
+
+	uint32_t get_seq_number()
+	{
+		return ntohl(_tcphdr->seq);
+	}
+
+private:
+	char *_pkt;   ///< the starting address of the IP packet.
+
+	int  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header
-	const uint8_t *_ip_content;  ///< pointer to the ip content excluding the ip header.
-	int32_t  _ihl;                   ///< the IP header length.
+	char *_ip_content;  ///< pointer to the ip content excluding the ip header.
+	int  _iphdr_len;                   ///< the IP header length.
 
 	struct tcphdr *_tcphdr;      ///< pointer to the tcp header.
-	const uint8_t *_tcp_content; ///< pointer to the tcp content.
-	int32_t _tcp_content_len;        ///< the length of the tcp content AKA playload.
+	int  _tcphdr_len;             ///< the TCP header length.
+	char *_tcp_content; ///< pointer to the tcp content.
+	int _tcp_content_len;        ///< the length of the tcp content AKA playload.
 
 	uint32_t _seq;         ///< tcp's sequence number. In host byte order.
 	uint32_t _ack_seq;     ///< tcp's acknoledgement sequence. In host byte order.
@@ -104,7 +164,9 @@ private:
 	bool _syn_flag;              ///< self-explanatory.
 	bool _fin_flag;              ///< no explanation.
 
-	std::string _client_ip_addr;
+	/// the following variables are for debug's convenience.
+	std::string _src_addr;
+	std::string _dst_addr;
 };
 
 #endif /* _IPPKG_H_ */

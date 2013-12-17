@@ -32,7 +32,7 @@ private:
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.
 	 */
-	int dispatch_ip_pkt(const u_char* ip_pkt);
+	int dispatch_ip_pkt(const char* ip_pkt);
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;

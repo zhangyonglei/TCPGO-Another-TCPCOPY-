@@ -14,20 +14,29 @@ struct eth_hdr
 	uint16_t  _type;
 };
 
-uint16_t calc_ip_checksum(const uint8_t* iphdr, int32_t hdrlen)
+uint16_t calc_ip_checksum(const struct iphdr* iphdr)
 {
 	uint32_t sum = 0;
+	const char *mem = (const char*)iphdr;
+
+	assert(0 == mem[10] && 0 == mem[11]);
+	assert(NULL!=iphdr);
+
+	int hdrlen = (iphdr->ihl << 2);
 
 	while(hdrlen > 1){
-		sum += *(uint16_t*)iphdr;
-		iphdr += 2;
+		sum += *(uint16_t*)mem;
+		mem += 2;
 		if(sum & 0x80000000)   /* if high order bit set, fold */
 			sum = (sum & 0xFFFF) + (sum >> 16);
 		hdrlen -= 2;
 	}
 
 	if(hdrlen)       /* take care of left over byte */
-		sum += (uint16_t) *(uint8_t *)iphdr;
+	{      //notice: i think there lives a bug 'cos the btye after mem is possibly not zero.
+		sum += (uint16_t) *(uint8_t *)mem;
+		std::cerr << "notice " << __FILE__ << " " << __LINE__ << std::endl;
+	}
 
 	while(sum>>16)
 		sum = (sum & 0xFFFF) + (sum >> 16);
@@ -35,7 +44,67 @@ uint16_t calc_ip_checksum(const uint8_t* iphdr, int32_t hdrlen)
 	return ~sum;
 }
 
-const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame)
+uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr)
+{
+	int  i, need_pad, loop_size;
+	int  tot_tcpsgmt_len;
+	int  pseudo_hdr_len;
+	int  tot_ipsegmt_len;
+	uint16_t  word16;
+	uint16_t  buff[12];
+	uint16_t* ptr2buff;
+	uint32_t  sum;
+	const uint16_t* tcpmem;
+
+	const uint8_t* src_addr;
+	const uint8_t* dst_addr;
+
+	tcpmem = (uint16_t*)tcphdr;
+	assert(0 == tcpmem[8]);  // the caller has the responsibility to clear the tcp checksum.
+
+	tot_ipsegmt_len = ntohs(iphdr->tot_len);
+	tot_tcpsgmt_len = tot_ipsegmt_len - ((iphdr->ihl) << 2);
+	assert(tot_tcpsgmt_len>=0);
+
+	//initialize sum to zero
+	sum = 0;
+
+	memcpy(buff, &iphdr->saddr, 4);
+	memcpy(buff+2, &iphdr->daddr, 4);
+	buff[4] = htons((unsigned short)(iphdr->protocol));
+	buff[5] = htons((unsigned short) tot_tcpsgmt_len);
+	pseudo_hdr_len = sizeof(buff)/sizeof(buff[0]);
+	ptr2buff = buff;
+	while(pseudo_hdr_len > 1)
+	{
+		sum += *(uint16_t*)ptr2buff;
+		ptr2buff++;
+		pseudo_hdr_len -= 2;
+	}
+
+	while(tot_tcpsgmt_len > 1)
+	{
+		sum += *(uint16_t*)tcpmem;
+		tcpmem ++;
+		tot_tcpsgmt_len -= 2;
+	}
+
+	if(tot_tcpsgmt_len)       /* take care of left over byte */
+	{      //notice: i think there lives a bug 'cos the btye after mem is possibly not zero.
+		sum += (uint16_t)*(uint8_t *)tcpmem;
+
+	}
+
+	// keep only the last 16 bits of the 32 bit calculated sum and add the carries
+	while(sum>>16)
+		sum = (sum & 0xFFFF) + (sum >> 16);
+
+	sum = ~sum;
+
+	return ((unsigned short) sum);
+}
+
+const char* strip_l2head(pcap_t *pcap, const char *frame)
 {
 	int32_t l2_len;
 	struct eth_hdr *ethhdr;
@@ -49,8 +118,8 @@ const uint8_t* strip_l2head(pcap_t *pcap, const uint8_t *frame)
 		ethhdr = (struct eth_hdr *)frame;
 		switch (ntohs(ethhdr->_type)) {
 		case  0x8100: /* IEEE 802.1Q VLAN tagging */
-		l2_len = 18;
-		break;
+			l2_len = 18;
+			break;
 		default:
 			l2_len = 14;
 			break;
@@ -89,9 +158,8 @@ int detect_l2head_len(const char *frame)
 		len = iphdr->ihl << 2;
 		memcpy(buff, iphdr, len);
 		sum = *(uint16_t*)(buff+10);
-		buff[10] = 0;
-		buff[11] = 0;
-		checksum = calc_ip_checksum((uint8_t*)buff, len);
+		buff[10] = buff[11] = 0;
+		checksum = calc_ip_checksum((struct iphdr*)buff);
 		if (checksum == sum)
 			return offsets[i];
 	}

@@ -17,12 +17,12 @@ session_manager g_session_manager;
 session_manager::session_manager() {
 }
 
-int session_manager::read_from_capfile(const string& path,
-		const string& filter) {
+int session_manager::read_from_capfile(const string& path, const string& filter)
+{
 	char ebuf[1024];
 	pcap_t *pcap;
-	const u_char *pkt_data;
-	const u_char *ip_pkt;
+	const char *pkt_data;
+	const char *ip_pkt;
 	struct bpf_program fp;
 	struct pcap_pkthdr pkt_hdr;
 	struct timeval ts;
@@ -46,7 +46,7 @@ int session_manager::read_from_capfile(const string& path,
 
 	while (true) {
 		int truncated_pkt_count = 0;
-		pkt_data = pcap_next(pcap, &pkt_hdr);
+		pkt_data = (const char*)pcap_next(pcap, &pkt_hdr);
 		if (pkt_data != NULL) {
 			if (pkt_hdr.caplen < pkt_hdr.len) {
 				g_logger.printf("%d truncated packets are detected.\n",
@@ -68,7 +68,7 @@ int session_manager::read_from_capfile(const string& path,
 	clean();
 }
 
-int session_manager::dispatch_ip_pkt(const u_char* ip_pkt) {
+int session_manager::dispatch_ip_pkt(const char* ip_pkt) {
 	int ret;
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;

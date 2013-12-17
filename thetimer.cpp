@@ -13,7 +13,7 @@ the_timer g_timer;
 void sig_alarm_handler(int sig)
 {
 	g_timer._jiffles++;
-	std::cout << g_timer._jiffles << std::endl;
+	//std::cout << g_timer._jiffles << std::endl;
 }
 
 the_timer::the_timer()
