@@ -9,7 +9,8 @@
 #include "utils.h"
 #include "cute_logger.h"
 
-tcpsession::tcpsession(uint32_t ip, uint16_t port) {
+tcpsession::tcpsession(uint32_t ip, uint16_t port)
+{
 	struct in_addr inaddr;
 	inaddr.s_addr = ip;
 
@@ -18,7 +19,8 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port) {
 	_client_src_port = ntohs(port);
 }
 
-tcpsession::~tcpsession() {
+tcpsession::~tcpsession()
+{
 }
 
 void tcpsession::append_ip_sample(const char* ippkt)
@@ -138,6 +140,40 @@ int32_t tcpsession::check_samples_integrity()
 
 _err:
 	return 1;
+}
+
+static int __nnn;
+const ip_pkt* tcpsession::pls_send_this_packet()
+{
+	const ip_pkt* pkt;
+	if (_ite_next_avaliable == _ippkts_samples.end())
+		return NULL;
+	_ite_next_avaliable = _ippkts_samples.begin();
+
+	// testing code .......
+	for(; _ite_next_avaliable!=_ippkts_samples.end(); ++_ite_next_avaliable)
+	{
+		pkt = &(*_ite_next_avaliable);
+		//if (pkt->get_seq() == ntohl(2345627925ul) && pkt->get_dst_port() == 8011)
+		{
+			//return pkt;
+		}
+	}
+	std::cout << __nnn++ << std::endl;
+	return NULL;
+	//_ite_next_avaliable->rebuild("127.0.0.1", 80);
+	_ite_next_avaliable->rebuild("192.168.44.129", 80);
+	pkt = &(*_ite_next_avaliable);
+	return pkt;
+}
+
+void tcpsession::got_a_packet(const ip_pkt *pkt)
+{
+	// testing code.
+	_ite_next_avaliable = _ippkts_samples.begin();
+	/////////////////////////
+
+	std::cout << "got_a_packet seq:" << pkt->get_seq() << "ackseq:" << pkt->get_ack_seq() << std::endl;
 }
 
 

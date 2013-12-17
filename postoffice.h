@@ -17,13 +17,12 @@ class postoffice;
 extern postoffice g_postoffice;
 
 class postoffice_callback_interface
-		: public evt_workhorse
 {
 public:
 	/**
 	 * @return returns the ip packet that is expected to be sent soon.
 	 */
-	virtual const ip_pkt* send_this_packet() = 0;
+	virtual const ip_pkt* pls_send_this_packet() = 0;
 
 	/**
 	 * @param ip_pkt points to the coming packet.
@@ -60,7 +59,7 @@ public:
 	int set_svr_addr(const char* addr);
 
 private:
-	struct sockaddr_in  _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
+	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
 	int  _svr_port; ///< captured outbound IP packets don't matching the this port will be ignored. in network byte order.
 	int  _send_fd;   ///< The raw socket file descriptor used to send IP packets. on level 3.
 	int  _recv_fd;   ///< The raw socket file descriptor created on datalink level to sniff traffic. on level 2.

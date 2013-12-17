@@ -31,11 +31,6 @@ public:
 	bool operator>(const ip_pkt& challenger)const;
 	bool operator==(const ip_pkt& challenger)const;
 
-	/**
-	 * Parse the IP packet data and set the member fields appropriately.
-	 */
-	void warm_up();
-
 	virtual ~ip_pkt();
 
 public:
@@ -117,32 +112,46 @@ public:
 		return _fin_flag;
 	}
 
-	const std::string get_src_addr()
+	const std::string get_src_addr()const
 	{
 		return _src_addr;
 	}
 
-	const std::string get_dst_addr()
+	const std::string get_dst_addr()const
 	{
 		return _dst_addr;
 	}
 
 	// in host byte order
-	uint16_t get_src_port()
+	uint16_t get_src_port()const
 	{
 		return ntohs(_tcphdr->source);
 	}
 
 	// in host byte order
-	uint16_t get_dst_port()
+	uint16_t get_dst_port()const
 	{
 		return ntohs(_tcphdr->dest);
 	}
 
-	uint32_t get_seq_number()
+	uint32_t get_seq_number()const
 	{
 		return ntohl(_tcphdr->seq);
 	}
+
+	/**
+	 * replace the original destination IP address and port with new
+	 * dest IP addr and port. checksum will be re-calculated and properly
+	 * stored.
+	 * @param port in host byte order.
+	 */
+	void rebuild(const char* addr, unsigned short port);
+
+private:
+	/**
+	 * Parse the IP packet data and set the member fields appropriately.
+	 */
+	void warm_up();
 
 private:
 	char *_pkt;   ///< the starting address of the IP packet.

@@ -72,7 +72,7 @@ void poller::deregister_evt(int fd)
 	assert(1 == ret);
 }
 
-void poller::run()
+void poller::bigbang()
 {
 	int nfds, n;
 	int fd;
