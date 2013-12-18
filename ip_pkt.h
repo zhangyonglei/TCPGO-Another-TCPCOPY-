@@ -134,11 +134,6 @@ public:
 		return ntohs(_tcphdr->dest);
 	}
 
-	uint32_t get_seq_number()const
-	{
-		return ntohl(_tcphdr->seq);
-	}
-
 	/**
 	 * replace the original destination IP address and port with new
 	 * dest IP addr and port. checksum will be re-calculated and properly
