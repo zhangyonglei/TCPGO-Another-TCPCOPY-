@@ -17,6 +17,8 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_ip_num = ip;
 	_client_src_ip_str = inet_ntoa(inaddr);
 	_client_src_port = ntohs(port);
+
+	_current_state = tcpsession::CLOSED;
 }
 
 tcpsession::~tcpsession()
@@ -137,36 +139,123 @@ _err:
 	return 1;
 }
 
-const ip_pkt* tcpsession::pls_send_this_packet()
+int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
-	if (_ite_next_avaliable == _ippkts_samples.end())
-		return NULL;
-	_ite_next_avaliable = _ippkts_samples.begin();
+	std::list<ip_pkt>::iterator ite_next_avaliable;
 
-	// testing code .......
-	for(; _ite_next_avaliable!=_ippkts_samples.end(); ++_ite_next_avaliable)
+	pkts.clear();
+	for(ite_next_avaliable = _ippkts_samples.begin();
+		ite_next_avaliable!=_ippkts_samples.end();
+		++ite_next_avaliable)
 	{
-		pkt = &(*_ite_next_avaliable);
+		pkt = &(*ite_next_avaliable);
 		// testing code ...
 		//if (pkt->get_seq() == 2345627925ul && pkt->get_dst_port() == 80)
 		{
-			//_ite_next_avaliable->rebuild("127.0.0.1", 80);
-			pkt->rebuild("192.168.44.129", 80);
-			return pkt;
+			// pkt->rebuild("127.0.0.1", 80);
+			pkt->rebuild("192.168.44.129", 80); // TODO hard code temporarily.
+			pkts.push_back(pkt);
 		}
 	}
 
-	return NULL;
+	return pkts.size();
 }
 
 void tcpsession::got_a_packet(const ip_pkt *pkt)
 {
-	// testing code.
-	_ite_next_avaliable = _ippkts_samples.begin();
-	/////////////////////////
+	switch(_current_state)
+	{
+	case CLOSED:
+		closed_state_handler(pkt);
+		break;
 
-	std::cout << "got_a_packet seq:" << pkt->get_seq() << "ackseq:" << pkt->get_ack_seq() << std::endl;
+	case LISTEN: 
+		listen_state_handler(pkt);
+		break;
+
+	case SYN_RCVD: 
+		syn_rcvd_state_handler(pkt);
+		break;
+		
+	case SYN_SENT:
+		syn_sent_state_handler(pkt);
+		break;
+
+	case ESTABLISHED: 
+		established_state_handler(pkt);
+		break;
+
+	case CLOSE_WAIT:
+		close_wait_state_handler(pkt);
+		break;
+
+	case LAST_ACK:
+		last_ack_state_handler(pkt);
+		break;
+		
+	case FIN_WAIT_1:
+		fin_wait_1_state_handler(pkt);
+		break;
+
+	case FIN_WAIT_2:
+		fin_wait_2_state_handler(pkt);
+		break;
+
+	case CLOSING:
+		closing_state_handler(pkt);
+		break;
+
+	case TIME_WAIT:
+		time_wait_state_handler(pkt);
+		break;
+
+	default:
+		// catch ya. only god and bug knows how to reach here.
+		abort();
+	}
 }
 
+void tcpsession::closed_state_handler(const ip_pkt *pkt)
+{
+}
 
+void tcpsession::listen_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::syn_rcvd_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::syn_sent_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::established_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::close_wait_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::last_ack_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::fin_wait_1_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::fin_wait_2_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::closing_state_handler(const ip_pkt *pkt)
+{
+}
+
+void tcpsession::time_wait_state_handler(const ip_pkt *pkt)
+{
+}

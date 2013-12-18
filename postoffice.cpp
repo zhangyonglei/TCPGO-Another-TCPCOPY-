@@ -190,29 +190,33 @@ void postoffice::pollout_handler(int fd)
 
 	dst_addr.sin_family = AF_INET;
 
+	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
 	{
 		callback = ite->second;
-		do
-		{
-			pkt = callback->pls_send_this_packet();
-			if (NULL == pkt)
+
+			int num;
+			vector<const ip_pkt*> pkts;
+			num = callback->pls_send_these_packets(pkts);
+			if (0 == num)
 			{
 				break;
 			}
 
-
-			dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
-			starting_addr = pkt->get_starting_addr();
-			tot_len = pkt->get_tot_len();
-			ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
-							(struct sockaddr *) &dst_addr, sizeof(dst_addr));
-			if (ret < 0 && errno == EINTR)
+			for (int i = 0; i < num; i++)
 			{
-				perror("send ");
-				return;
+				pkt = pkts[i];
+				dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
+				starting_addr = pkt->get_starting_addr();
+				tot_len = pkt->get_tot_len();
+				ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
+								(struct sockaddr *) &dst_addr, sizeof(dst_addr));
+				if (ret < 0 && errno == EINTR)
+				{
+					perror("send ");
+					return;
+				}
 			}
-		}while(true);
 	}  // end of for loop ...
 }
 
