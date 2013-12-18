@@ -112,6 +112,7 @@ int session_manager::clean() {
 		else 
 		{
 			sick_sess_count++;
+			g_postoffice.deregister_callback(ite->first);
 			_sessions.erase(ite++);
 		}
 

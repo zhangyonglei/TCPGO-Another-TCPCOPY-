@@ -51,11 +51,6 @@ int32_t tcpsession::check_samples_integrity()
 	// used to elicit an ACK from the receiver.
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
-		///////////////testing code, remove me later.
-		uint16_t sum;
-		sum = ite->reset_tcp_checksum();
-		sum = ite->reset_tcp_checksum();
-
 		int tot_len = ite->get_tot_len();
 		int tcp_content_len = ite->get_tcp_content_len();
 		int iphdr_len = ite->get_iphdr_len();
@@ -142,10 +137,9 @@ _err:
 	return 1;
 }
 
-static int __nnn;
 const ip_pkt* tcpsession::pls_send_this_packet()
 {
-	const ip_pkt* pkt;
+	ip_pkt* pkt;
 	if (_ite_next_avaliable == _ippkts_samples.end())
 		return NULL;
 	_ite_next_avaliable = _ippkts_samples.begin();
@@ -154,17 +148,16 @@ const ip_pkt* tcpsession::pls_send_this_packet()
 	for(; _ite_next_avaliable!=_ippkts_samples.end(); ++_ite_next_avaliable)
 	{
 		pkt = &(*_ite_next_avaliable);
-		//if (pkt->get_seq() == ntohl(2345627925ul) && pkt->get_dst_port() == 8011)
+		// testing code ...
+		//if (pkt->get_seq() == 2345627925ul && pkt->get_dst_port() == 80)
 		{
-			//return pkt;
+			//_ite_next_avaliable->rebuild("127.0.0.1", 80);
+			pkt->rebuild("192.168.44.129", 80);
+			return pkt;
 		}
 	}
-	std::cout << __nnn++ << std::endl;
+
 	return NULL;
-	//_ite_next_avaliable->rebuild("127.0.0.1", 80);
-	_ite_next_avaliable->rebuild("192.168.44.129", 80);
-	pkt = &(*_ite_next_avaliable);
-	return pkt;
 }
 
 void tcpsession::got_a_packet(const ip_pkt *pkt)

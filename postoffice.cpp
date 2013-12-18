@@ -73,10 +73,10 @@ postoffice::postoffice()
 	assert(ret != -1);
 
 	_l2hdr_len = -1;
-	
+
 	return;
 
-_err:
+	_err:
 	// I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
 	//strerror_r(errno, _buff, sizeof(_buff));
 	//g_logger.printf("%s\n", _buff);
@@ -182,10 +182,13 @@ void postoffice::pollout_handler(int fd)
 	const char* starting_addr;
 	int tot_len;
 	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
+	struct sockaddr_in  dst_addr;
 	postoffice_callback_interface* callback;
 
 	if (fd != _send_fd)
 		return;
+
+	dst_addr.sin_family = AF_INET;
 
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
 	{
@@ -198,16 +201,19 @@ void postoffice::pollout_handler(int fd)
 				break;
 			}
 
+
+			dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
 			starting_addr = pkt->get_starting_addr();
 			tot_len = pkt->get_tot_len();
-			ret = send(_send_fd, starting_addr, tot_len, MSG_DONTWAIT);
+			ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
+							(struct sockaddr *) &dst_addr, sizeof(dst_addr));
 			if (ret < 0 && errno == EINTR)
 			{
 				perror("send ");
 				return;
 			}
 		}while(true);
-	}
+	}  // end of for loop ...
 }
 
 void postoffice::set_svr_port(uint16_t port)
