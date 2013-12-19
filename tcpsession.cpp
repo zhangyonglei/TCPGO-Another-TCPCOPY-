@@ -18,7 +18,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_ip_str = inet_ntoa(inaddr);
 	_client_src_port = ntohs(port);
 
-	_current_state = tcpsession::CLOSED;
+	get_ready();
 }
 
 tcpsession::~tcpsession()
@@ -139,30 +139,39 @@ _err:
 	return 1;
 }
 
+void tcpsession::get_ready()
+{
+	std::list<ip_pkt>::iterator tmp_ite;
+
+	_current_state = tcpsession::CLOSED;
+	_expected_next_sequence_from_peer = 0;
+	_latest_acked_sequence_by_peer = 0;
+	_advertised_window_size = 0;
+	_sliding_window_left_boundary = _ippkts_samples.begin();
+	tmp_ite = _sliding_window_left_boundary;
+	++tmp_ite;
+	_sliding_window_right_boundary = tmp_ite;
+}
+
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
-	std::list<ip_pkt>::iterator ite_next_avaliable;
 
 	pkts.clear();
-	for(ite_next_avaliable = _ippkts_samples.begin();
-		ite_next_avaliable!=_ippkts_samples.end();
-		++ite_next_avaliable)
+	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
+		ite != _sliding_window_right_boundary;
+		++ite)
 	{
-		pkt = &(*ite_next_avaliable);
-		// testing code ...
-		//if (pkt->get_seq() == 2345627925ul && pkt->get_dst_port() == 80)
-		{
-			// pkt->rebuild("127.0.0.1", 80);
-			pkt->rebuild("192.168.44.129", 80); // TODO hard code temporarily.
-			pkts.push_back(pkt);
-		}
+		pkt = &(*ite);
+		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
+		pkt->rebuild("192.168.44.129", 80); // TODO hard code temporarily.
+		pkts.push_back(pkt);
 	}
 
 	return pkts.size();
 }
 
-void tcpsession::got_a_packet(const ip_pkt *pkt)
+void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
 	switch(_current_state)
 	{
@@ -216,46 +225,146 @@ void tcpsession::got_a_packet(const ip_pkt *pkt)
 	}
 }
 
-void tcpsession::closed_state_handler(const ip_pkt *pkt)
+void tcpsession::closed_state_handler(const ip_pkt* pkt)
+{
+	// do nothing, it's assumed the peer will got a time out event finally.
+}
+
+void tcpsession::listen_state_handler(const ip_pkt* pkt)
+{
+	// not supposed to reach here.
+	abort();
+}
+
+void tcpsession::syn_rcvd_state_handler(const ip_pkt* pkt)
+{
+	// this event rarely happens in real world. i'm not planning to support this.
+	// so, code will never get here.
+}
+
+void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
+{
+	if (pkt->is_syn_set() && pkt->is_ack_set())
+	{
+		_current_state = tcpsession::ESTABLISHED;
+	}
+	refresh_status(pkt);
+}
+
+void tcpsession::established_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::listen_state_handler(const ip_pkt *pkt)
+void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::syn_rcvd_state_handler(const ip_pkt *pkt)
+void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::syn_sent_state_handler(const ip_pkt *pkt)
+void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::established_state_handler(const ip_pkt *pkt)
+void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::close_wait_state_handler(const ip_pkt *pkt)
+void tcpsession::closing_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::last_ack_state_handler(const ip_pkt *pkt)
+void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 {
 }
 
-void tcpsession::fin_wait_1_state_handler(const ip_pkt *pkt)
+void tcpsession::refresh_status(const ip_pkt* pkt)
 {
-}
+	uint32_t seq;
+	uint32_t ack_seq;
+	uint32_t ack_seq_tmp;
+	uint16_t win_size_saved;
+	
+	std::list<ip_pkt>::iterator ite;
 
-void tcpsession::fin_wait_2_state_handler(const ip_pkt *pkt)
-{
-}
+	ip_packet_parser(pkt);
+	seq = ntohl(tcphdr->seq);
+	ack_seq = ntohl(tcphdr->ack_seq);
 
-void tcpsession::closing_state_handler(const ip_pkt *pkt)
-{
-}
+	if (pkt->is_syn_set() && pkt->is_ack_set())
+	{
+		_expected_next_sequence_from_peer = pkt->get_seq() + 1;
+		_latest_acked_sequence_by_peer = pkt->get_ack_seq();
+		_advertised_window_size = pkt->get_win_size();
+		return;
+	}
 
-void tcpsession::time_wait_state_handler(const ip_pkt *pkt)
-{
+	if (seq + 1 == _expected_next_sequence_from_peer)
+	{
+		_expected_next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+	}
+
+	if (pkt->is_ack_set())
+	{
+		ack_seq_tmp = pkt->get_ack_seq();
+		if (seq_before(_latest_acked_sequence_by_peer, ack_seq_tmp))
+		{
+			_latest_acked_sequence_by_peer = pkt->get_ack_seq();
+		}
+	}
+
+	// eliminate  acked packets.
+	for (ite = _sliding_window_left_boundary;
+		 ite != _sliding_window_right_boundary;)
+	{
+		if (seq_before(ite->get_seq(), _latest_acked_sequence_by_peer))
+		{
+			_ippkts_samples.erase(ite++);
+			_sliding_window_left_boundary = ite;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	win_size_saved = _advertised_window_size;
+	_advertised_window_size = pkt->get_win_size();
+
+	// adjust sliding window
+	int win_size = 0;
+	int ippkt_count_walked_through = 0;
+	for (ite = _sliding_window_left_boundary;
+		 ite != _sliding_window_right_boundary;)
+	{
+		win_size += ite->get_tot_len();
+		if (win_size > _advertised_window_size)
+		{
+			// make sure at least one IP packet are available to be sent.
+			if(0 == ippkt_count_walked_through)
+			{
+				break;
+			}
+			else  // reduce the window size.
+			{
+				_sliding_window_right_boundary = ite;
+				break;
+			}
+		}
+		ippkt_count_walked_through++;
+	}
+	if (win_size < _advertised_window_size);
+	{
+		// try to increase the window size
+		for(; ite != _ippkts_samples.end(); ++ite)
+		{
+			win_size += ite->get_tot_len();
+			if (win_size > _advertised_window_size)
+			{
+				break;
+			}
+		}
+		_sliding_window_right_boundary = ite;
+	}
 }

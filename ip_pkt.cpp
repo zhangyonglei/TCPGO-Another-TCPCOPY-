@@ -131,6 +131,7 @@ void ip_pkt::warm_up()
 
 	_seq = ntohl(tcphdr->seq);
 	_ack_seq = ntohl(tcphdr->ack_seq);
+	_win_size = ntohs(tcphdr->window);
 
 	_ack_flag = _tcphdr->ack;
 	_rst_flag = _tcphdr->rst;

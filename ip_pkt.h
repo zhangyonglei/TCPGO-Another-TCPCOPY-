@@ -92,6 +92,11 @@ public:
 		return _ack_seq;
 	}
 
+	uint16_t get_win_size()const
+	{
+		return _win_size;
+	}
+
 	bool is_ack_set()const
 	{
 		return _ack_flag;
@@ -163,6 +168,7 @@ private:
 
 	uint32_t _seq;         ///< tcp's sequence number. In host byte order.
 	uint32_t _ack_seq;     ///< tcp's acknoledgement sequence. In host byte order.
+	uint16_t _win_size;    ///< advertised window size.
 
 	bool _ack_flag;              ///< if the ack is set or not.
 	bool _rst_flag;              ///< reset flag.

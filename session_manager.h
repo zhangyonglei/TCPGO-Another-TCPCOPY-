@@ -20,15 +20,15 @@ public:
 	virtual ~session_manager();
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
-
-	/**
-	 * weed out tcpsession with unhealthy IP samples.
-	 */
-	int clean();
 	
 	int get_ready();
 
 private:
+	/**
+	 * weed out tcpsession with unhealthy IP samples.
+	 */
+	int clean();
+		
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.
 	 */
