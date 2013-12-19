@@ -4,6 +4,19 @@
  * website: www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
+ /*
+ *
+ *             _=,_
+ *         o_/6 /#\  woof ! woof!! bark !!!
+ *         \__ |##/
+ *          ='|--\
+ *            /   #'-.
+ *            \#|_   _'-. /
+ *             |/ \_( # |" 
+ *            C/ ,--___/
+ *
+ *      www.dogeye.net presents
+ */
 
 #include <getopt.h>
 #include "misc.h"

@@ -175,6 +175,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		assert(1 == count);
 		_current_state = tcpsession::SYN_SENT;
+		_last_recored_jiffies = g_timer.get_jiffles();
 	}
 	if (0 != count && pkts[count-1]->is_fin_set())
 	{
@@ -366,38 +367,41 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	seq = ntohl(tcphdr->seq);
 	ack_seq = ntohl(tcphdr->ack_seq);
 
+       // the second handshake.
 	if (pkt->is_syn_set() && pkt->is_ack_set())
 	{
 		_expected_next_sequence_from_peer = pkt->get_seq() + 1;
 		_latest_acked_sequence_by_peer = pkt->get_ack_seq();
 		_advertised_window_size = pkt->get_win_size();
-		return;
-	}
-
-	uint32_t next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
-	if (seq + 1 == _expected_next_sequence_from_peer)
-	{
-		_expected_next_sequence_from_peer = next_sequence_from_peer;
 	}
 	else
 	{
-		// drop outdated packets.
-		if(seq_before(next_sequence_from_peer, _expected_next_sequence_from_peer))
+		uint32_t next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+		if (seq == _expected_next_sequence_from_peer)
 		{
-			return;
+			_expected_next_sequence_from_peer = next_sequence_from_peer;
+		}
+		else
+		{
+			// drop outdated packets.
+			if(seq_before(next_sequence_from_peer, _expected_next_sequence_from_peer))
+			{
+				return;
+			}
 		}
 	}
 
-	if (pkt->is_ack_set())
+	if (pkt->is_ack_set() && !pkt->is_syn_set())
 	{
 		ack_seq_tmp = pkt->get_ack_seq();
+		// the peer acked new packe.
 		if (seq_before(_latest_acked_sequence_by_peer, ack_seq_tmp))
 		{
 			_latest_acked_sequence_by_peer = pkt->get_ack_seq();
 		}
 	}
 
-	// eliminate  acked packets.
+	// eliminate acked packets.
 	for (ite = _sliding_window_left_boundary;
 		 ite != _sliding_window_right_boundary;)
 	{
@@ -431,6 +435,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			}
 			else  // reduce the window size.
 			{
+			       // update the right boundary.
 				_sliding_window_right_boundary = ite;
 				break;
 			}

@@ -86,7 +86,7 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt)
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool>  ugly_pair;
 
 	ip_packet_parser(ip_pkt);
-	key = mk_sess_key(iphdr->saddr, tcphdr->dest);
+	key = mk_sess_key(iphdr->saddr, tcphdr->source);
 
 	tcpsession session(iphdr->saddr, tcphdr->source);
 	// The following map::insert returns a pair, with its member pair::first set to an iterator pointing to

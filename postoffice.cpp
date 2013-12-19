@@ -40,14 +40,14 @@ postoffice::postoffice()
 	// failed to capture outgoing packets elicited by incoming pakcets from other machines.
 	// it actually works to capture both incoming and outgoing packets if the outgoing
 	// pakcets are eclited by packets sent from the same machine.
-	_recv_fd = socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
+	// _recv_fd = socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
 
 	// code from tcpcopy, failed to capture outgoing packets.
 	// _recv_fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 
 	// code from http://www.binarytides.com/packet-sniffer-code-in-c-using-linux-sockets-bsd-part-2/.
 	// works for both directions. But ethernet header is also received.
-	//_recv_fd = socket( AF_PACKET , SOCK_RAW , htons(ETH_P_ALL));
+	_recv_fd = socket(AF_PACKET , SOCK_RAW , htons(ETH_P_ALL));
 
 	// failed to capture outgoing packets. ethernet header is received.
 	// _recv_fd = socket(AF_PACKET , SOCK_RAW , htons(ETH_P_IP));
@@ -115,8 +115,8 @@ void postoffice::deregister_callback(uint64_t key)
 	if (_callbacks.empty())
 	{
 		cout << "All Finished. kamuszhou@tencent.com\n";
-		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
-		cout << "Your support is greatly appreciated and will undoubted encourage me(kamuszhou) to devote more efforts"
+//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
+		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts"
 				"to make this gadget better." << endl;
 		exit(0);
 	}
@@ -174,7 +174,7 @@ void postoffice::pollin_handler(int fd)
 		}
 
 		// now inform the corresponding receiver the coming ip package.
-		key = mk_sess_key(iphdr->saddr, tcphdr->dest);
+		key = mk_sess_key(iphdr->daddr, tcphdr->dest);
 		ite = _callbacks.find(key);
 		if (ite != _callbacks.end())
 		{
