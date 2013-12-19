@@ -63,19 +63,25 @@ private:
 	// reserved for the possible future version if i can still play with this stuff.
 //	std::list<ip_pkt>  _ippkts_received;   // The ip packages received from the server will be saved here.
 
-	/// 11 standard TCP state.
+	/// eleven industry standard TCP state.
+	/// refer to http://en.wikipedia.org/wiki/File:Tcp_state_diagram_fixed.svg. (recv/send)
 	enum state_machine{CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, CLOSE_WAIT, LAST_ACK, FIN_WAIT_1,
 			FIN_WAIT_2, CLOSING, TIME_WAIT};
 	state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order
+	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	uint16_t _advertised_window_size;             ///< in host byte order
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)
 	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< closed interval (excluding)
 
+	uint64_t _last_recored_jiffies;
+
 	uint32_t _client_src_ip_num;
 	std::string _client_src_ip_str;
 	uint16_t _client_src_port;      ///< in host byte order
+
+	uint64_t _session_key;
 };
 
 #endif /* _TCPSESSION_H_ */

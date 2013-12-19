@@ -8,6 +8,7 @@
 #include "tcpsession.h"
 #include "utils.h"
 #include "cute_logger.h"
+#include "thetimer.h"
 
 tcpsession::tcpsession(uint32_t ip, uint16_t port)
 {
@@ -17,8 +18,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_ip_num = ip;
 	_client_src_ip_str = inet_ntoa(inaddr);
 	_client_src_port = ntohs(port);
-
-	get_ready();
+	_session_key = mk_sess_key(ip, port);
 }
 
 tcpsession::~tcpsession()
@@ -146,6 +146,7 @@ void tcpsession::get_ready()
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;
+	_expected_last_ack_seq_from_peer = 0;
 	_advertised_window_size = 0;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	tmp_ite = _sliding_window_left_boundary;
@@ -156,6 +157,7 @@ void tcpsession::get_ready()
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
+	int count;
 
 	pkts.clear();
 	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
@@ -164,15 +166,43 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		pkt = &(*ite);
 		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
-		pkt->rebuild("192.168.44.129", 80); // TODO hard code temporarily.
+		pkt->rebuild("192.168.44.129", 80, _expected_next_sequence_from_peer); // TODO hard code temporarily.
 		pkts.push_back(pkt);
 	}
 
-	return pkts.size();
+	count = pkts.size();
+	if (0 != count && pkts[0]->is_syn_set())
+	{
+		assert(1 == count);
+		_current_state = tcpsession::SYN_SENT;
+	}
+	if (0 != count && pkts[count-1]->is_fin_set())
+	{
+		const ip_pkt* pkt = pkts[count-1];
+		if (_current_state == tcpsession::ESTABLISHED) // active close
+		{
+			_current_state = tcpsession::FIN_WAIT_1;
+			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+		}
+		else if (_current_state == tcpsession::CLOSE_WAIT) // passive close
+		{
+			_current_state = tcpsession::LAST_ACK;
+			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+		}
+
+	}
+
+	return count;
 }
 
 void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
+	uint64_t jiffies = g_timer.get_jiffles();
+	// hard code the timeout value is one second.
+	if (jiffies - _last_recored_jiffies > HZ)  // timeout
+	{
+		g_postoffice.deregister_callback(_session_key);
+	}
 	switch(_current_state)
 	{
 	case CLOSED:
@@ -238,45 +268,89 @@ void tcpsession::listen_state_handler(const ip_pkt* pkt)
 
 void tcpsession::syn_rcvd_state_handler(const ip_pkt* pkt)
 {
-	// this event rarely happens in real world. i'm not planning to support this.
-	// so, code will never get here.
+	// this event rarely happens in real world.
+	// TODO. add code to handle this case.
 }
 
 void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->is_syn_set() && pkt->is_ack_set())
+	if (pkt->is_syn_set())
 	{
-		_current_state = tcpsession::ESTABLISHED;
+		if (pkt->is_ack_set())
+		{
+			_current_state = tcpsession::ESTABLISHED;
+		}
+		else
+		{
+			_current_state = tcpsession::SYN_RCVD; // rarely happens.
+		}
 	}
 	refresh_status(pkt);
 }
 
 void tcpsession::established_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->is_fin_set())
+	{
+		_current_state = tcpsession::CLOSE_WAIT;
+	}
+	refresh_status(pkt);
 }
 
 void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 {
+	// this state will be transformed to LAST_ACK in the sending logic, refer to pls_send_these_packets().
+	refresh_status(pkt);
 }
 
 void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+		_current_state = tcpsession::CLOSED;
+	refresh_status(pkt);
 }
 
 void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->is_ack_set())
+	{
+		if (!pkt->is_fin_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+		{
+			_current_state = tcpsession::FIN_WAIT_2;
+		}
+		else if(pkt->is_fin_set())
+		{
+			_current_state = tcpsession::CLOSING;
+		}
+	}
+	refresh_status(pkt);
 }
 
 void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->is_fin_set())
+	{
+		_current_state = tcpsession::TIME_WAIT;
+	}
+	refresh_status(pkt);
 }
 
 void tcpsession::closing_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	{
+		_current_state = tcpsession::CLOSED;
+	}
+	refresh_status(pkt);
 }
 
 void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 {
+	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	{
+		_current_state = tcpsession::CLOSED;
+	}
+	refresh_status(pkt);
 }
 
 void tcpsession::refresh_status(const ip_pkt* pkt)
@@ -300,9 +374,18 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		return;
 	}
 
+	uint32_t next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
 	if (seq + 1 == _expected_next_sequence_from_peer)
 	{
-		_expected_next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+		_expected_next_sequence_from_peer = next_sequence_from_peer;
+	}
+	else
+	{
+		// drop outdated packets.
+		if(seq_before(next_sequence_from_peer, _expected_next_sequence_from_peer))
+		{
+			return;
+		}
 	}
 
 	if (pkt->is_ack_set())

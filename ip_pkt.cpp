@@ -172,7 +172,7 @@ uint16_t ip_pkt::reset_ip_checksum()
 	memcpy(ptr, &new_checksum, 2);
 }
 
-void ip_pkt::rebuild(const char* addr, unsigned short port)
+void ip_pkt::rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer)
 {
 	int ret;
 	struct in_addr inaddr;
@@ -187,6 +187,7 @@ void ip_pkt::rebuild(const char* addr, unsigned short port)
 	_iphdr->daddr = *(uint32_t*)&inaddr;
 	_tcphdr->dest = htons(port);
 	_tcphdr->window = htons(65535);
+	_tcphdr->ack_seq = htonl(expected_next_sequence_from_peer);
 	warm_up();
 	reset_ip_checksum();
 	reset_tcp_checksum();

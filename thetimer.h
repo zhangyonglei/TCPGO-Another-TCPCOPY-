@@ -22,7 +22,7 @@ public:
 
 	uint64_t get_jiffles()
 	{
-		return _jiffles;
+		return _jiffies;
 	}
 
 	void run();
@@ -35,7 +35,7 @@ private:
 	// startup. On startup, the kernel initializes the variable to zero, and it is incremented by
 	// one during each timer interrupt.Thus, because there are HZ timer interrupts in a second,
 	// there are HZ jiffies in a second.The system uptime is therefore jiffies/HZ seconds.What
-	volatile uint64_t  _jiffles;
+	volatile uint64_t  _jiffies;
 };
 
 #endif /* _THETIMER_H_ */

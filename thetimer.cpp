@@ -12,7 +12,7 @@ the_timer g_timer;
 
 void sig_alarm_handler(int sig)
 {
-	g_timer._jiffles++;
+	g_timer._jiffies++;
 
 	//std::cout << g_timer._jiffles << std::endl;
 }
@@ -20,6 +20,7 @@ void sig_alarm_handler(int sig)
 the_timer::the_timer()
 {
     signal(SIGALRM, sig_alarm_handler);
+    _jiffies = 0;
 }
 
 the_timer::~the_timer()

@@ -145,7 +145,7 @@ public:
 	 * stored.
 	 * @param port in host byte order.
 	 */
-	void rebuild(const char* addr, unsigned short port);
+	void rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 
 private:
 	/**
