@@ -20,7 +20,7 @@ public:
 
 	void get_ready();
 
-	uint64_t get_jiffles()
+	uint64_t get_jiffies()
 	{
 		return _jiffies;
 	}

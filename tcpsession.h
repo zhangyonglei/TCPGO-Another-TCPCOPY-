@@ -83,7 +83,8 @@ private:
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)
 	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< closed interval (excluding)
 
-	uint64_t _last_recored_jiffies;
+	uint64_t last_recorded_recv_time;
+	uint64_t last_recorded_snd_time;
 
 	uint32_t _client_src_ip_num;
 	std::string _client_src_ip_str;

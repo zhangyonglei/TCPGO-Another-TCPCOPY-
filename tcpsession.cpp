@@ -178,14 +178,26 @@ void tcpsession::get_ready()
 	tmp_ite = _sliding_window_left_boundary;
 	++tmp_ite;
 	_sliding_window_right_boundary = tmp_ite;
+	last_recorded_recv_time = g_timer.get_jiffies();
+	last_recorded_snd_time = g_timer.get_jiffies();
 }
 
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
 	int count;
+	uint64_t jiffies;
+
+	jiffies = g_timer.get_jiffies();
 
 	pkts.clear();
+
+	// don't send too quickly.
+	if (jiffies - last_recorded_snd_time >= 2)
+	{
+		return 0;
+	}
+
 	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
 		ite != _sliding_window_right_boundary;
 		++ite)
@@ -202,13 +214,12 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		assert(1 == count);
 		_current_state = tcpsession::SYN_SENT;
-		_last_recored_jiffies = g_timer.get_jiffles();
+		last_recorded_recv_time = jiffies;
 	}
 	else
 	{
-		// hard code the timeout value is one second.
-		uint64_t jiffies = g_timer.get_jiffles();
-		if (jiffies - _last_recored_jiffies > HZ)  // timeout
+		// hard code the timeout value as one second.
+		if (jiffies - last_recorded_recv_time > HZ)  // timeout
 		{
 			g_session_manager.remove_a_session(_session_key);
 			g_logger.printf("session: %s.%hu time out.\n", _client_src_ip_str.c_str(), _client_src_port);
@@ -236,8 +247,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 
 void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
-	uint64_t jiffies = g_timer.get_jiffles();
-	_last_recored_jiffies = jiffies;
+	uint64_t jiffies = g_timer.get_jiffies();
+	last_recorded_recv_time = jiffies;
 
 	switch(_current_state)
 	{
