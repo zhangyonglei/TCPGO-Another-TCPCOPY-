@@ -195,7 +195,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	pkts.clear();
 
 	// don't send too quickly.
-	if (jiffies - last_recorded_snd_time >= 2)
+	if (jiffies - last_recorded_snd_time <= 2)
 	{
 		return 0;
 	}
@@ -222,7 +222,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	else
 	{
 		// hard code the timeout value as one second.
-		if (jiffies - last_recorded_recv_time > HZ)  // timeout
+		if (jiffies - last_recorded_recv_time > 3*HZ)  // timeout
 		{
 			g_logger.printf("session: %s.%hu time out.\n", _client_src_ip_str.c_str(), _client_src_port);
 			g_session_manager.remove_a_session(_session_key);
@@ -246,6 +246,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		}
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
 	}
+
+	last_recorded_snd_time = jiffies;
 
 	return count;
 }

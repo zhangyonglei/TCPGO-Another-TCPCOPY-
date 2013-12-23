@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <iostream>
 
 class cute_logger;
 extern cute_logger g_logger;
@@ -36,6 +37,7 @@ int cute_logger::printf(const char* format, ...)
 {
 	int ret;
 	va_list ap;
+	char buff[1024];
 
 	ret = 0;
 	if (_on)
@@ -46,6 +48,8 @@ int cute_logger::printf(const char* format, ...)
 	}
 
 #ifdef __DEBUG__
+	vsnprintf(buff, sizeof(buff), format, ap);
+	std::cout << buff;
 	fflush(_stream);
 #endif
 
