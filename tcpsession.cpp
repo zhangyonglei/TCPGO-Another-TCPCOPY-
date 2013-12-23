@@ -11,6 +11,9 @@
 #include "thetimer.h"
 #include "session_manager.h"
 
+extern std::string g_dst_addr;
+extern uint16_t g_dst_port;
+
 tcpsession::tcpsession(uint32_t ip, uint16_t port)
 {
 	struct in_addr inaddr;
@@ -206,8 +209,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		pkt = &(*ite);
 		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
-		// TODO hard code the dstination IP and port temporarily.
-		pkt->rebuild("192.168.44.129", 80, _expected_next_sequence_from_peer);
+		pkt->rebuild(g_dst_addr.c_str(), g_dst_port, _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
 	}
 
@@ -221,8 +223,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 	else
 	{
-		// hard code the timeout value as one second.
-		if (jiffies - last_recorded_recv_time > 3*HZ)  // timeout
+		// hard code the timeout value.
+		if (jiffies - last_recorded_recv_time > 4*HZ)  // timeout
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
