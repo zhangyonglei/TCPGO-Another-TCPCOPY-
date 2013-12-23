@@ -180,6 +180,8 @@ void tcpsession::get_ready()
 	_sliding_window_right_boundary = tmp_ite;
 	last_recorded_recv_time = g_timer.get_jiffies();
 	last_recorded_snd_time = g_timer.get_jiffies();
+
+	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
 }
 
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
@@ -222,8 +224,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		// hard code the timeout value as one second.
 		if (jiffies - last_recorded_recv_time > HZ)  // timeout
 		{
-			g_session_manager.remove_a_session(_session_key);
 			g_logger.printf("session: %s.%hu time out.\n", _client_src_ip_str.c_str(), _client_src_port);
+			g_session_manager.remove_a_session(_session_key);
 		}
 	}
 
@@ -524,7 +526,9 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			}
 		}
 		ippkt_count_walked_through++;
+		++ite;
 	}
+	std::cout << ippkt_count_walked_through << " packets are in the sliding window.\n";
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
