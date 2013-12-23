@@ -214,6 +214,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		assert(1 == count);
 		_current_state = tcpsession::SYN_SENT;
+		g_logger.printf("move to state SYN_SENT\n");
 		last_recorded_recv_time = jiffies;
 	}
 	else
@@ -232,11 +233,13 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		if (_current_state == tcpsession::ESTABLISHED) // active close
 		{
 			_current_state = tcpsession::FIN_WAIT_1;
+			g_logger.printf("move to state FIN_WAIT_1\n");
 			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
 		}
 		else if (_current_state == tcpsession::CLOSE_WAIT) // passive close
 		{
 			_current_state = tcpsession::LAST_ACK;
+			g_logger.printf("move to state LAST_ACK\n");
 			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
 		}
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
@@ -337,10 +340,12 @@ void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
 		if (pkt->is_ack_set())
 		{
 			_current_state = tcpsession::ESTABLISHED;
+			g_logger.printf("move to state ESTABLISHED\n");
 		}
 		else
 		{
 			_current_state = tcpsession::SYN_RCVD; // rarely happens.
+			g_logger.printf("move to state SYN_RCVD\n");
 		}
 	}
 	refresh_status(pkt);
@@ -351,6 +356,7 @@ void tcpsession::established_state_handler(const ip_pkt* pkt)
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::CLOSE_WAIT;
+		g_logger.printf("move to state CLOSE_WAIT\n");
 	}
 	refresh_status(pkt);
 }
@@ -364,7 +370,10 @@ void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 {
 	if (pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	{
 		_current_state = tcpsession::CLOSED;
+		g_logger.printf("move to state CLOSED\n");
+	}
 	refresh_status(pkt);
 }
 
@@ -375,10 +384,12 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 		if (!pkt->is_fin_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
 		{
 			_current_state = tcpsession::FIN_WAIT_2;
+			g_logger.printf("move to state FIN_WAIT_2\n");
 		}
 		else if(pkt->is_fin_set())
 		{
 			_current_state = tcpsession::CLOSING;
+			g_logger.printf("move to state CLOSING\n");
 		}
 	}
 
@@ -395,6 +406,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
+		g_logger.printf("move to state TIME_WAIT\n");
 	}
 
 	if (0 != pkt->get_tcp_content_len())
@@ -410,6 +422,7 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
 	{
 		_current_state = tcpsession::CLOSED;
+		g_logger.printf("move to state CLOSED\n");
 	}
 	refresh_status(pkt);
 }
@@ -419,6 +432,7 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
 	{
 		_current_state = tcpsession::CLOSED;
+		g_logger.printf("move to state CLOSED\n");
 	}
 	refresh_status(pkt);
 }
