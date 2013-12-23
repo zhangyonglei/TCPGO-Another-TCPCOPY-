@@ -202,7 +202,8 @@ void postoffice::pollout_handler(int fd)
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
 	{
-		callback = ite->second;
+			assert(_callbacks.size()==1);
+		    callback = ite->second;
 
 			int num;
 			vector<const ip_pkt*> pkts;

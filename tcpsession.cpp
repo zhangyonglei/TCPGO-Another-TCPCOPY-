@@ -19,6 +19,31 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_ip_str = inet_ntoa(inaddr);
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
+
+	struct iphdr *iphdr = (struct iphdr*)_ack_template;
+	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
+	memset(_ack_template, 0, 40);
+	iphdr->ihl = 5;
+	iphdr->version = 4;
+	iphdr->tos = 0;
+	iphdr->tot_len = htons(40);
+    iphdr->id = 0;
+    iphdr->frag_off = 0;
+    iphdr->ttl = 255;
+    iphdr->protocol = IPPROTO_TCP;
+    iphdr->check = 0;
+    iphdr->saddr = ip;
+    iphdr->daddr = 0;
+
+	tcphdr->source = port;
+    tcphdr->dest = 0;
+    tcphdr->seq = 0;
+    tcphdr->ack_seq = 0;
+    tcphdr->ack = 0;
+    tcphdr->doff = 5;
+    tcphdr->window = 65535;
+    tcphdr->check = 0;
+    tcphdr->urg_ptr = 0;
 }
 
 tcpsession::~tcpsession()
@@ -166,7 +191,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		pkt = &(*ite);
 		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
-		pkt->rebuild("192.168.44.129", 80, _expected_next_sequence_from_peer); // TODO hard code temporarily.
+		// TODO hard code the dstination IP and port temporarily.
+		pkt->rebuild("192.168.44.129", 80, _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
 	}
 
@@ -190,7 +216,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			_current_state = tcpsession::LAST_ACK;
 			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
 		}
-
+		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
 	}
 
 	return count;
@@ -254,6 +280,17 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 		// catch ya. only god and bug knows how to reach here.
 		abort();
 	}
+}
+
+void tcpsession::create_an_ack_without_payload()
+{
+	struct tcphdr* tcphdr;
+	char buff[40];
+	memcpy(buff, _ack_template, sizeof(buff));
+
+	tcphdr = (struct tcphdr*)(buff + 20);
+	tcphdr->seq = htons(_last_seq_beyond_fin_at_localhost_side);
+	_ippkts_samples.push_back(buff);
 }
 
 void tcpsession::closed_state_handler(const ip_pkt* pkt)
@@ -324,6 +361,12 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 			_current_state = tcpsession::CLOSING;
 		}
 	}
+
+	if (0 != pkt->get_tcp_content_len())
+	{
+		create_an_ack_without_payload();
+		_sliding_window_right_boundary = _ippkts_samples.end();
+	}
 	refresh_status(pkt);
 }
 
@@ -332,6 +375,12 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
+	}
+
+	if (0 != pkt->get_tcp_content_len())
+	{
+		create_an_ack_without_payload();
+		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
 	refresh_status(pkt);
 }
@@ -420,13 +469,13 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	_advertised_window_size = pkt->get_win_size();
 
 	// adjust sliding window
-	int win_size = 0;
+	int current_sliding_win_size = 0;
 	int ippkt_count_walked_through = 0;
 	for (ite = _sliding_window_left_boundary;
 		 ite != _sliding_window_right_boundary;)
 	{
-		win_size += ite->get_tot_len();
-		if (win_size > _advertised_window_size)
+		current_sliding_win_size += ite->get_tot_len();
+		if (current_sliding_win_size > _advertised_window_size)
 		{
 			// make sure at least one IP packet are available to be sent.
 			if(0 == ippkt_count_walked_through)
@@ -442,17 +491,25 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		}
 		ippkt_count_walked_through++;
 	}
-	if (win_size < _advertised_window_size);
+	// // try to increase the sliding window size
+	if (current_sliding_win_size < _advertised_window_size)
 	{
-		// try to increase the window size
-		for(; ite != _ippkts_samples.end(); ++ite)
+		while (current_sliding_win_size < _advertised_window_size
+				&& _sliding_window_right_boundary != _ippkts_samples.end())
 		{
-			win_size += ite->get_tot_len();
-			if (win_size > _advertised_window_size)
+			++_sliding_window_right_boundary;
+			current_sliding_win_size += ite->get_tot_len();
+			if (current_sliding_win_size > _advertised_window_size)
 			{
 				break;
 			}
 		}
-		_sliding_window_right_boundary = ite;
+	}
+	else // reduce the sliding window size
+	{
+		int how_much_bytes_should_be_reduced;
+		how_much_bytes_should_be_reduced = current_sliding_win_size - _advertised_window_size;
+		// TODO. sorry i have to ignore this logic at current cos I'm so tried to code and it gonna be still okay
+		// without reducing sliding window size.
 	}
 }

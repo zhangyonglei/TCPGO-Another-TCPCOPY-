@@ -131,18 +131,35 @@ int session_manager::clean()
 
 	}
 	g_logger.printf("total %d sessions, %d of them are sick and are dropped.\n", total_sess_count, sick_sess_count);
+	for (ite = _sessions.begin(); ite != _sessions.end();)
+	{
+		if (ite == _sessions.begin())
+		{
+			ite++;
+			continue;
+		}
+
+		g_postoffice.deregister_callback(ite->first);
+		_sessions.erase(ite++);
+	}
+	int size = _sessions.size();
+	size = size;
 
 	return 0;
 }
 
 int session_manager::get_ready()
 {
+	int n;
+	n = 0;
 	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
 				ite != _sessions.end();
 				++ite)
 	{
+		n++;
 		ite->second.get_ready();
 	}
+	assert(n == 1);
 
 	return 0;
 }

@@ -41,6 +41,12 @@ public:
 	virtual void got_a_packet(const ip_pkt* pkt);
 
 private:
+	/// in the case of active close and the sent FIN has be acked by peer, _ippkts_samples is empty at this time
+	/// if a tcp segment received, ack cann't be piggybacked by sample, so create a pure ack withou payload just
+	/// for the sake of acknowledge.
+	void create_an_ack_without_payload();
+
+private:
 	/// eleven member functions for their respective tcp state.
 	void closed_state_handler(const ip_pkt* pkt);
 	void listen_state_handler(const ip_pkt* pkt);
@@ -59,6 +65,7 @@ private:
 
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
+	char _ack_template[40];   ///< a template to create a ack without payload.
 
 	// reserved for the possible future version if i can still play with this stuff.
 //	std::list<ip_pkt>  _ippkts_received;   // The ip packages received from the server will be saved here.
@@ -70,6 +77,7 @@ private:
 	state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order
+	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	uint16_t _advertised_window_size;             ///< in host byte order
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)

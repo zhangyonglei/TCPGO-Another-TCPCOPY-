@@ -15,7 +15,7 @@
  *             |/ \_( # |" 
  *            C/ ,--___/
  *
- *      www.dogeye.net presents
+ *      www.tencent.com & www.dogeye.net co-present
  */
 
 #include <getopt.h>
