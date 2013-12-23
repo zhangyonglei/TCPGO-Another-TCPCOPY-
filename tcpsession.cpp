@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "cute_logger.h"
 #include "thetimer.h"
+#include "session_manager.h"
 
 tcpsession::tcpsession(uint32_t ip, uint16_t port)
 {
@@ -203,6 +204,17 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		_current_state = tcpsession::SYN_SENT;
 		_last_recored_jiffies = g_timer.get_jiffles();
 	}
+	else
+	{
+		// hard code the timeout value is one second.
+		uint64_t jiffies = g_timer.get_jiffles();
+		if (jiffies - _last_recored_jiffies > HZ)  // timeout
+		{
+			g_session_manager.remove_a_session(_session_key);
+			g_logger.printf("session: %s.%hu time out.\n", _client_src_ip_str.c_str(), _client_src_port);
+		}
+	}
+
 	if (0 != count && pkts[count-1]->is_fin_set())
 	{
 		const ip_pkt* pkt = pkts[count-1];
@@ -225,11 +237,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
 	uint64_t jiffies = g_timer.get_jiffles();
-	// hard code the timeout value is one second.
-	if (jiffies - _last_recored_jiffies > HZ)  // timeout
-	{
-		g_postoffice.deregister_callback(_session_key);
-	}
+	_last_recored_jiffies = jiffies;
+
 	switch(_current_state)
 	{
 	case CLOSED:

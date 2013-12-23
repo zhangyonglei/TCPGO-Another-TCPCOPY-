@@ -164,6 +164,14 @@ int session_manager::get_ready()
 	return 0;
 }
 
+void session_manager::remove_a_session(uint64_t key)
+{
+	int num;
+	g_postoffice.deregister_callback(key);
+	num = _sessions.erase(key);
+	assert(num == 1);
+}
+
 session_manager::~session_manager()
 {
 }
