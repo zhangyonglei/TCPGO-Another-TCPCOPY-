@@ -115,7 +115,7 @@ void postoffice::deregister_callback(uint64_t key)
 	if (_callbacks.empty())
 	{
 		cout << "All Finished. kamuszhou@tencent.com\n";
-//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
+		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
 		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts"
 				"to make this gadget better." << endl;
 		exit(0);
@@ -167,7 +167,7 @@ void postoffice::pollin_handler(int fd)
 		}
 
 		src_port = ntohs(tcphdr->source);
-		g_logger.printf("Got a tcp packet with source port %hu.\n", src_port);
+//		g_logger.printf("Got a tcp packet with source port %hu.\n", src_port);
 		if (_svr_port != tcphdr->source)
 		{
 			continue;
@@ -202,31 +202,30 @@ void postoffice::pollout_handler(int fd)
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
 	{
-			assert(_callbacks.size()==1);
-		    callback = ite->second;
+		callback = ite->second;
 
-			int num;
-			vector<const ip_pkt*> pkts;
-			num = callback->pls_send_these_packets(pkts);
-			if (0 == num)
-			{
-				break;
-			}
+		int num;
+		vector<const ip_pkt*> pkts;
+		num = callback->pls_send_these_packets(pkts);
+		if (0 == num)
+		{
+			break;
+		}
 
-			for (int i = 0; i < num; i++)
+		for (int i = 0; i < num; i++)
+		{
+			pkt = pkts[i];
+			dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
+			starting_addr = pkt->get_starting_addr();
+			tot_len = pkt->get_tot_len();
+			ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
+					(struct sockaddr *) &dst_addr, sizeof(dst_addr));
+			if (ret < 0 && errno == EINTR)
 			{
-				pkt = pkts[i];
-				dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
-				starting_addr = pkt->get_starting_addr();
-				tot_len = pkt->get_tot_len();
-				ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
-								(struct sockaddr *) &dst_addr, sizeof(dst_addr));
-				if (ret < 0 && errno == EINTR)
-				{
-					perror("send ");
-					return;
-				}
+				perror("send ");
+				return;
 			}
+		}
 	}  // end of for loop ...
 }
 

@@ -45,6 +45,10 @@ int cute_logger::printf(const char* format, ...)
 		va_end(ap);
 	}
 
+#ifdef __DEBUG__
+	fflush(_stream);
+#endif
+
 	return ret;
 }
 

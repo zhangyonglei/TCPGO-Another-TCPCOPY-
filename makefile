@@ -9,7 +9,7 @@ objects := $(subst .cpp,.o,$(sources))
 dependencies := $(subst .cpp,.d,$(sources))
 public_dirs := ./public
 
-CPPFLAGS += -I$(public_dirs) -g
+CPPFLAGS += -I$(public_dirs) -g -D__DEBUG__
 LINKFLAGS := -lpthread -lpcap
 RM := rm -rf
 MV := mv
