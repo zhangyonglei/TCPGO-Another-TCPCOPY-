@@ -224,7 +224,9 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		// hard code the timeout value as one second.
 		if (jiffies - last_recorded_recv_time > 3*HZ)  // timeout
 		{
-			g_logger.printf("session: %s.%hu time out.\n", _client_src_ip_str.c_str(), _client_src_port);
+			const char* ip_str;
+			ip_str = _client_src_ip_str.c_str();
+			g_logger.printf("session: %s.%hu time out.\n", ip_str, _client_src_port);
 			g_session_manager.remove_a_session(_session_key);
 		}
 	}

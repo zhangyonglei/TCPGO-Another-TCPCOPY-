@@ -37,7 +37,7 @@ int cute_logger::printf(const char* format, ...)
 {
 	int ret;
 	va_list ap;
-	char buff[1024];
+	char buff[2048] = { 0 };
 
 	ret = 0;
 	if (_on)
@@ -48,7 +48,9 @@ int cute_logger::printf(const char* format, ...)
 	}
 
 #ifdef __DEBUG__
+	va_start(ap, format);
 	vsnprintf(buff, sizeof(buff), format, ap);
+	va_end(ap);
 	std::cout << buff;
 	fflush(_stream);
 #endif
