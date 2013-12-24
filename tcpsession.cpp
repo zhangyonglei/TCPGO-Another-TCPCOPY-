@@ -26,7 +26,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 
 	_recv_time_out = 4 * HZ;
 	_snd_speed_control = HZ / 10;
-	_wait_for_fin_from_peer_time_out = 4 * HZ;
+	_wait_for_fin_from_peer_time_out = 1 * HZ;
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
 	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
@@ -238,6 +238,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			ip_str = _client_src_ip_str.c_str();
 			g_logger.printf("session: %s.%hu time out.\n", ip_str, _client_src_port);
 			g_session_manager.remove_a_session(_session_key);
+			return 0;
 		}
 	}
 
