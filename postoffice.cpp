@@ -226,7 +226,6 @@ void postoffice::pollout_handler(int fd)
 			tot_len = pkt->get_tot_len();
 			ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
 					(struct sockaddr *) &dst_addr, sizeof(dst_addr));
-			cout << "sending...\n";
 			if (ret < 0 && errno == EINTR)
 			{
 				perror("send ");

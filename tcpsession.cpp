@@ -203,7 +203,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	pkts.clear();
 
 	// don't send too quickly.
-	if (jiffies - last_recorded_snd_time <= 2)
+	if (jiffies - last_recorded_snd_time <= 10)
 	{
 		return 0;
 	}
@@ -329,6 +329,9 @@ void tcpsession::create_an_ack_without_payload()
 	struct tcphdr* tcphdr;
 	char buff[40];
 	memcpy(buff, _ack_template, sizeof(buff));
+
+	if (!_ippkts_samples.empty())
+		return;
 
 	tcphdr = (struct tcphdr*)(buff + 20);
 	tcphdr->seq = htons(_last_seq_beyond_fin_at_localhost_side);
