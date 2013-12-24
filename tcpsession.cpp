@@ -170,7 +170,7 @@ _err:
 
 void tcpsession::get_ready()
 {
-	std::list<ip_pkt>::iterator tmp_ite;
+	std::list<ip_pkt>::iterator ite, tmp_ite;
 
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
@@ -183,6 +183,11 @@ void tcpsession::get_ready()
 	_sliding_window_right_boundary = tmp_ite;
 	last_recorded_recv_time = g_timer.get_jiffies();
 	last_recorded_snd_time = g_timer.get_jiffies();
+
+	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end(); ++ite)
+	{
+
+	}
 
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
 }
@@ -392,18 +397,20 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 
 void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->is_ack_set())
+	if (pkt->is_ack_set() && !pkt->is_fin_set())
 	{
-		if (!pkt->is_fin_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
-		{
-			_current_state = tcpsession::FIN_WAIT_2;
-			g_logger.printf("move to state FIN_WAIT_2\n");
-		}
-		else if(pkt->is_fin_set())
-		{
-			_current_state = tcpsession::CLOSING;
-			g_logger.printf("move to state CLOSING\n");
-		}
+		_current_state = tcpsession::FIN_WAIT_2;
+		g_logger.printf("move to state FIN_WAIT_2\n");
+	}
+	else if (pkt->is_ack_set() && pkt->is_fin_set())
+	{
+		_current_state = tcpsession::TIME_WAIT;
+		g_logger.printf("move to state TIME_WAIT\n");
+	}
+	else if(!pkt->is_ack_set() && pkt->is_fin_set())
+	{
+		_current_state = tcpsession::CLOSING;
+		g_logger.printf("move to state CLOSING\n");
 	}
 
 	if (0 != pkt->get_tcp_content_len())

@@ -145,6 +145,11 @@ void ip_pkt::warm_up()
 	_dst_addr = inet_ntoa(inaddr);
 }
 
+void ip_pkt::modify_src_port(uint16_t src_port)
+{
+	_tcphdr->source = htons(src_port);
+	warm_up();
+}
 
 uint16_t ip_pkt::reset_tcp_checksum()
 {

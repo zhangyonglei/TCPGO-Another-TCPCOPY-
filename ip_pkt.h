@@ -34,6 +34,8 @@ public:
 	virtual ~ip_pkt();
 
 public:
+	void  modify_src_port(uint16_t src_port);
+
 	/**
 	 * return the previous tcp checksum, and new tcp checksum is calculated and set.
 	 * note: in network byte order.
@@ -143,7 +145,7 @@ public:
 	 * replace the original destination IP address and port with new
 	 * dest IP addr and port. checksum will be re-calculated and properly
 	 * stored.
-	 * @param port in host byte order.
+	 * @param port the dst port in host byte order.
 	 */
 	void rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 
