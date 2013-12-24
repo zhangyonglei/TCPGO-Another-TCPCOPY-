@@ -15,6 +15,7 @@
 using namespace std;
 
 postoffice g_postoffice;
+extern int g_concurrency_limit;
 
 postoffice::postoffice()
 {
@@ -193,15 +194,20 @@ void postoffice::pollout_handler(int fd)
 	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
 	struct sockaddr_in  dst_addr;
 	postoffice_callback_interface* callback;
+	int concurrency_num;
 
 	if (fd != _send_fd)
 		return;
 
 	dst_addr.sin_family = AF_INET;
-
+	concurrency_num = 0;
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
 	{
+		if (concurrency_num >= g_concurrency_limit)
+			break;
+
+		++concurrency_num;
 		callback = ite->second;
 
 		int num;

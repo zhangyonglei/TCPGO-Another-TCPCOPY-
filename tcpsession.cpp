@@ -224,7 +224,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	else
 	{
 		// hard code the timeout value.
-		if (jiffies - last_recorded_recv_time > 4*HZ)  // timeout
+		if (jiffies - last_recorded_recv_time > 5*HZ)  // timeout
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
@@ -260,6 +260,11 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
 	uint64_t jiffies = g_timer.get_jiffies();
 	last_recorded_recv_time = jiffies;
+
+	if(pkt->is_rst_set())
+	{
+		g_session_manager.remove_a_session(_session_key);
+	}
 
 	switch(_current_state)
 	{

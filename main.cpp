@@ -31,6 +31,7 @@ using namespace std;
 string   g_pcap_file_path;
 string   g_dst_addr;
 uint16_t g_dst_port;
+int g_concurrency_limit = 20;  // default to 20 connections run concurrently.
 
 static void output_help();
 static void output_version();
@@ -44,13 +45,14 @@ int main(int argc, char **argv)
 			{"pcapfile", required_argument, NULL,  'f' },
 			{"dst-addr", required_argument, NULL, 'd' },
 			{"dst-port", required_argument, NULL, 'p'},
+			{"concurrency-limit", required_argument, NULL, 'c'},
 			{"help", no_argument, NULL, 'h'},
 			{"version", no_argument, NULL,  'v' },
 			{0, 0, 0, 0}
 	};
 
 	while (true) {
-		ch = getopt_long(argc, argv, "f:d:p:hv", long_options, &option_index);
+		ch = getopt_long(argc, argv, "f:d:p:c:hv", long_options, &option_index);
 		if (ch == -1)
 			break;
 
@@ -65,6 +67,10 @@ int main(int argc, char **argv)
 
 		case 'p':
 			g_dst_port = strtol(optarg, NULL, 10);
+			break;
+
+		case 'c':
+			g_concurrency_limit = strtol(optarg, NULL, 10);
 			break;
 
 		case 'h':
