@@ -24,6 +24,10 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
 
+	_recv_time_out = 4 * HZ;
+	_snd_speed_control = HZ / 10;
+	_wait_for_fin_from_peer_time_out = 4 * HZ;
+
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
 	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
 	memset(_ack_template, 0, 40);
@@ -181,8 +185,8 @@ void tcpsession::get_ready()
 	tmp_ite = _sliding_window_left_boundary;
 	++tmp_ite;
 	_sliding_window_right_boundary = tmp_ite;
-	last_recorded_recv_time = g_timer.get_jiffies();
-	last_recorded_snd_time = g_timer.get_jiffies();
+	_last_recorded_recv_time = g_timer.get_jiffies();
+	_last_recorded_snd_time = g_timer.get_jiffies();
 
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end(); ++ite)
 	{
@@ -203,7 +207,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	pkts.clear();
 
 	// don't send too quickly.
-	if (jiffies - last_recorded_snd_time <= 10)
+	if (jiffies - _last_recorded_snd_time <= _snd_speed_control )
 	{
 		return 0;
 	}
@@ -224,12 +228,11 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		assert(1 == count);
 		_current_state = tcpsession::SYN_SENT;
 		g_logger.printf("move to state SYN_SENT\n");
-		last_recorded_recv_time = jiffies;
+		_last_recorded_recv_time = jiffies;
 	}
 	else
 	{
-		// hard code the timeout value.
-		if (jiffies - last_recorded_recv_time > 5*HZ)  // timeout
+		if (jiffies - _last_recorded_recv_time > _recv_time_out )  // timeout
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
@@ -256,7 +259,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
 	}
 
-	last_recorded_snd_time = jiffies;
+	_last_recorded_snd_time = jiffies;
 
 	return count;
 }
@@ -264,7 +267,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 void tcpsession::got_a_packet(const ip_pkt* pkt)
 {
 	uint64_t jiffies = g_timer.get_jiffies();
-	last_recorded_recv_time = jiffies;
+	_last_recorded_recv_time = jiffies;
 
 	if(pkt->is_rst_set())
 	{
@@ -405,6 +408,7 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
 	{
 		my_fin_has_been_acked = true;
+		_my_fin_acked_time = g_timer.get_jiffies();
 	}
 	else
 	{
@@ -438,6 +442,14 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 
 void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 {
+	uint64_t now;
+	now = g_timer.get_jiffies();
+	if (now - _wait_for_fin_from_peer_time_out > _wait_for_fin_from_peer_time_out)
+	{
+		g_session_manager.remove_a_session(_session_key);
+		return;
+	}
+
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
@@ -457,6 +469,7 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 	{
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("move to state CLOSED\n");
+		_my_fin_acked_time = g_timer.get_jiffies();
 	}
 	refresh_status(pkt);
 

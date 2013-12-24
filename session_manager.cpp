@@ -69,8 +69,10 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 				if (ip_pkt != NULL)
 				{
 					uint16_t new_src_port;
+					uint16_t ori_src_port;
 					struct ip_pkt pkt(ip_pkt);
-					new_src_port = ((pkt.get_src_port() + random) % 30000) + 4096;
+					ori_src_port = pkt.get_src_port();
+					new_src_port = ((ori_src_port + random) % 30000) + 4096;
 					pkt.modify_src_port(new_src_port);
 					dispatch_ip_pkt(pkt.get_starting_addr());
 				}

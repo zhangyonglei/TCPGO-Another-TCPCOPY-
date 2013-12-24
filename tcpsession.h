@@ -83,8 +83,14 @@ private:
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)
 	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< closed interval (excluding)
 
-	uint64_t last_recorded_recv_time;
-	uint64_t last_recorded_snd_time;
+	uint64_t _last_recorded_recv_time;   ///< used for session timeout
+	int      _recv_time_out;             ///< in unit of jiffy. refer to class the_timer
+
+	uint64_t _last_recorded_snd_time;    ///< sending speed control
+	int      _snd_speed_control;         ///< in unit of jiffy.
+
+	uint64_t _my_fin_acked_time;         ///< don't wanna wait for fin from peer forever
+	int      _wait_for_fin_from_peer_time_out; ///< as the variable name suggests.
 
 	uint32_t _client_src_ip_num;
 	std::string _client_src_ip_str;

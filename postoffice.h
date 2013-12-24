@@ -31,6 +31,9 @@ public:
 	 * @param ip_pkt points to the coming packet.
 	 */
 	virtual void got_a_packet(const ip_pkt *pkt) = 0;
+
+protected:
+	virtual ~postoffice_callback_interface(){}
 };
 
 /**

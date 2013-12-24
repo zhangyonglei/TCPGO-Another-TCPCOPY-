@@ -18,6 +18,9 @@ class evt_workhorse
 public:
 	virtual void pollin_handler(int fd) = 0;
 	virtual void pollout_handler(int fd) = 0;
+
+protected:
+	virtual ~evt_workhorse(){}
 };
 
 /**
