@@ -269,6 +269,7 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	if(pkt->is_rst_set())
 	{
 		g_session_manager.remove_a_session(_session_key);
+		return;
 	}
 
 	switch(_current_state)
@@ -397,12 +398,22 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 
 void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->is_ack_set() && !pkt->is_fin_set())
+	bool my_fin_has_been_acked;
+	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	{
+		my_fin_has_been_acked = true;
+	}
+	else
+	{
+		my_fin_has_been_acked = false;
+	}
+
+	if (my_fin_has_been_acked && !pkt->is_fin_set() )
 	{
 		_current_state = tcpsession::FIN_WAIT_2;
 		g_logger.printf("move to state FIN_WAIT_2\n");
 	}
-	else if (pkt->is_ack_set() && pkt->is_fin_set())
+	else if (my_fin_has_been_acked && pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
 		g_logger.printf("move to state TIME_WAIT\n");
@@ -413,12 +424,13 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 		g_logger.printf("move to state CLOSING\n");
 	}
 
-	if (0 != pkt->get_tcp_content_len())
+	refresh_status(pkt);
+	if (my_fin_has_been_acked)
 	{
 		create_an_ack_without_payload();
+		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
-	refresh_status(pkt);
 }
 
 void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
@@ -429,12 +441,11 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 		g_logger.printf("move to state TIME_WAIT\n");
 	}
 
-	if (0 != pkt->get_tcp_content_len())
-	{
-		create_an_ack_without_payload();
-		_sliding_window_right_boundary = _ippkts_samples.end();
-	}
 	refresh_status(pkt);
+
+	create_an_ack_without_payload();
+	_sliding_window_left_boundary = _ippkts_samples.begin();
+	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
 void tcpsession::closing_state_handler(const ip_pkt* pkt)
@@ -445,6 +456,10 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 		g_logger.printf("move to state CLOSED\n");
 	}
 	refresh_status(pkt);
+
+	create_an_ack_without_payload();
+	_sliding_window_left_boundary = _ippkts_samples.begin();
+	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
 void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
@@ -454,7 +469,12 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("move to state CLOSED\n");
 	}
+
 	refresh_status(pkt);
+
+	create_an_ack_without_payload();
+	_sliding_window_left_boundary = _ippkts_samples.begin();
+	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
 void tcpsession::refresh_status(const ip_pkt* pkt)
