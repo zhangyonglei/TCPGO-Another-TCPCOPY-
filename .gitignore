@@ -12,3 +12,6 @@ horos
 INSTALL
 missing
 .deps/
+*so
+*so.*
+test
