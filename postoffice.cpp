@@ -113,15 +113,6 @@ void postoffice::deregister_callback(uint64_t key)
 	ite = _callbacks.find(key);
 	assert(ite != _callbacks.end());
 	_callbacks.erase(ite);
-
-	if (_callbacks.empty())
-	{
-		cout << "All Finished. kamuszhou@tencent.com\n";
-		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
-		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts"
-				"to make this gadget better." << endl;
-		exit(0);
-	}
 }
 
 void postoffice::pollin_handler(int fd)
@@ -199,6 +190,15 @@ void postoffice::pollout_handler(int fd)
 
 	if (fd != _send_fd)
 		return;
+
+	if (_callbacks.empty())
+	{
+		cout << "All Finished. kamuszhou@tencent.com\n";
+		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
+		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts"
+				"to make this gadget better." << endl;
+		exit(0);
+	}
 
 	dst_addr.sin_family = AF_INET;
 	concurrency_num = 0;

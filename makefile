@@ -1,19 +1,20 @@
-#makefile created by 16236914@qq.com on August 10 2011.
-#Using GNU make 3.81, GCC 4.3.2
-#The projct aims to supply assistance functions.
+#created by 16236914@qq.com
 
 #projname := $(notdir $(CURDIR))
-projname := horos
+bins := bins/
+objs := objs/
+deps := deps/
+projname := $(bins)horos
 libstem := horos
-test := test
-lib_linkname := lib$(libstem).so
+test := $(bins)test
+lib_linkname := $(bins)lib$(libstem).so
 libname = $(lib_linkname).$(VERSION_NUM)
 #soname = $(lib_linkname).$(firstword $(subst ., ,$(VERSION_NUM)))
 #don't use so version control
-soname = $(lib_linkname)
+soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
-objects := $(subst .cpp,.o,$(sources))
-dependencies := $(subst .cpp,.d,$(sources))
+objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
+dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
 public_dirs := ./public
 
 VERSION_NUM := 1.0.0
@@ -21,27 +22,27 @@ CXXFLAGS += -fvisibility=hidden
 CPPFLAGS += -I$(public_dirs) -g -fPIC -D__DEBUG__
 LINKFLAGS := -lpthread -lpcap 
 LINKFLAGS4LIB := -shared -Wl,-soname,$(soname) -lpthread -lpcap  
-LINKFLAGS4UT := -L. -l$(libstem) -Wl,-rpath,. 
+LINKFLAGS4UT := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 RM := rm -rf
 MV := mv
 
 vpath %.cpp .
 vpath %.h . $(public_dirs)
 
-.PHONY : clean install
+.PHONY : clean install 
 
-all : $(projname) $(libname) $(test)
+all : $(projname) $(libname) $(test) 
 
-$(projname) : $(objects)
-	g++ $(LINKFLAGS) -o $@ $^
+$(projname) : $(bins) $(deps) $(objs) $(objects) 
+	g++ $(LINKFLAGS) -o $@ $(objects)
 	
 $(libname) : $(objects)
 	g++ $(LINKFLAGS4LIB) -o $@ $^	
-	-ln -s $(libname) $(lib_linkname)
+	-ln -s $(PWD)/$@ $(lib_linkname)
 	
-test : unit_test/test.o
+$(test) : unit_test/test.o
 #	ld -rpath . -o test unit_test/test.o
-	g++ -o $@  $^ $(LINKFLAGS4UT)
+	g++ $(LINKFLAGS4UT) -o $@  $^
 	
 install :
 #	-cp $(libname) /usr/local/lib
@@ -49,6 +50,15 @@ install :
  	
 unit_test/test.o: unit_test/unit_test.cpp public/misc.h public/horos.h $(libname)
 	g++ -c -o $@ unit_test/unit_test.cpp  
+	
+$(bins):
+	mkdir $@
+	 
+$(deps):
+	mkdir $@
+ 
+$(objs):
+	mkdir $@
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include $(dependencies)
@@ -64,9 +74,9 @@ define make-depend
   g++ -MM -MF $3 -MT $2 $(CPPFLAGS) $(TARGET_ARCH) $1
 endef
 
-%.o : %.cpp
+$(objs)%.o : %.cpp
 	$(call make-depend, $<,$@,$(subst .o,.d,$@))
 	$(COMPILE.C) $(OUTPUT_OPTION) $<
 
 clean :
-	$(RM) $(objects) $(dependencies) $(projname) $(libname)
+	$(RM) $(objects) $(dependencies) $(projname) $(libname) $(bins) $(objs) $(deps)
