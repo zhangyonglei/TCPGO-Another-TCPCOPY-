@@ -23,7 +23,7 @@ CXXFLAGS += -fvisibility=hidden
 CPPFLAGS += -I$(public_dirs) -g -fPIC -D__DEBUG__
 LINKFLAGS := -lpthread -lpcap 
 LINKFLAGS4LIB := -shared -Wl,-soname,$(soname) -lpthread -lpcap  
-LINKFLAGS4UT := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
+LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 RM := rm -rf
 MV := mv
 
@@ -41,16 +41,16 @@ $(libname) : $(objects)
 	g++ $(LINKFLAGS4LIB) -o $@ $^	
 	-ln -s $(PWD)/$@ $(lib_linkname)
 	
-$(test) : unit_test/test.o
-#	ld -rpath . -o test unit_test/test.o
-	g++ $(LINKFLAGS4UT) -o $@  $^
+$(test) : test/test.o
+#	ld -rpath . -o test test/test.o
+	g++ $(LINKFLAGS4TEST) -o $@  $^
 	
 install :
 #	-cp $(libname) /usr/local/lib
 #	-ln -s /usr/local/lib/$(libname) /usr/lib/$(soname)
  	
-unit_test/test.o: unit_test/unit_test.cpp public/misc.h public/horos.h $(libname)
-	g++ -c -o $@ unit_test/unit_test.cpp  
+test/test.o: test/test.cpp public/misc.h public/horos.h $(libname)
+	g++ -c -o $@ test/test.cpp  
 	
 $(bins):
 	mkdir $@
