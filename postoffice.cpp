@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "cute_logger.h"
 #include "postoffice.h"
+#include "session_manager.h"
 
 #define SNAP_LEN 8192
 
@@ -202,7 +203,7 @@ void postoffice::pollout_handler(int fd)
 	dst_addr.sin_family = AF_INET;
 	concurrency_num = 0;
 	// practically, loop through all the tcpsessions.
-	for(ite = _callbacks.begin(); ite != _callbacks.end(); ++ite)
+	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{
 		if (concurrency_num >= g_concurrency_limit)
 			break;
@@ -215,6 +216,13 @@ void postoffice::pollout_handler(int fd)
 		num = callback->pls_send_these_packets(pkts);
 		if (0 == num)
 		{
+			++ite;
+			continue;
+		}
+		else if (-1 == num)
+		{
+			g_session_manager.erase_a_session(ite->first);
+			_callbacks.erase(ite++);
 			continue;
 		}
 
@@ -232,6 +240,7 @@ void postoffice::pollout_handler(int fd)
 				return;
 			}
 		}
+		++ite;
 	}  // end of for loop ...
 }
 

@@ -176,6 +176,7 @@ void tcpsession::get_ready()
 {
 	std::list<ip_pkt>::iterator ite, tmp_ite;
 
+	_dead = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;
@@ -190,7 +191,7 @@ void tcpsession::get_ready()
 
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end(); ++ite)
 	{
-
+		// add code to fiddle with every IP packets.
 	}
 
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
@@ -201,6 +202,11 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	ip_pkt* pkt;
 	int count;
 	uint64_t jiffies;
+
+	if(!still_alive())
+	{
+		return -1;
+	}
 
 	jiffies = g_timer.get_jiffies();
 
@@ -237,8 +243,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
 			g_logger.printf("session: %s.%hu time out.\n", ip_str, _client_src_port);
-			g_session_manager.remove_a_session(_session_key);
-			return 0;
+			kill_me();
+			return -1;
 		}
 	}
 
@@ -270,9 +276,12 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	uint64_t jiffies = g_timer.get_jiffies();
 	_last_recorded_recv_time = jiffies;
 
-	if(pkt->is_rst_set())
+	if (!still_alive())
+		return;
+
+	if (pkt->is_rst_set())
 	{
-		g_session_manager.remove_a_session(_session_key);
+		kill_me();
 		return;
 	}
 
@@ -447,7 +456,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	now = g_timer.get_jiffies();
 	if (now - _wait_for_fin_from_peer_time_out > _wait_for_fin_from_peer_time_out)
 	{
-		g_session_manager.remove_a_session(_session_key);
+		kill_me();
 		return;
 	}
 
@@ -605,4 +614,14 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		// TODO. sorry i have to ignore this logic at current cos I'm so tried to code and it gonna be still okay
 		// without reducing sliding window size.
 	}
+}
+
+void tcpsession::kill_me()
+{
+	_dead = true;
+}
+
+bool tcpsession::still_alive()
+{
+	return !_dead;
 }

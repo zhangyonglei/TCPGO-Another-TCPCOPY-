@@ -63,6 +63,10 @@ private:
 private:
 	void refresh_status(const ip_pkt* pkt);
 
+	void kill_me();
+
+	bool still_alive();
+
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
 	char _ack_template[40];   ///< a template to create a ack without payload.
@@ -97,6 +101,8 @@ private:
 	uint16_t _client_src_port;      ///< in host byte order
 
 	uint64_t _session_key;
+
+	bool _dead;
 };
 
 #endif /* _TCPSESSION_H_ */

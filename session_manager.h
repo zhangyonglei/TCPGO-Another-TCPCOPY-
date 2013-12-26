@@ -23,7 +23,7 @@ public:
 	
 	int get_ready();
 
-	void remove_a_session(uint64_t key);
+	void erase_a_session(uint64_t key);
 
 private:
 	/**
