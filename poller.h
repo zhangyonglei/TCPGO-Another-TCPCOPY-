@@ -51,8 +51,11 @@ public:
 	 */
 	void bigbang();
 
+	void stop();
+
 private:
-	int _epoll_fd;
+	volatile bool _stop;
+	int   _epoll_fd;
 	std::map<int, evt_workhorse*> _workhorses;
 };
 

@@ -31,12 +31,14 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 
 	random = rand();
 
-	if ((pcap = pcap_open_offline(path.c_str(), ebuf)) == NULL) {
-		cerr << ebuf << endl;
+	if ((pcap = pcap_open_offline(path.c_str(), ebuf)) == NULL)
+	{
+		g_logger.printf("%s\n", ebuf);
 		return -1;
 	}
 
-	if (!filter.empty()) {
+	if (!filter.empty())
+	{
 		if (pcap_compile(pcap, &fp, filter.c_str(), 0, 0) == -1)
 		{
 			cerr << pcap_geterr(pcap) << endl;

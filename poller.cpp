@@ -15,6 +15,7 @@ poller g_poller;
 
 poller::poller()
 {
+	_stop = false;
 	_epoll_fd = epoll_create(1);
 	if (_epoll_fd < 0)
 	{
@@ -82,6 +83,9 @@ void poller::bigbang()
 	while(true)
 	{
 		nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100);
+		if (_stop)
+			return;
+
 		if (nfds == -1 && errno == EINTR)
 		{
 			perror("epoll_pwait");
@@ -104,3 +108,7 @@ void poller::bigbang()
 	}
 }
 
+void poller::stop()
+{
+	_stop = true;
+}
