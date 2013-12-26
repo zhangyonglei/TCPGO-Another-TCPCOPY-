@@ -7,8 +7,31 @@
  ********************************************/
 
 #include "horos.h"
+#include "misc.h"
 
-__attribute__((visibility("default"))) int horos_test(int num)
+extern std::string  g_pcap_file_path;
+extern std::string  g_dst_addr;
+extern uint16_t g_dst_port;
+extern int g_concurrency_limit;
+extern int run();
+
+__attribute__((visibility("default"))) int horos_init(const char* pcap_file_path,
+		const char* dst_ip_addr, unsigned short dst_port, int concurrency)
 {
-	return ++num;
+	if (NULL == pcap_file_path || NULL == dst_ip_addr)
+		return -1;
+
+	g_pcap_file_path = pcap_file_path;
+	g_dst_addr = dst_ip_addr;
+	g_dst_port = dst_port;
+	if (concurrency > 0)
+		g_concurrency_limit = 20;
+	else
+		g_concurrency_limit = concurrency;
+
+	return run();
+}
+
+__attribute__((visibility("default"))) void horos_uninit()
+{
 }

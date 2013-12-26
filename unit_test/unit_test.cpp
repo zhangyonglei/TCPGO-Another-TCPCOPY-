@@ -14,8 +14,16 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	int num = horos_test(100);
-	cout << num << endl;
+	int ret;
+
+	ret = horos_init("/home/kamus/projs/horoscope/public/traffic.smallsize.pcap",
+			"192.168.44.129", 80, 10);
+	if (ret != 0)
+	{
+		cerr << "horos_init() failed.";
+		return ret;
+	}
+
 	return 0;
 }
 

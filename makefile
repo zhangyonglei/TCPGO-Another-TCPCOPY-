@@ -1,4 +1,5 @@
-#created by 16236914@qq.com
+#created by kamuszhou@tencent.com 16236914@qq.com
+#website: v.qq.com www.dogeye.net
 
 #projname := $(notdir $(CURDIR))
 bins := bins/

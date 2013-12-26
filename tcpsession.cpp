@@ -25,7 +25,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_session_key = mk_sess_key(ip, port);
 
 	_recv_time_out = 4 * HZ;
-	_snd_speed_control = HZ / 10;
+	_snd_speed_control = HZ / 5;
 	_wait_for_fin_from_peer_time_out = 1 * HZ;
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;

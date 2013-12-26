@@ -35,7 +35,7 @@ int g_concurrency_limit = 20;  // default to 20 connections run concurrently.
 
 static void output_help();
 static void output_version();
-static void run();
+int run();
 
 int main(int argc, char **argv)
 {
@@ -123,10 +123,15 @@ static void output_help()
 	cout << "horos -f pcap_file_path.\n";
 }
 
-static void run()
+int run()
 {
+	int ret;
+
 	srand(time(NULL));
-	g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	ret = g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+	if (0 != ret)
+		return ret;
+
 	g_session_manager.get_ready();
 	g_postoffice.get_ready();
 	g_timer.get_ready();
