@@ -5,9 +5,10 @@
  * Created on: 13 Dec, 2013
  ********************************************/
 
+#include <sys/epoll.h>
 #include "misc.h"
 #include "poller.h"
-#include <sys/epoll.h>
+#include "thetimer.h"
 
 #define MAX_EVENTS_COUNT 8
 
@@ -82,7 +83,7 @@ void poller::bigbang()
 
 	while(true)
 	{
-		nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100);
+		nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100/*in unit of millisecond*/);
 		if (_stop)
 			return;
 
@@ -105,6 +106,8 @@ void poller::bigbang()
 				workhorse->pollout_handler(fd);
 			}
 		}
+
+		g_timer.loop_through_all_timer_event();
 	}
 }
 

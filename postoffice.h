@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "poller.h"
 #include "ip_pkt.h"
+#include "thetimer.h"
 
 class postoffice;
 extern postoffice g_postoffice;
@@ -40,7 +41,7 @@ protected:
  * This class is in charge of sending IP packets and receiving
  * datalink level packets.
  */
-class postoffice : public evt_workhorse
+class postoffice : public evt_workhorse, public timer_event
 {
 public:
 	postoffice();
@@ -53,6 +54,9 @@ public:
 
 	virtual void pollin_handler(int fd);
 	virtual void pollout_handler(int fd);
+
+public:
+	void one_shot_timer_event_run();
 
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.

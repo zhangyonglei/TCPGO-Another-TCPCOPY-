@@ -120,7 +120,7 @@ static void output_version()
 static void output_help()
 {
 	cout << "Usage: \n";
-	cout << "horos -f pcap_file_path.\n";
+	cout << "horos -f pcap_file_path -d destination_ip -p port -c concurrency\n";
 }
 
 int run()

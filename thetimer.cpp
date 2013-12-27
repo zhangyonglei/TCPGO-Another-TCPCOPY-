@@ -45,3 +45,29 @@ void the_timer::get_ready()
     	abort();
     }
 }
+
+void the_timer::register_one_shot_timer_event(timer_event* evt, uint32_t relative_time)
+{
+	uint64_t now, fire_time;
+
+	now = _jiffies;
+	fire_time = now + relative_time;
+	_tmp_events.insert(std::pair<uint64_t, timer_event*>(fire_time, evt));
+}
+
+void the_timer::loop_through_all_timer_event()
+{
+	std::multimap<uint64_t, timer_event*>::iterator ite;
+	_events.insert(_tmp_events.begin(), _tmp_events.end());
+	_tmp_events.clear();
+
+	for (ite = _events.begin(); ite != _events.end(); )
+	{
+		// fire it !
+		if (ite->first <= _jiffies)
+		{
+			ite->second->one_shot_timer_event_run();
+			_events.erase(ite++);
+		}
+	}
+}

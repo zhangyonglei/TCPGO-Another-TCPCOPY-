@@ -17,6 +17,7 @@ using namespace std;
 
 postoffice g_postoffice;
 extern int g_concurrency_limit;
+extern int g_dst_port;
 
 postoffice::postoffice()
 {
@@ -91,6 +92,7 @@ postoffice::~postoffice()
 
 void postoffice::get_ready()
 {
+	_svr_port = htons(g_dst_port);
 	g_poller.register_evt(_send_fd, poller::POLLOUT, this);
 	g_poller.register_evt(_recv_fd, poller::POLLIN, this);
 }
@@ -182,7 +184,8 @@ void postoffice::pollout_handler(int fd)
 	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
 	struct sockaddr_in  dst_addr;
 	postoffice_callback_interface* callback;
-	int concurrency_num;
+	int  concurrency_num;
+	bool data_has_been_sent;
 
 	if (fd != _send_fd)
 		return;
@@ -198,6 +201,7 @@ void postoffice::pollout_handler(int fd)
 
 	dst_addr.sin_family = AF_INET;
 	concurrency_num = 0;
+	data_has_been_sent = false;
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{
@@ -222,6 +226,7 @@ void postoffice::pollout_handler(int fd)
 			continue;
 		}
 
+		data_has_been_sent = true;
 		for (int i = 0; i < num; i++)
 		{
 			pkt = pkts[i];
@@ -238,4 +243,17 @@ void postoffice::pollout_handler(int fd)
 		}
 		++ite;
 	}  // end of for loop ...
+
+	// punish the sending logic if no data has been sent in this around.
+	// temporarily unregister the POLLOUT event.
+	if (!data_has_been_sent)
+	{
+		g_timer.register_one_shot_timer_event(this, HZ / 5);
+		g_poller.deregister_evt(_send_fd);
+	}
+}
+
+void postoffice::one_shot_timer_event_run()
+{
+	g_poller.register_evt(_send_fd, poller::POLLOUT, this);
 }
