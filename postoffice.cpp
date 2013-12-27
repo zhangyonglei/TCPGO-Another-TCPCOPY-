@@ -192,11 +192,11 @@ void postoffice::pollout_handler(int fd)
 
 	if (_callbacks.empty())
 	{
-		cout << "All Finished. kamuszhou@tencent.com\n";
-		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
-		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts "
-				"to make this gadget better." << endl;
-		exit(0);
+//		cout << "All Finished. kamuszhou@tencent.com\n";
+//		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
+//		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts "
+//				"to make this gadget better." << endl;
+//		exit(0);
 	}
 
 	dst_addr.sin_family = AF_INET;
