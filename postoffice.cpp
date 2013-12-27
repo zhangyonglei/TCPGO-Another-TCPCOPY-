@@ -70,10 +70,6 @@ postoffice::postoffice()
 		goto _err;
 	}
 
-	set_svr_port(80);
-	ret = set_svr_addr("127.0.0.1");
-	assert(ret != -1);
-
 	_l2hdr_len = -1;
 
 	return;
@@ -195,7 +191,7 @@ void postoffice::pollout_handler(int fd)
 	{
 		cout << "All Finished. kamuszhou@tencent.com\n";
 		//		cout << "Would you please consider donating some QQ coins to kamuszhou, if you like this tool.\n";
-		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts"
+		cout << "Your support is greatly appreciated and will undoubted encourage me to devote more efforts "
 				"to make this gadget better." << endl;
 		exit(0);
 	}
@@ -242,20 +238,4 @@ void postoffice::pollout_handler(int fd)
 		}
 		++ite;
 	}  // end of for loop ...
-}
-
-void postoffice::set_svr_port(uint16_t port)
-{
-	_svr_port = htons(port);
-}
-
-int32_t postoffice::set_svr_addr(const char* addr)
-{
-	int32_t ret;
-	assert(addr != NULL);
-	ret = inet_aton(addr, &_svr_addr);
-	if (INADDR_NONE == ret)
-		return -1;
-	else
-		return 0;
 }

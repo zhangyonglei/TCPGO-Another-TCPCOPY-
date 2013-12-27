@@ -54,16 +54,6 @@ public:
 	virtual void pollin_handler(int fd);
 	virtual void pollout_handler(int fd);
 
-	/**
-	 *@param port in host byte order.
-	 */
-	void set_svr_port(unsigned short port);
-
-	/**
-	 * @param addr The dest IP address in c-string.
-	 */
-	int set_svr_addr(const char* addr);
-
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
 	int  _svr_port; ///< captured outbound IP packets don't matching the this port will be ignored. in network byte order.

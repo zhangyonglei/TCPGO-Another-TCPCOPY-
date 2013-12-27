@@ -35,23 +35,23 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	iphdr->version = 4;
 	iphdr->tos = 0;
 	iphdr->tot_len = htons(40);
-    iphdr->id = 0;
-    iphdr->frag_off = 0;
-    iphdr->ttl = 255;
-    iphdr->protocol = IPPROTO_TCP;
-    iphdr->check = 0;
-    iphdr->saddr = ip;
-    iphdr->daddr = 0;
+	iphdr->id = 0;
+	iphdr->frag_off = 0;
+	iphdr->ttl = 255;
+	iphdr->protocol = IPPROTO_TCP;
+	iphdr->check = 0;
+	iphdr->saddr = ip;
+	iphdr->daddr = 0;
 
 	tcphdr->source = port;
-    tcphdr->dest = 0;
-    tcphdr->seq = 0;
-    tcphdr->ack_seq = 0;
-    tcphdr->ack = 0;
-    tcphdr->doff = 5;
-    tcphdr->window = 65535;
-    tcphdr->check = 0;
-    tcphdr->urg_ptr = 0;
+	tcphdr->dest = 0;
+	tcphdr->seq = 0;
+	tcphdr->ack_seq = 0;
+	tcphdr->ack = 0;
+	tcphdr->doff = 5;
+	tcphdr->window = 65535;
+	tcphdr->check = 0;
+	tcphdr->urg_ptr = 0;
 }
 
 tcpsession::~tcpsession()
@@ -104,7 +104,7 @@ int32_t tcpsession::check_samples_integrity()
 		else if (tot_len != iphdr_len + tcphdr_len + tcp_content_len)
 		{
 			std::cerr << "detected corrupted ip packet." << ite->get_src_addr() << " : " << ite->get_src_port()
-					<< " --> " <<ite->get_dst_addr() << " : " << ite->get_dst_port() << std::endl;
+							<< " --> " <<ite->get_dst_addr() << " : " << ite->get_dst_port() << std::endl;
 			++ite;
 		}
 		else
@@ -123,8 +123,8 @@ int32_t tcpsession::check_samples_integrity()
 	size_now = _ippkts_samples.size();
 	if (size_now != size_saved)
 	{
-	//	g_logger.printf("tcpsession:%s:%hu has %d duplicated packets dropped.\n",
-	//			_client_src_ip_str.c_str(), _client_src_port, size_saved - size_now);
+		//	g_logger.printf("tcpsession:%s:%hu has %d duplicated packets dropped.\n",
+		//			_client_src_ip_str.c_str(), _client_src_port, size_saved - size_now);
 	}
 
 	ite = _ippkts_samples.begin();
@@ -168,7 +168,7 @@ int32_t tcpsession::check_samples_integrity()
 
 	return 0;
 
-_err:
+	_err:
 	return 1;
 }
 
@@ -219,8 +219,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 
 	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
-		ite != _sliding_window_right_boundary;
-		++ite)
+			ite != _sliding_window_right_boundary;
+			++ite)
 	{
 		pkt = &(*ite);
 		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
@@ -298,7 +298,7 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	case SYN_RCVD: 
 		syn_rcvd_state_handler(pkt);
 		break;
-		
+
 	case SYN_SENT:
 		syn_sent_state_handler(pkt);
 		break;
@@ -314,7 +314,7 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	case LAST_ACK:
 		last_ack_state_handler(pkt);
 		break;
-		
+
 	case FIN_WAIT_1:
 		fin_wait_1_state_handler(pkt);
 		break;
@@ -509,14 +509,14 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	uint32_t ack_seq;
 	uint32_t ack_seq_tmp;
 	uint16_t win_size_saved;
-	
+
 	std::list<ip_pkt>::iterator ite;
 
 	ip_packet_parser(pkt);
 	seq = ntohl(tcphdr->seq);
 	ack_seq = ntohl(tcphdr->ack_seq);
 
-       // the second handshake.
+	// the second handshake.
 	if (pkt->is_syn_set() && pkt->is_ack_set())
 	{
 		_expected_next_sequence_from_peer = pkt->get_seq() + 1;
@@ -552,7 +552,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 	// eliminate acked packets.
 	for (ite = _sliding_window_left_boundary;
-		 ite != _sliding_window_right_boundary;)
+			ite != _sliding_window_right_boundary;)
 	{
 		if (seq_before(ite->get_seq(), _latest_acked_sequence_by_peer))
 		{
@@ -572,7 +572,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	int current_sliding_win_size = 0;
 	int ippkt_count_walked_through = 0;
 	for (ite = _sliding_window_left_boundary;
-		 ite != _sliding_window_right_boundary;)
+			ite != _sliding_window_right_boundary;)
 	{
 		current_sliding_win_size += ite->get_tot_len();
 		if (current_sliding_win_size > _advertised_window_size)
@@ -584,7 +584,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			}
 			else  // reduce the window size.
 			{
-			       // update the right boundary.
+				// update the right boundary.
 				_sliding_window_right_boundary = ite;
 				break;
 			}
