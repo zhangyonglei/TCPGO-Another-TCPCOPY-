@@ -24,7 +24,7 @@ protected:
 };
 
 /**
- * poller is just c++ wrapper of epoll.
+ * poller is just a c++ wrapper of epoll.
  */
 class poller
 {

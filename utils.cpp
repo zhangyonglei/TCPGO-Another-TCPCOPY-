@@ -148,7 +148,7 @@ int detect_l2head_len(const char *frame)
 	int8_t buff[60];
 	int32_t len;
 	uint16_t sum, checksum;
-	int32_t offsets[4] = {14, 0, 18};
+	int32_t offsets[] = {14, 0, 18};
 
 	for (int32_t i = 0; i < sizeof(offsets)/sizeof(int32_t); i++)
 	{
