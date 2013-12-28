@@ -14,8 +14,8 @@
  * the following macro is inspired by the book "Linux Kernel Development 3rd Edition" Page 214.
  * It gets around the problem of number wraparound.
  */
-#define seq_before(left, right) ((int32_t)(left) - (int32_t)(right) < 0)
-#define seq_after(left, right) ((int32_t)(left) - (int32_t)(right) > 0)
+#define seq_before(left, right)  ((int)((uint32_t)(left - right)) < 0)
+#define seq_after(left, right)  ((int)((uint32_t)(left - right)) > 0)
 
 /**
  * calculate the IPv4 header checksum.

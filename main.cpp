@@ -129,14 +129,20 @@ int run()
 	int ret;
 
 	srand(time(NULL));
-	ret = g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
-	if (0 != ret)
-		return ret;
+	if (!g_pcap_file_path.empty())
+	{
+		ret = g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+		if (0 != ret)
+		{
+			g_logger.printf("failed to open pcap file %s.\n", g_pcap_file_path.c_str());
+			return ret;
+		}
+	}
 
 	g_session_manager.get_ready();
 	g_postoffice.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
-	///< the word starts from a big bang.Refer to function declarations for yummy explanations.
+	/// the word starts from a big bang.Refer to function declarations for yummy explanations.
 	g_poller.bigbang();
 }

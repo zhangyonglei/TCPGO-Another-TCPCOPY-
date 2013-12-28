@@ -55,7 +55,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	while (true)
 	{
 		int truncated_pkt_count = 0;
-		pkt_data = (const char*)pcap_next(pcap, &pkt_hdr);
+		pkt_data = (const char*) pcap_next(pcap, &pkt_hdr);
 		if (pkt_data != NULL)
 		{
 			if (pkt_hdr.caplen < pkt_hdr.len)
@@ -95,7 +95,7 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt)
 	int ret;
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;
-	std::pair<std::map<uint64_t, tcpsession>::iterator, bool>  ugly_pair;
+	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
 
 	ip_packet_parser(ip_pkt);
 	key = mk_sess_key(iphdr->saddr, tcphdr->source);
@@ -107,7 +107,7 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt)
 	// existed. (copied from c++ references to clarify the obfuscated map::insert return value.)
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
 	ite = ugly_pair.first;
-	ite->second.append_ip_sample((const char*)ip_pkt);
+	ite->second.append_ip_sample((const char*) ip_pkt);
 	if (ugly_pair.second)
 	{
 		g_postoffice.register_callback(key, &ite->second);
@@ -116,6 +116,13 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt)
 	ret = 0;
 
 	return ret;
+}
+
+void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
+{
+	uint64_t key;
+	ip_packet_parser(ip_pkt);
+	key = mk_sess_key(iphdr->saddr, tcphdr->source);
 }
 
 int session_manager::clean()
@@ -130,11 +137,11 @@ int session_manager::clean()
 	{
 		total_sess_count++;
 		healthy = ite->second.check_samples_integrity();
-		if (healthy == 0) 
+		if (healthy == 0)
 		{
 			++ite;
 		}
-		else 
+		else
 		{
 			sick_sess_count++;
 			g_postoffice.deregister_callback(ite->first);
@@ -142,7 +149,8 @@ int session_manager::clean()
 		}
 
 	}
-	g_logger.printf("total %d sessions, %d of them are sick and are dropped.\n", total_sess_count, sick_sess_count);
+	g_logger.printf("total %d sessions, %d of them are sick and are dropped.\n",
+			total_sess_count, sick_sess_count);
 
 	return 0;
 }
@@ -152,8 +160,7 @@ int session_manager::get_ready()
 	int count;
 	count = 0;
 	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
-			ite != _sessions.end();
-			++ite)
+			ite != _sessions.end(); ++ite)
 	{
 		count++;
 		ite->second.get_ready();

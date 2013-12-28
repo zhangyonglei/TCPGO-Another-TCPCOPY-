@@ -30,7 +30,7 @@ MV := mv
 vpath %.cpp .
 vpath %.h . $(public_dirs)
 
-.PHONY : clean install 
+.PHONY : clean install dummy
 
 all : $(projname) $(libname) $(test) 
 
@@ -44,6 +44,10 @@ $(libname) : $(objects)
 $(test) : test/test.o
 #	ld -rpath . -o test test/test.o
 	g++ $(LINKFLAGS4TEST) -o $@  $^
+
+# for debug's purpose
+dummy:
+	#echo $(dependencies)
 	
 install :
 #	-cp $(libname) /usr/local/lib
@@ -76,7 +80,7 @@ define make-depend
 endef
 
 $(objs)%.o : %.cpp
-	$(call make-depend, $<,$@,$(subst .o,.d,$@))
+	$(call make-depend, $<,$@,$(addprefix $(deps),$(subst .cpp,.d,$<)))
 	$(COMPILE.C) $(OUTPUT_OPTION) $<
 
 clean :

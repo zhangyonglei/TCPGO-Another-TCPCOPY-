@@ -25,6 +25,8 @@ public:
 
 	void erase_a_session(uint64_t key);
 
+	void inject_a_realtime_ippkt(const char* ip_pkt);
+
 private:
 	/**
 	 * weed out tcpsession with unhealthy IP samples.
