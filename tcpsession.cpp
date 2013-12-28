@@ -24,7 +24,8 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
 
-	_recv_time_out = 2 * HZ;
+	_recv_time_out = 3 * HZ;
+	_have_to_send_data_within_this_timeperiod = 3 * HZ;
 	_snd_speed_control = HZ / 5;
 	_wait_for_fin_from_peer_time_out = 1 * HZ;
 
@@ -74,7 +75,12 @@ void tcpsession::append_ip_sample(const char* ippkt)
 
 void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
-
+	if (_current_state == tcpsession::CLOSED)
+	{
+		_ippkts_samples.push_back(ippkt);
+		_ippkts_samples.sort();
+		_ippkts_samples.unique();
+	}
 }
 
 int32_t tcpsession::check_samples_integrity()
@@ -184,6 +190,7 @@ void tcpsession::get_ready()
 	_dead = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
+	_expectec_next_sending_sequence = 0;
 	_latest_acked_sequence_by_peer = 0;
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
@@ -197,6 +204,7 @@ void tcpsession::get_ready()
 	}
 	else
 	{
+		// empty
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
 	_last_recorded_recv_time = g_timer.get_jiffies();
@@ -241,6 +249,19 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 
 	count = pkts.size();
+
+	// count the _expectec_next_sending_sequence.
+	if (0 != count)
+	{
+		ip_pkt* tail_ip_pkt;
+		tail_ip_pkt = pkts[count-1];
+		_expectec_next_sending_sequence = tail_ip_pkt->get_seq() + tail_ip_pkt->get_tcp_content_len();
+		if (tail_ip_pkt->is_syn_set())
+		{
+			_expectec_next_sending_sequence++;
+		}
+	}
+
 	if (0 != count && pkts[0]->is_syn_set())
 	{
 		assert(1 == count);
@@ -279,12 +300,19 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
 	}
 
-	_last_recorded_snd_time = jiffies;
-
 	if (_current_state == tcpsession::TIME_WAIT)
 	{
 		// Give only one chance for peer's FIN to be acked.
 		kill_me();
+	}
+
+	if (count > 0)
+	{
+		_last_recorded_snd_time = jiffies;
+	}
+	else if (jiffies - _last_recorded_snd_time > _have_to_send_data_within_this_timeperiod)
+	{
+		return -1;
 	}
 
 	return count;
@@ -599,7 +627,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			{
 				break;
 			}
-			else  // reduce the window size.
+			else  // reduce the window size a little.
 			{
 				// update the right boundary.
 				_sliding_window_right_boundary = ite;
@@ -616,6 +644,10 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		while (current_sliding_win_size < _advertised_window_size
 				&& _sliding_window_right_boundary != _ippkts_samples.end())
 		{
+//			ite = _sliding_window_right_boundary;
+//			--ite;
+//			uint32_t seq_next = _sliding_window_right_boundary->get_seq() + _sliding_window_right_boundary->get_tcp_content_len()
+//			if (ite->get_seq() != )
 			++_sliding_window_right_boundary;
 			current_sliding_win_size += ite->get_tot_len();
 			if (current_sliding_win_size > _advertised_window_size)
@@ -623,13 +655,6 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 				break;
 			}
 		}
-	}
-	else // reduce the sliding window size
-	{
-		int how_much_bytes_should_be_reduced;
-		how_much_bytes_should_be_reduced = current_sliding_win_size - _advertised_window_size;
-		// TODO. sorry i have to ignore this logic at current cos I'm so tried to code and it gonna be still okay
-		// without reducing sliding window size.
 	}
 }
 

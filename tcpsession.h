@@ -86,6 +86,7 @@ private:
 			FIN_WAIT_2, CLOSING, TIME_WAIT};
 	state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
+	uint32_t _expectec_next_sending_sequence;     ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
@@ -96,8 +97,9 @@ private:
 	uint64_t _last_recorded_recv_time;   ///< used for session timeout
 	int      _recv_time_out;             ///< in unit of jiffy. refer to class the_timer
 
-	uint64_t _last_recorded_snd_time;    ///< sending speed control
+	uint64_t _last_recorded_snd_time;    ///< sending speed control and detect disabled tcp session.
 	int      _snd_speed_control;         ///< in unit of jiffy.
+	int      _have_to_send_data_within_this_timeperiod;  ///< self-explanatory
 
 	uint64_t _my_fin_acked_time;         ///< don't wanna wait for fin from peer forever
 	int      _wait_for_fin_from_peer_time_out; ///< as the variable name suggests.
