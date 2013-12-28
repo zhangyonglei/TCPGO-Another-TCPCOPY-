@@ -90,9 +90,8 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	clean();
 }
 
-int session_manager::dispatch_ip_pkt(const char* ip_pkt)
+void session_manager::dispatch_ip_pkt(const char* ip_pkt)
 {
-	int ret;
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
@@ -112,17 +111,29 @@ int session_manager::dispatch_ip_pkt(const char* ip_pkt)
 	{
 		g_postoffice.register_callback(key, &ite->second);
 	}
-
-	ret = 0;
-
-	return ret;
 }
 
 void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 {
+	static uint64_t ip_count;
 	uint64_t key;
+	std::map<uint64_t, tcpsession>::iterator ite;
+	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
+
 	ip_packet_parser(ip_pkt);
 	key = mk_sess_key(iphdr->saddr, tcphdr->source);
+
+	tcpsession session(iphdr->saddr, tcphdr->source);
+	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
+	ite = ugly_pair.first;
+	ite->second.inject_a_realtime_ippkt((const char*) ip_pkt);
+	if (ugly_pair.second)
+	{
+		ugly_pair.first->second.get_ready();
+		g_postoffice.register_callback(key, &ite->second);
+	}
+
+	g_logger.printf("%ul real time ip packets have been injected.\n");
 }
 
 int session_manager::clean()
@@ -165,7 +176,7 @@ int session_manager::get_ready()
 		count++;
 		ite->second.get_ready();
 	}
-	g_logger.printf("%d sessions are ready.\n", count);
+	g_logger.printf("%d sessions are ready at current.\n", count);
 
 	return 0;
 }

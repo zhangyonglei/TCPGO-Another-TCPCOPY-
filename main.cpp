@@ -115,13 +115,13 @@ static void output_version()
 	cout << "Horoscope v0.1\n";
 	cout << "This tool is aimed to replay captured client's requests to server.\n";
 	cout << "Author: kamuszhou www.dogeye.net.\n";
-	cout << "Copyright by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
+	cout << "Copyrights Reserved by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
 }
 
 static void output_help()
 {
 	cout << "Usage: \n";
-	cout << "horos -f pcap_file_path -d destination_ip -p port -c concurrency\n";
+	cout << "horos [-f pcap_file_path] -d destination_ip -p port [-c concurrency]\n";
 }
 
 int run()

@@ -24,8 +24,14 @@ public:
 
 	/**
 	 * add a ip packet to this session as a sample.
+	 * used when ip packets are read from pcap file.
 	 */
 	void append_ip_sample(const char* ippkt);
+
+	/**
+	 * used when ip packets are read on the fly.
+	 */
+	void inject_a_realtime_ippkt(const char* ippkt);
 
 	/**
 	 * This function will also remove ack packets without playload.

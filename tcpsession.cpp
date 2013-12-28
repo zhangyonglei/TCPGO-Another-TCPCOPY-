@@ -72,6 +72,11 @@ void tcpsession::append_ip_sample(const char* ippkt)
 	_ippkts_samples.back().cp(ippkt);
 }
 
+void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
+{
+
+}
+
 int32_t tcpsession::check_samples_integrity()
 {
 	int32_t size_saved, size_now;
@@ -181,11 +186,19 @@ void tcpsession::get_ready()
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;
 	_expected_last_ack_seq_from_peer = 0;
+	_last_seq_beyond_fin_at_localhost_side = 0;
 	_advertised_window_size = 0;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
-	tmp_ite = _sliding_window_left_boundary;
-	++tmp_ite;
-	_sliding_window_right_boundary = tmp_ite;
+	if (!_ippkts_samples.empty())
+	{
+		tmp_ite = _sliding_window_left_boundary;
+		++tmp_ite;
+		_sliding_window_right_boundary = tmp_ite;
+	}
+	else
+	{
+		_sliding_window_right_boundary = _ippkts_samples.end();
+	}
 	_last_recorded_recv_time = g_timer.get_jiffies();
 	_last_recorded_snd_time = g_timer.get_jiffies();
 
@@ -223,7 +236,6 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			++ite)
 	{
 		pkt = &(*ite);
-		// pkt->rebuild("127.0.0.1", 80);  // failed to work.
 		pkt->rebuild(g_dst_addr.c_str(), g_dst_port, _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
 	}
@@ -238,7 +250,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 	else
 	{
-		if (jiffies - _last_recorded_recv_time > _recv_time_out )  // timeout
+		// timeout. No responses has received from peer for a long time.
+		if (jiffies - _last_recorded_recv_time > _recv_time_out )
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
@@ -408,6 +421,8 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 	{
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("move to state CLOSED\n");
+		kill_me();
+		return;
 	}
 	refresh_status(pkt);
 }
@@ -435,7 +450,7 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 		_current_state = tcpsession::TIME_WAIT;
 		g_logger.printf("move to state TIME_WAIT\n");
 	}
-	else if(!pkt->is_ack_set() && pkt->is_fin_set())
+	else if(pkt->is_fin_set())
 	{
 		_current_state = tcpsession::CLOSING;
 		g_logger.printf("move to state CLOSING\n");
@@ -454,6 +469,8 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 {
 	uint64_t now;
 	now = g_timer.get_jiffies();
+	// my impatience is limited. My FIN has been sent for a long time without your FIN as a response.
+	// I will commit a suicide.
 	if (now - _wait_for_fin_from_peer_time_out > _wait_for_fin_from_peer_time_out)
 	{
 		kill_me();
@@ -477,8 +494,8 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 {
 	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
 	{
-		_current_state = tcpsession::CLOSED;
-		g_logger.printf("move to state CLOSED\n");
+		_current_state = tcpsession::TIME_WAIT;
+		g_logger.printf("move to state TIME_WAIT\n");
 		_my_fin_acked_time = g_timer.get_jiffies();
 	}
 	refresh_status(pkt);
@@ -490,12 +507,6 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 
 void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
-	{
-		_current_state = tcpsession::CLOSED;
-		g_logger.printf("move to state CLOSED\n");
-	}
-
 	refresh_status(pkt);
 
 	create_an_ack_without_payload();

@@ -20,12 +20,11 @@ public:
 	virtual ~session_manager();
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
+	void inject_a_realtime_ippkt(const char* ip_pkt);
 	
 	int get_ready();
 
 	void erase_a_session(uint64_t key);
-
-	void inject_a_realtime_ippkt(const char* ip_pkt);
 
 private:
 	/**
@@ -36,7 +35,7 @@ private:
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.
 	 */
-	int dispatch_ip_pkt(const char* ip_pkt);
+	void dispatch_ip_pkt(const char* ip_pkt);
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
