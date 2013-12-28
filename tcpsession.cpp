@@ -678,24 +678,6 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
-		// the sliding window is closed, try to reopen it.
-//		if (current_sliding_win_size == 0)
-//		{
-//			assert(_sliding_window_left_boundary == _sliding_window_right_boundary);
-//			if (_ippkts_samples.size())  // get the chance to reopen it.
-//			{
-//				assert(_sliding_window_left_boundary == _ippkts_samples.begin());
-//				if (_expectec_next_sending_sequence == _ippkts_samples.begin()->get_seq())
-//				{
-//
-//				}
-//			}
-//		}
-//		else  // sliding window is open yet.
-//		{
-//
-//		}
-
 		// try to determine how far it can go left to increase sliding window.
 		std::list<ip_pkt>::iterator right_gap, ite_tmp;
 		right_gap = check_ippkts_continuity(_sliding_window_right_boundary, _ippkts_samples.end());
@@ -706,18 +688,18 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		}
 		// check if there is a gap between current sliding window's payload and the position
 		// that _sliding_window_right_boundary points.
-		if (_sliding_window_right_boundary != _ippkts_samples.end()
-				&& _sliding_window_left_boundary != _sliding_window_right_boundary)
-		{
-			ite_tmp = _sliding_window_right_boundary;
-			--ite_tmp;
-			// if the gap exist
-			if (ite_tmp == check_ippkts_continuity(ite_tmp, _sliding_window_right_boundary))
-			{
-				// then, keep the _sliding_window_right_boundary.
-				right_gap = _sliding_window_right_boundary;
-			}
-		}
+//		if (_sliding_window_right_boundary != _ippkts_samples.end()
+//				&& _sliding_window_left_boundary != _sliding_window_right_boundary)
+//		{
+//			ite_tmp = _sliding_window_right_boundary;
+//			--ite_tmp;
+//			// if the gap exist
+//			if (ite_tmp == check_ippkts_continuity(ite_tmp, _sliding_window_right_boundary))
+//			{
+//				// then, keep the _sliding_window_right_boundary.
+//				right_gap = _sliding_window_right_boundary;
+//			}
+//		}
 
 		while (current_sliding_win_size < _advertised_window_size
 				&& _sliding_window_right_boundary != right_gap)
