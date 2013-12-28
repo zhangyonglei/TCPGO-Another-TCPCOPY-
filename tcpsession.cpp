@@ -253,7 +253,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	// count the _expectec_next_sending_sequence.
 	if (0 != count)
 	{
-		ip_pkt* tail_ip_pkt;
+		const ip_pkt* tail_ip_pkt;
 		tail_ip_pkt = pkts[count-1];
 		_expectec_next_sending_sequence = tail_ip_pkt->get_seq() + tail_ip_pkt->get_tcp_content_len();
 		if (tail_ip_pkt->is_syn_set())
@@ -548,6 +548,43 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
+std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end)
+{
+	uint32_t seq, expected_next_seq;
+	int tcp_content_len;
+	std::list<ip_pkt>::iterator ite, ite_pre;
+
+	ite = begin;
+	ite_pre = ite;
+	if (begin == end)
+	{
+		return ite_pre;
+	}
+
+	seq = ite->get_seq();
+	expected_next_seq = seq + ite->get_tcp_content_len();
+	if (ite->is_syn_set())
+	{
+		expected_next_seq++;
+	}
+	++ite;
+
+	for (; ite != end; ++ite)
+	{
+		seq = ite->get_seq();
+		if(expected_next_seq != seq)
+		{
+			break;
+		}
+		tcp_content_len = ite->get_tcp_content_len();
+		assert(tcp_content_len >= 0);
+		expected_next_seq += tcp_content_len;
+		ite_pre;
+	}
+
+	return ite_pre;
+}
+
 void tcpsession::refresh_status(const ip_pkt* pkt)
 {
 	uint32_t seq;
@@ -641,13 +678,50 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
-		while (current_sliding_win_size < _advertised_window_size
-				&& _sliding_window_right_boundary != _ippkts_samples.end())
+		// the sliding window is closed, try to reopen it.
+//		if (current_sliding_win_size == 0)
+//		{
+//			assert(_sliding_window_left_boundary == _sliding_window_right_boundary);
+//			if (_ippkts_samples.size())  // get the chance to reopen it.
+//			{
+//				assert(_sliding_window_left_boundary == _ippkts_samples.begin());
+//				if (_expectec_next_sending_sequence == _ippkts_samples.begin()->get_seq())
+//				{
+//
+//				}
+//			}
+//		}
+//		else  // sliding window is open yet.
+//		{
+//
+//		}
+
+		// try to determine how far it can go left to increase sliding window.
+		std::list<ip_pkt>::iterator right_gap, ite_tmp;
+		right_gap = check_ippkts_continuity(_sliding_window_right_boundary, _ippkts_samples.end());
+		if (right_gap != _ippkts_samples.end())
 		{
-//			ite = _sliding_window_right_boundary;
-//			--ite;
-//			uint32_t seq_next = _sliding_window_right_boundary->get_seq() + _sliding_window_right_boundary->get_tcp_content_len()
-//			if (ite->get_seq() != )
+			// increase it because of closed interval (excluding right boundary)
+			++right_gap;
+		}
+		// check if there is a gap between current sliding window's payload and the position
+		// that _sliding_window_right_boundary points.
+		if (_sliding_window_right_boundary != _ippkts_samples.end()
+				&& _sliding_window_left_boundary != _sliding_window_right_boundary)
+		{
+			ite_tmp = _sliding_window_right_boundary;
+			--ite_tmp;
+			// if the gap exist
+			if (ite_tmp == check_ippkts_continuity(ite_tmp, _sliding_window_right_boundary))
+			{
+				// then, keep the _sliding_window_right_boundary.
+				right_gap = _sliding_window_right_boundary;
+			}
+		}
+
+		while (current_sliding_win_size < _advertised_window_size
+				&& _sliding_window_right_boundary != right_gap)
+		{
 			++_sliding_window_right_boundary;
 			current_sliding_win_size += ite->get_tot_len();
 			if (current_sliding_win_size > _advertised_window_size)

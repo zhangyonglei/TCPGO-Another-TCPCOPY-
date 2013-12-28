@@ -67,6 +67,11 @@ private:
 	void time_wait_state_handler(const ip_pkt* pkt);
 
 private:
+	/**
+	 * return the leftmost ip packet that is in a continuous sequence.
+	 */
+	std::list<ip_pkt>::iterator check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end);
+
 	void refresh_status(const ip_pkt* pkt);
 
 	void kill_me();
