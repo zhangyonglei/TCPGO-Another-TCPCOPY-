@@ -24,7 +24,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
 
-	_recv_time_out = 4 * HZ;
+	_recv_time_out = 2 * HZ;
 	_snd_speed_control = HZ / 5;
 	_wait_for_fin_from_peer_time_out = 1 * HZ;
 
@@ -280,6 +280,12 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 
 	_last_recorded_snd_time = jiffies;
+
+	if (_current_state == tcpsession::TIME_WAIT)
+	{
+		// Give only one chance for peer's FIN to be acked.
+		kill_me();
+	}
 
 	return count;
 }
