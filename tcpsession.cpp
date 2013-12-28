@@ -579,7 +579,7 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 		tcp_content_len = ite->get_tcp_content_len();
 		assert(tcp_content_len >= 0);
 		expected_next_seq += tcp_content_len;
-		ite_pre;
+		ite_pre = ite;
 	}
 
 	return ite_pre;
