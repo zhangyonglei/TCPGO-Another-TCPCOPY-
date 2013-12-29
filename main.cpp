@@ -33,6 +33,7 @@ string   g_pcap_file_path;
 string   g_dst_addr;
 uint16_t g_dst_port;
 int g_concurrency_limit = 20;  // default to 20 connections run concurrently.
+bool g_generate_random_port = true; // for debug's convenience.
 
 static void output_help();
 static void output_version();
@@ -47,13 +48,14 @@ int main(int argc, char **argv)
 			{"dst-addr", required_argument, NULL, 'd' },
 			{"dst-port", required_argument, NULL, 'p'},
 			{"concurrency-limit", required_argument, NULL, 'c'},
+			{"random-port", required_argument, NULL, 'r'},
 			{"help", no_argument, NULL, 'h'},
 			{"version", no_argument, NULL,  'v' },
 			{0, 0, 0, 0}
 	};
 
 	while (true) {
-		ch = getopt_long(argc, argv, "f:d:p:c:hv", long_options, &option_index);
+		ch = getopt_long(argc, argv, "f:d:p:c:r:hv", long_options, &option_index);
 		if (ch == -1)
 			break;
 
@@ -72,6 +74,10 @@ int main(int argc, char **argv)
 
 		case 'c':
 			g_concurrency_limit = strtol(optarg, NULL, 10);
+			break;
+
+		case 'r':
+			g_generate_random_port = strtol(optarg, NULL, 10);
 			break;
 
 		case 'h':

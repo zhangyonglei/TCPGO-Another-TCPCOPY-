@@ -41,6 +41,8 @@ const char* strip_l2head(pcap_t *pcap, const char *frame);
  */
 int detect_l2head_len(const char *frame);
 
+unsigned short generate_the_port(unsigned short ori_src_port);
+
 /* ip_pack is the starting address of a IP package. */
 #define ip_packet_parser(ip_pack)        \
         const struct iphdr *iphdr;   \

@@ -7,6 +7,8 @@
 
 #include "misc.h"
 
+extern bool g_generate_random_port;
+
 struct eth_hdr
 {
 	uint8_t   _dest[6];
@@ -164,4 +166,18 @@ int detect_l2head_len(const char *frame)
 			return offsets[i];
 	}
 	return -1;
+}
+
+unsigned short generate_the_port(unsigned short ori_src_port)
+{
+	static unsigned short rand = random();
+
+	if (g_generate_random_port)
+	{
+		return ((ori_src_port + rand) % 30000) + 4096;
+	}
+	else
+	{
+		return ori_src_port;
+	}
 }

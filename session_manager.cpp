@@ -27,9 +27,6 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	struct bpf_program fp;
 	struct pcap_pkthdr pkt_hdr;
 	struct timeval ts;
-	uint16_t random;
-
-	random = rand();
 
 	if ((pcap = pcap_open_offline(path.c_str(), ebuf)) == NULL)
 	{
@@ -74,7 +71,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 					uint16_t ori_src_port;
 					struct ip_pkt pkt(ip_pkt);
 					ori_src_port = pkt.get_src_port();
-					new_src_port = ((ori_src_port + random) % 30000) + 4096;
+					new_src_port = generate_the_port(ori_src_port);
 					pkt.modify_src_port(new_src_port);
 					dispatch_ip_pkt(pkt.get_starting_addr());
 				}

@@ -34,6 +34,9 @@ public:
 	virtual ~ip_pkt();
 
 public:
+	/**
+	 * @param src_port in host byte order.
+	 */
 	void  modify_src_port(uint16_t src_port);
 
 	/**
