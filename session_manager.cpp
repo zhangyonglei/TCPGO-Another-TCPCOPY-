@@ -132,8 +132,6 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 		ugly_pair.first->second.get_ready();
 		g_postoffice.register_callback(key, &ite->second);
 	}
-
-	g_logger.printf("%ul real time ip packets have been injected.\n");
 }
 
 int session_manager::clean()

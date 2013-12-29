@@ -27,7 +27,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_recv_time_out = 3 * HZ;
 	_have_to_send_data_within_this_timeperiod = 3 * HZ;
 	_snd_speed_control = HZ / 5;
-	_wait_for_fin_from_peer_time_out = 1 * HZ;
+	_wait_for_fin_from_peer_time_out = 4 * HZ;
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
 	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
@@ -75,12 +75,9 @@ void tcpsession::append_ip_sample(const char* ippkt)
 
 void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
-	if (_current_state == tcpsession::CLOSED)
-	{
-		_ippkts_samples.push_back(ippkt);
-		_ippkts_samples.sort();
-		_ippkts_samples.unique();
-	}
+	_ippkts_samples.push_back(ippkt);
+	_ippkts_samples.sort();
+	_ippkts_samples.unique();
 }
 
 int32_t tcpsession::check_samples_integrity()
@@ -190,7 +187,6 @@ void tcpsession::get_ready()
 	_dead = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
-	_expectec_next_sending_sequence = 0;
 	_latest_acked_sequence_by_peer = 0;
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
@@ -250,21 +246,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 
 	count = pkts.size();
 
-	// count the _expectec_next_sending_sequence.
-	if (0 != count)
-	{
-		const ip_pkt* tail_ip_pkt;
-		tail_ip_pkt = pkts[count-1];
-		_expectec_next_sending_sequence = tail_ip_pkt->get_seq() + tail_ip_pkt->get_tcp_content_len();
-		if (tail_ip_pkt->is_syn_set())
-		{
-			_expectec_next_sending_sequence++;
-		}
-	}
-
 	if (0 != count && pkts[0]->is_syn_set())
 	{
-		assert(1 == count);
 		_current_state = tcpsession::SYN_SENT;
 		g_logger.printf("move to state SYN_SENT\n");
 		_last_recorded_recv_time = jiffies;
@@ -678,7 +661,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
-		// try to determine how far it can go left to increase sliding window.
+		// try to determine how far it can go to increase sliding window.
 		std::list<ip_pkt>::iterator right_gap, ite_tmp;
 		right_gap = check_ippkts_continuity(_sliding_window_right_boundary, _ippkts_samples.end());
 		if (right_gap != _ippkts_samples.end())
@@ -686,6 +669,8 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			// increase it because of closed interval (excluding right boundary)
 			++right_gap;
 		}
+
+		// too complex to be understood. so i comment it out~
 		// check if there is a gap between current sliding window's payload and the position
 		// that _sliding_window_right_boundary points.
 //		if (_sliding_window_right_boundary != _ippkts_samples.end()

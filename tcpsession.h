@@ -91,7 +91,6 @@ private:
 			FIN_WAIT_2, CLOSING, TIME_WAIT};
 	state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
-	uint32_t _expectec_next_sending_sequence;     ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
