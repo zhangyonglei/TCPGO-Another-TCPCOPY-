@@ -690,29 +690,22 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	if (current_sliding_win_size < _advertised_window_size)
 	{
 		// try to determine how far it can go to increase sliding window.
-		std::list<ip_pkt>::iterator right_gap, ite_tmp;
-		right_gap = check_ippkts_continuity(_sliding_window_right_boundary, _ippkts_samples.end());
-		if (right_gap != _ippkts_samples.end())
+		std::list<ip_pkt>::iterator right_gap, ite_left;
+		if (_sliding_window_right_boundary != _ippkts_samples.end()) // got the chance to expand the window
 		{
-			// increase it because of closed interval (excluding right boundary)
-			++right_gap;
+			ite_left = _sliding_window_right_boundary;
+			--ite_left;
+			right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
+			if (right_gap != _ippkts_samples.end())
+			{
+				// increase it because of closed interval (excluding right boundary)
+				++right_gap;
+			}
 		}
-
-		// too complex to be understood. so i comment it out~
-		// check if there is a gap between current sliding window's payload and the position
-		// that _sliding_window_right_boundary points.
-//		if (_sliding_window_right_boundary != _ippkts_samples.end()
-//				&& _sliding_window_left_boundary != _sliding_window_right_boundary)
-//		{
-//			ite_tmp = _sliding_window_right_boundary;
-//			--ite_tmp;
-//			// if the gap exist
-//			if (ite_tmp == check_ippkts_continuity(ite_tmp, _sliding_window_right_boundary))
-//			{
-//				// then, keep the _sliding_window_right_boundary.
-//				right_gap = _sliding_window_right_boundary;
-//			}
-//		}
+		else // cannot expand the window size by any means.
+		{
+			right_gap = _sliding_window_right_boundary;
+		}
 
 		while (current_sliding_win_size < _advertised_window_size
 				&& _sliding_window_right_boundary != right_gap)

@@ -68,7 +68,9 @@ private:
 
 private:
 	/**
-	 * return the leftmost ip packet that is in a continuous sequence.
+	 * @param begin open interval
+	 * @param end closed interval
+	 * @return a iterator that points to the leftmost ip packet that is in a continuous sequence.
 	 */
 	std::list<ip_pkt>::iterator check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end);
 

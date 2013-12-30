@@ -57,13 +57,13 @@ test/test.o: test/test.cpp public/misc.h public/horos.h $(libname)
 	g++ -c -o $@ test/test.cpp  
 	
 $(bins):
-	mkdir $@
+	-mkdir $@
 	 
 $(deps):
-	mkdir $@
+	-mkdir $@
  
 $(objs):
-	mkdir $@
+	-mkdir $@
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include $(dependencies)
