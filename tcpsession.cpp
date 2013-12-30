@@ -59,6 +59,16 @@ tcpsession::~tcpsession()
 {
 }
 
+void tcpsession::kill_me()
+{
+	_dead = true;
+}
+
+bool tcpsession::still_alive()
+{
+	return !_dead;
+}
+
 void tcpsession::append_ip_sample(const char* ippkt)
 {
 	struct iphdr* iphdr; 
@@ -693,14 +703,21 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		std::list<ip_pkt>::iterator right_gap, ite_left;
 		if (_sliding_window_right_boundary != _ippkts_samples.end()) // got the chance to expand the window
 		{
-			ite_left = _sliding_window_right_boundary;
-			--ite_left;
-			right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
-			if (right_gap != _ippkts_samples.end())
+			if (_sliding_window_right_boundary != _sliding_window_right_boundary)
 			{
-				// increase it because of closed interval (excluding right boundary)
-				++right_gap;
+				ite_left = _sliding_window_right_boundary;
+				--ite_left;
+				right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
 			}
+			else
+			{
+				ite_left = _sliding_window_left_boundary;
+				right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
+			}
+
+			assert(right_gap != _ippkts_samples.end());
+			// increase it because of closed interval (excluding right boundary)
+			++right_gap;
 		}
 		else // cannot expand the window size by any means.
 		{
@@ -720,12 +737,3 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	}
 }
 
-void tcpsession::kill_me()
-{
-	_dead = true;
-}
-
-bool tcpsession::still_alive()
-{
-	return !_dead;
-}
