@@ -221,8 +221,7 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		assert(iphdr->version == 4);
 		iphdr_len = iphdr->ihl << 2;
 		sum = iphdr->check;
-		iphdr->check = 0;
-		checksum = calc_ip_checksum(iphdr);
+		checksum = compute_ip_checksum(iphdr);
 		iphdr->check = sum;
 		if (checksum != sum)
 		{
@@ -236,8 +235,7 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		}
 		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
 		sum = tcphdr->check;
-		tcphdr->check = 0;
-		checksum = calc_tcp_checksum(iphdr, tcphdr);
+		checksum = compute_tcp_checksum(iphdr, tcphdr);
 		tcphdr->check = sum;
 		if (checksum != sum)
 		{

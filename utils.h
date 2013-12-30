@@ -21,13 +21,13 @@
  * calculate the IPv4 header checksum.
  * note it's the caller's responsibility to set IP Header Checksum((char*)iphdr[10,11]) to zero.
  */
-uint16_t calc_ip_checksum(const struct iphdr *iphdr);
+uint16_t compute_ip_checksum(const struct iphdr *iphdr);
 
 /**
  * calculate the checksum of tcp over IPv4.
  * note it's the caller's responsibility to set TCP Header Checksum((char*)tcphdr[16, 17] to zero.
  */
-uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr);
+uint16_t compute_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr);
 
 /**
  *@param pcap The pcap handler.

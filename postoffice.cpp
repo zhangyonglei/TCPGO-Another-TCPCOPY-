@@ -147,8 +147,6 @@ void postoffice::pollin_handler(int fd)
 		// ignore the un-expected packages.
 		if (ip_tot_len > ret)
 		{
-			g_logger.printf("Ignore a truncated packet.\n");
-			cerr  << "Ignore a truncated packet.\n";
 			continue;
 		}
 

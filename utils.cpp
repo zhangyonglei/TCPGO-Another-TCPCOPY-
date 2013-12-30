@@ -16,15 +16,17 @@ struct eth_hdr
 	uint16_t  _type;
 };
 
-uint16_t calc_ip_checksum(const struct iphdr* iphdr)
+uint16_t compute_ip_checksum(const struct iphdr* iphdr)
 {
-	uint32_t sum = 0;
+	int hdrlen;
+	uint32_t sum = 0, sum_saved;
 	const char *mem = (const char*)iphdr;
 
-	assert(0 == mem[10] && 0 == mem[11]);
 	assert(NULL!=iphdr);
+	sum_saved = iphdr->check;
+	*(unsigned short*)(&iphdr->check) = 0;
 
-	int hdrlen = (iphdr->ihl << 2);
+	hdrlen = (iphdr->ihl << 2);
 
 	while(hdrlen > 1){
 		sum += *(uint16_t*)mem;
@@ -43,10 +45,11 @@ uint16_t calc_ip_checksum(const struct iphdr* iphdr)
 	while(sum>>16)
 		sum = (sum & 0xFFFF) + (sum >> 16);
 
+	*(unsigned short*)&(iphdr->check) = sum_saved;
 	return ~sum;
 }
 
-uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr)
+uint16_t compute_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr)
 {
 	int  i, need_pad, loop_size;
 	int  tot_tcpsgmt_len;
@@ -55,14 +58,15 @@ uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphd
 	uint16_t  word16;
 	uint16_t  buff[12];
 	uint16_t* ptr2buff;
-	uint32_t  sum;
+	uint32_t  sum, sum_saved;
 	const uint16_t* tcpmem;
 
 	const uint8_t* src_addr;
 	const uint8_t* dst_addr;
 
 	tcpmem = (uint16_t*)tcphdr;
-	assert(0 == tcpmem[8]);  // the caller has the responsibility to clear the tcp checksum.
+	sum_saved = tcphdr->check;
+	*(unsigned short*)(&tcphdr->check) = 0;
 
 	tot_ipsegmt_len = ntohs(iphdr->tot_len);
 	tot_tcpsgmt_len = tot_ipsegmt_len - ((iphdr->ihl) << 2);
@@ -102,6 +106,8 @@ uint16_t calc_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphd
 		sum = (sum & 0xFFFF) + (sum >> 16);
 
 	sum = ~sum;
+
+	*(unsigned short*)&(tcphdr->check) = sum_saved;
 
 	return ((unsigned short) sum);
 }
@@ -160,8 +166,7 @@ int detect_l2head_len(const char *frame)
 		len = iphdr->ihl << 2;
 		memcpy(buff, iphdr, len);
 		sum = *(uint16_t*)(buff+10);
-		buff[10] = buff[11] = 0;
-		checksum = calc_ip_checksum((struct iphdr*)buff);
+		checksum = compute_ip_checksum((struct iphdr*)buff);
 		if (checksum == sum)
 			return offsets[i];
 	}
