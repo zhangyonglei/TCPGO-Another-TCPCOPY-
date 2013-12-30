@@ -126,8 +126,8 @@ void ip_pkt::warm_up()
 
 	_tcphdr = (struct tcphdr*)tcphdr;
 	_tcphdr_len = tcphdr_len;
-	_tcp_content = (char*)tcp_content;
-	_tcp_content_len = tcp_content_len;
+	_tcp_payload = (char*)tcp_payload;
+	_tcp_payload_len = tcp_payload_len;
 
 	_seq = ntohl(tcphdr->seq);
 	_ack_seq = ntohl(tcphdr->ack_seq);

@@ -47,19 +47,19 @@ unsigned short generate_the_port(unsigned short ori_src_port);
 #define ip_packet_parser(ip_pack)        \
         const struct iphdr *iphdr;   \
 		const struct tcphdr *tcphdr;                                     \
-		const char *tcp_content;                               \
-		int32_t ip_tot_len, iphdr_len, ip_content_len, tcphdr_len, tcp_content_len;     \
+		const char *tcp_payload;                               \
+		int32_t ip_tot_len, iphdr_len, ip_payload_len, tcphdr_len, tcp_payload_len;     \
 		\
 		iphdr = (const struct iphdr*)(ip_pack);                                   \
 		ip_tot_len = ntohs(iphdr->tot_len);                                 \
 		iphdr_len = iphdr->ihl << 2;                                          \
-		ip_content_len = ip_tot_len - iphdr_len;                \
+		ip_payload_len = ip_tot_len - iphdr_len;                \
 		tcphdr = (const struct tcphdr*)((const char*)iphdr + iphdr_len);   \
 		tcphdr_len = tcphdr->doff << 2;                                                            \
-		tcp_content = (const char*)tcphdr + tcphdr_len;                \
-		tcp_content_len = ip_content_len - tcphdr_len;                       \
-		tcp_content_len = tcp_content_len; tcphdr_len = tcphdr_len;     \
-		ip_tot_len = ip_tot_len; iphdr_len = iphdr_len; tcp_content = tcp_content;/* suppress the warning: set but not used */
+		tcp_payload = (const char*)tcphdr + tcphdr_len;                \
+		tcp_payload_len = ip_payload_len - tcphdr_len;                       \
+		tcp_payload_len = tcp_payload_len; tcphdr_len = tcphdr_len;     \
+		ip_tot_len = ip_tot_len; iphdr_len = iphdr_len; tcp_payload = tcp_payload;/* suppress the warning: set but not used */
 
 #define ip_packet_clone(ip_pack)  ({   \
 		int  tot_len;                                        \

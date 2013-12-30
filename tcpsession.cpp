@@ -77,7 +77,7 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
 	std::list<ip_pkt>::iterator ite;
 	ip_pkt pkt(ippkt);
-	if (pkt.get_tcp_content_len() == 0 && !pkt.is_fin_set() && !pkt.is_syn_set())
+	if (pkt.get_tcp_payload_len() == 0 && !pkt.is_fin_set() && !pkt.is_syn_set())
 	{
 		return;
 	}
@@ -108,7 +108,7 @@ int32_t tcpsession::check_samples_integrity()
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
 		int tot_len = ite->get_tot_len();
-		int tcp_content_len = ite->get_tcp_content_len();
+		int tcp_content_len = ite->get_tcp_payload_len();
 		int iphdr_len = ite->get_iphdr_len();
 		int tcphdr_len = ite->get_tcphdr_len();
 		bool fin_set = ite->is_fin_set();
@@ -174,7 +174,7 @@ int32_t tcpsession::check_samples_integrity()
 				goto _err;
 			}
 		}
-		tcp_content_len = ite->get_tcp_content_len();
+		tcp_content_len = ite->get_tcp_payload_len();
 		if (tcp_content_len > 0)
 		{
 			expected_next_seq += tcp_content_len;
@@ -292,15 +292,15 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		{
 			_current_state = tcpsession::FIN_WAIT_1;
 			g_logger.printf("session: %s.%hu move to state FIN_WAIT_1\n", _client_src_ip_str.c_str(), _client_src_port);
-			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_payload_len();
 		}
 		else if (_current_state == tcpsession::CLOSE_WAIT) // passive close
 		{
 			_current_state = tcpsession::LAST_ACK;
 			g_logger.printf("session: %s.%hu move to state LAST_ACK\n", _client_src_ip_str.c_str(), _client_src_port);
-			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_payload_len();
 		}
-		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_content_len();
+		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_payload_len();
 	}
 
 	if (_current_state == tcpsession::TIME_WAIT)
@@ -527,7 +527,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 
 	refresh_status(pkt);
 
-	if (pkt->get_tcp_content_len())
+	if (pkt->get_tcp_payload_len())
 	{
 		create_an_ack_without_payload();
 		_sliding_window_left_boundary = _ippkts_samples.begin();
@@ -573,7 +573,7 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 	}
 
 	seq = ite->get_seq();
-	expected_next_seq = seq + ite->get_tcp_content_len();
+	expected_next_seq = seq + ite->get_tcp_payload_len();
 	if (ite->is_syn_set())
 	{
 		expected_next_seq++;
@@ -587,7 +587,7 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 		{
 			break;
 		}
-		tcp_content_len = ite->get_tcp_content_len();
+		tcp_content_len = ite->get_tcp_payload_len();
 		assert(tcp_content_len >= 0);
 		expected_next_seq += tcp_content_len;
 		ite_pre = ite;
@@ -618,7 +618,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	}
 	else
 	{
-		uint32_t next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_content_len();
+		uint32_t next_sequence_from_peer = pkt->get_seq() + pkt->get_tcp_payload_len();
 		if (seq == _expected_next_sequence_from_peer)
 		{
 			_expected_next_sequence_from_peer = next_sequence_from_peer;

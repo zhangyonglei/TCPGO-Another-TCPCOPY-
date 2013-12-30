@@ -82,9 +82,9 @@ public:
 		return _tcphdr_len;
 	}
 
-	int get_tcp_content_len()const
+	int get_tcp_payload_len()const
 	{
-		return _tcp_content_len;
+		return _tcp_payload_len;
 	}
 
 	uint32_t get_seq()const
@@ -168,8 +168,8 @@ private:
 
 	struct tcphdr *_tcphdr;      ///< pointer to the tcp header.
 	int  _tcphdr_len;             ///< the TCP header length.
-	char *_tcp_content; ///< pointer to the tcp content.
-	int _tcp_content_len;        ///< the length of the tcp content AKA playload.
+	char *_tcp_payload; ///< pointer to the tcp payload.
+	int _tcp_payload_len;        ///< the length of the tcp playload.
 
 	uint32_t _seq;         ///< tcp's sequence number. In host byte order.
 	uint32_t _ack_seq;     ///< tcp's acknoledgement sequence. In host byte order.
