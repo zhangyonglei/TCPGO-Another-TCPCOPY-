@@ -114,10 +114,18 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 {
 	static uint64_t ip_count;
 	uint64_t key;
+	uint16_t src_port;  // host byte order
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
 
 	ip_packet_parser(ip_pkt);
+	src_port = ntohs(tcphdr->source);
+	// the following logic ignore product server's outgoing traffic
+	// if the user by mistake did this: tcpdump -i any src 80 -s 0 -w - | netcat xxx.xxx.xxx.xxx 1993
+	if (src_port < 1024)
+	{
+		return;
+	}
 	key = mk_sess_key(iphdr->saddr, tcphdr->source);
 
 	tcpsession session(iphdr->saddr, tcphdr->source);

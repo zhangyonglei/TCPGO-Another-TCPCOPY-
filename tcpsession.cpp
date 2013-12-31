@@ -86,8 +86,8 @@ void tcpsession::append_ip_sample(const char* ippkt)
 void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
 	std::list<ip_pkt>::iterator ite;
-	ip_pkt pkt(ippkt);
-	if (pkt.get_tcp_payload_len() == 0 && !pkt.is_fin_set() && !pkt.is_syn_set())
+	ip_packet_parser(ippkt);
+	if (tcp_payload_len == 0 && !tcphdr->fin && !tcphdr->syn)
 	{
 		return;
 	}
