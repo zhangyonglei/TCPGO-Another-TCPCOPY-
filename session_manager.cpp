@@ -36,7 +36,9 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 
 	if (!filter.empty())
 	{
-		if (pcap_compile(pcap, &fp, filter.c_str(), 0, 0) == -1)
+		// some old version libpcap library declares the third parameter of pcap_compile as type of char*
+		// rather than const char*. To pass the compiling on this case, a cast has to be made.
+		if (pcap_compile(pcap, &fp, (char*)filter.c_str(), 0, 0) == -1)
 		{
 			cerr << pcap_geterr(pcap) << endl;
 			return -1;
