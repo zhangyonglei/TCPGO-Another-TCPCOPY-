@@ -6,6 +6,7 @@ bins := bins/
 objs := objs/
 deps := deps/
 projname := $(bins)horos
+projname_alias := $(bins)tcpgo
 libstem := horos
 test := $(bins)test
 lib_linkname := $(bins)lib$(libstem).so
@@ -32,10 +33,13 @@ vpath %.h . $(public_dirs)
 
 .PHONY : clean install dummy
 
-all : $(projname) $(libname) $(test) 
+all : $(projname) $(projname_alias) $(libname) $(test) 
 
 $(projname) : $(bins) $(deps) $(objs) $(objects) 
 	g++ $(LINKFLAGS) -o $@ $(objects)
+
+$(projname_alias) : $(projname)
+	-ln $(projname) $(projname_alias)
 	
 $(libname) : $(objects)
 	g++ $(LINKFLAGS4LIB) -o $@ $^	
