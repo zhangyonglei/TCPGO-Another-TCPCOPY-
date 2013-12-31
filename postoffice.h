@@ -1,6 +1,6 @@
 /*********************************************
  * sender.h
- * Author: kamuszhou@tencent.com, 16236914@qq.com
+ * Author: kamuszhou@tencent.com, kamuszhou@qq.com
  * website: www.dogeye.net
  * Created on: 11 Dec, 2013
  ********************************************/
