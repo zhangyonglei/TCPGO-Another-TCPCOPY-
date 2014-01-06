@@ -612,6 +612,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	uint32_t ack_seq;
 	uint32_t ack_seq_tmp;
 	uint16_t win_size_saved;
+	int distance;
 
 	std::list<ip_pkt>::iterator ite;
 
@@ -695,7 +696,8 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		ippkt_count_walked_through++;
 		++ite;
 	}
-	std::cout << ippkt_count_walked_through << " packets are in the sliding window.\n";
+	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
+	std::cout << distance << " packets are in the sliding window.\n";
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
@@ -734,6 +736,10 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 				break;
 			}
 		}
+
+		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
+		std::cout << "sliding window has been expanded to " << distance << " packets.\n";
+		std::cout << _ippkts_samples.size() << " packets are in the _ippkts_samples.\n";
 	}
 }
 
