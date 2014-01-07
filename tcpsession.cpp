@@ -109,7 +109,7 @@ int32_t tcpsession::check_samples_integrity()
 	int32_t i;   // for the convenience of debug.
 	uint32_t seq;
 	uint32_t expected_next_seq;
-	int32_t tcp_content_len;
+	int32_t tcp_payload_len;
 
 	i = 0;
 	std::list<ip_pkt>::iterator ite;
@@ -118,7 +118,6 @@ int32_t tcpsession::check_samples_integrity()
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
 		int tot_len = ite->get_tot_len();
-		int tcp_content_len = ite->get_tcp_payload_len();
 		int iphdr_len = ite->get_iphdr_len();
 		int tcphdr_len = ite->get_tcphdr_len();
 		bool fin_set = ite->is_fin_set();
@@ -126,13 +125,15 @@ int32_t tcpsession::check_samples_integrity()
 		bool sin_set = ite->is_syn_set();
 		bool rst_set = ite->is_rst_set();
 
+		tcp_payload_len = ite->get_tcp_payload_len();
+
 		// remove usefuless samples
-		if (0 == tcp_content_len && !fin_set && !rst_set && ack_set)
+		if (0 == tcp_payload_len && !fin_set && !rst_set && ack_set)
 		{
 			_ippkts_samples.erase(ite++);
 		}
 		// remove  corrupted sample, this case occurs rarely.
-		else if (tot_len != iphdr_len + tcphdr_len + tcp_content_len)
+		else if (tot_len != iphdr_len + tcphdr_len + tcp_payload_len)
 		{
 			std::cerr << "detected corrupted ip packet." << ite->get_src_addr() << " : " << ite->get_src_port()
 							<< " --> " <<ite->get_dst_addr() << " : " << ite->get_dst_port() << std::endl;
@@ -184,10 +185,10 @@ int32_t tcpsession::check_samples_integrity()
 				goto _err;
 			}
 		}
-		tcp_content_len = ite->get_tcp_payload_len();
-		if (tcp_content_len > 0)
+		tcp_payload_len = ite->get_tcp_payload_len();
+		if (tcp_payload_len > 0)
 		{
-			expected_next_seq += tcp_content_len;
+			expected_next_seq += tcp_payload_len;
 		}
 
 		if(ite->is_fin_set() || ite->is_rst_set())
@@ -572,7 +573,7 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end)
 {
 	uint32_t seq, expected_next_seq;
-	int tcp_content_len;
+	int tcp_payload_len;
 	std::list<ip_pkt>::iterator ite, ite_pre;
 
 	ite = begin;
@@ -597,9 +598,9 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 		{
 			break;
 		}
-		tcp_content_len = ite->get_tcp_payload_len();
-		assert(tcp_content_len >= 0);
-		expected_next_seq += tcp_content_len;
+		tcp_payload_len = ite->get_tcp_payload_len();
+		assert(tcp_payload_len >= 0);
+		expected_next_seq += tcp_payload_len;
 		ite_pre = ite;
 	}
 
