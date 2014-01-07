@@ -26,7 +26,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 
 	_recv_time_out = 3 * HZ;
 	_have_to_send_data_within_this_timeperiod = 3 * HZ;
-	_snd_speed_control = HZ / 5;
+	_snd_speed_control = HZ / 4;
 	_wait_for_fin_from_peer_time_out = 4 * HZ;
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
@@ -209,6 +209,7 @@ void tcpsession::get_ready()
 	std::list<ip_pkt>::iterator ite, tmp_ite;
 
 	_dead = false;
+	_enable_active_close = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;
@@ -267,12 +268,26 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			++ite)
 	{
 		pkt = &(*ite);
+		if (pkt->is_fin_set())  // FIN packet
+		{
+			if (_enable_active_close)
+			{
+				fin_has_been_sent = true;
+			}
+			else   // passive close
+			{
+				if (_current_state != ESTABLISHED)
+				{
+					fin_has_been_sent = true;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
 		pkt->rebuild(g_dst_addr.c_str(), g_dst_port, _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
-		if (pkt->is_fin_set())
-		{
-			fin_has_been_sent = true;
-		}
 	}
 
 	count = pkts.size();
@@ -468,7 +483,10 @@ void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 
 void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	uint32_t ack_seq;
+
+	ack_seq = pkt->get_ack_seq();
+	if (seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("session %s.%hu move to state CLOSED\n", _client_src_ip_str.c_str(), _client_src_port);
@@ -481,7 +499,10 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 {
 	bool my_fin_has_been_acked;
-	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	uint32_t ack_seq;
+
+	ack_seq = pkt->get_ack_seq();
+	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		my_fin_has_been_acked = true;
 		_my_fin_acked_time = g_timer.get_jiffies();
@@ -548,7 +569,10 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 
 void tcpsession::closing_state_handler(const ip_pkt* pkt)
 {
-	if (pkt->is_ack_set() && pkt->get_ack_seq() == _expected_last_ack_seq_from_peer)
+	uint32_t ack_seq;
+
+	ack_seq = pkt->get_ack_seq();
+	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		_current_state = tcpsession::TIME_WAIT;
 		g_logger.printf("session: %s.%hu move to state TIME_WAIT\n", _client_src_ip_str.c_str(), _client_src_port);
@@ -617,9 +641,8 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 	std::list<ip_pkt>::iterator ite;
 
-	ip_packet_parser(pkt);
-	seq = ntohl(tcphdr->seq);
-	ack_seq = ntohl(tcphdr->ack_seq);
+	seq = pkt->get_seq();
+	ack_seq = pkt->get_ack_seq();
 
 	// the second handshake.
 	if (pkt->is_syn_set() && pkt->is_ack_set())
@@ -634,6 +657,10 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		if (seq == _expected_next_sequence_from_peer)
 		{
 			_expected_next_sequence_from_peer = next_sequence_from_peer;
+			if (pkt->is_fin_set())
+			{
+				_expected_next_sequence_from_peer++;
+			}
 		}
 		else
 		{

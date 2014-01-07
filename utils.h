@@ -15,7 +15,9 @@
  * It gets around the problem of number wraparound.
  */
 #define seq_before(left, right)  ((int)((uint32_t)(left - right)) < 0)
+#define seq_before_eq(left, right)  ((int)((uint32_t)(left - right)) <= 0)
 #define seq_after(left, right)  ((int)((uint32_t)(left - right)) > 0)
+#define seq_after_eq(left, right)  ((int)((uint32_t)(left - right)) >= 0)
 
 /**
  * calculate the IPv4 header checksum.

@@ -117,6 +117,7 @@ private:
 	uint64_t _session_key;
 
 	bool _dead;
+	bool _enable_active_close;     ///< default to false. That means tcpsession default to close passively.
 };
 
 #endif /* _TCPSESSION_H_ */
