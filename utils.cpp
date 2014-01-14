@@ -70,7 +70,7 @@ uint16_t compute_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tc
 
 	tot_ipsegmt_len = ntohs(iphdr->tot_len);
 	tot_tcpsgmt_len = tot_ipsegmt_len - ((iphdr->ihl) << 2);
-	assert(tot_tcpsgmt_len>=0);
+	//assert(tot_tcpsgmt_len>=0);
 
 	//initialize sum to zero
 	sum = 0;

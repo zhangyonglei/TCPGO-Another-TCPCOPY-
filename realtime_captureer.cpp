@@ -132,6 +132,7 @@ void realtime_captureer::readin_traffic(int fd)
 	char* buff_ptr;
 	int buff_available_len;
 	conn_info* _conn;
+	char buff[1024];
 
 	i = map_fd_to_index(fd);
 	_conn = &_conns[i];
@@ -147,12 +148,15 @@ void realtime_captureer::readin_traffic(int fd)
 	{
 		if (ret == 0 && buff_available_len == 0)
 		{
-			const char* hint = "Make sure -s 0 was specified to avoid truncated IP packages.\n";
+			const char* hint = "Make sure the two options have been specified:\n"
+				"1. -s 0 was specified to avoid truncated IP packages.\n"
+				"2. -w - was specified to output captured IP packages in binary format.\n";
 			write(fd, hint, strlen(hint));
 		}
 		else
 		{
-			perror("read");
+			char *ptr = strerror_r(errno, buff, sizeof(buff));
+			write(fd, ptr, strlen(ptr));
 		}
 		close_fd(fd);
 	}
