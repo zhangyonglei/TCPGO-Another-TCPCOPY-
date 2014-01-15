@@ -295,7 +295,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	if (0 != count && pkts[0]->is_syn_set())
 	{
 		_current_state = tcpsession::SYN_SENT;
-		g_logger.printf("session: %s.%hu move to state SYN_SENT\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state SYN_SENT from state CLOSED.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 		_last_recorded_recv_time = jiffies;
 	}
 	else
@@ -317,13 +318,15 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		if (_current_state == tcpsession::ESTABLISHED) // active close
 		{
 			_current_state = tcpsession::FIN_WAIT_1;
-			g_logger.printf("session: %s.%hu move to state FIN_WAIT_1\n", _client_src_ip_str.c_str(), _client_src_port);
+			g_logger.printf("session: %s.%hu moves to state FIN_WAIT_1 from state ESTABLISHED.\n",
+					_client_src_ip_str.c_str(), _client_src_port);
 			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_payload_len();
 		}
 		else if (_current_state == tcpsession::CLOSE_WAIT) // passive close
 		{
 			_current_state = tcpsession::LAST_ACK;
-			g_logger.printf("session: %s.%hu move to state LAST_ACK\n", _client_src_ip_str.c_str(), _client_src_port);
+			g_logger.printf("session: %s.%hu moves to state LAST_ACK from state CLOSE_WAIT.\n",
+					_client_src_ip_str.c_str(), _client_src_port);
 			_expected_last_ack_seq_from_peer = pkt->get_seq() + pkt->get_tcp_payload_len();
 		}
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_payload_len();
@@ -454,12 +457,14 @@ void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
 		if (pkt->is_ack_set())
 		{
 			_current_state = tcpsession::ESTABLISHED;
-			g_logger.printf("session %s.%hu move to state ESTABLISHED\n", _client_src_ip_str.c_str(), _client_src_port);
+			g_logger.printf("session %s.%hu moves to state ESTABLISHED from state SYN_SENT.\n",
+					_client_src_ip_str.c_str(), _client_src_port);
 		}
 		else
 		{
 			_current_state = tcpsession::SYN_RCVD; // rarely happens.
-			g_logger.printf("session %s.%hu move to state SYN_RCVD\n", _client_src_ip_str.c_str(), _client_src_port);
+			g_logger.printf("session %s.%hu moves to state SYN_RCVD from state SYN_SENT.\n",
+					_client_src_ip_str.c_str(), _client_src_port);
 		}
 	}
 	refresh_status(pkt);
@@ -470,7 +475,8 @@ void tcpsession::established_state_handler(const ip_pkt* pkt)
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::CLOSE_WAIT;
-		g_logger.printf("session %s.%hu move to state CLOSE_WAIT\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session %s.%hu moves to state CLOSE_WAIT from state ESTABLISHED.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 	}
 	refresh_status(pkt);
 }
@@ -489,7 +495,8 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 	if (seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		_current_state = tcpsession::CLOSED;
-		g_logger.printf("session %s.%hu move to state CLOSED\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 		kill_me();
 		return;
 	}
@@ -515,17 +522,20 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 	if (my_fin_has_been_acked && !pkt->is_fin_set() )
 	{
 		_current_state = tcpsession::FIN_WAIT_2;
-		g_logger.printf("session: %s.%hu move to state FIN_WAIT_2\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state FIN_WAIT_2 from state FIN_WAIT_1.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 	}
 	else if (my_fin_has_been_acked && pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
-		g_logger.printf("session: %s.%hu move to state TIME_WAIT\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state TIME_WAIT from state FIN_WAIT_1.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 	}
 	else if(pkt->is_fin_set())
 	{
 		_current_state = tcpsession::CLOSING;
-		g_logger.printf("session: %s.%hu move to state CLOSING\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state CLOSING from state FIN_WAIT_1.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 	}
 
 	refresh_status(pkt);
@@ -546,7 +556,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	if (now - _last_recorded_recv_time > _wait_for_fin_from_peer_time_out)
 	{
 		kill_me();
-		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide\n",
+		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		return;
 	}
@@ -554,7 +564,8 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	if (pkt->is_fin_set())
 	{
 		_current_state = tcpsession::TIME_WAIT;
-		g_logger.printf("session: %s.%hu move to state TIME_WAIT\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state TIME_WAIT from state FIN_WAIT_2.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 	}
 
 	refresh_status(pkt);
@@ -575,7 +586,8 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		_current_state = tcpsession::TIME_WAIT;
-		g_logger.printf("session: %s.%hu move to state TIME_WAIT\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_logger.printf("session: %s.%hu moves to state TIME_WAIT from state CLOSING.\n",
+				_client_src_ip_str.c_str(), _client_src_port);
 		_my_fin_acked_time = g_timer.get_jiffies();
 	}
 	refresh_status(pkt);

@@ -1,7 +1,3 @@
-# horos makes tcpdump quit pre-maturely, it may be caused by read from a error socket fd.
-
-# assert() in compute_tcp_checksum
-
 # Debug console support.
 
 # compilable on windows with visual studio.
