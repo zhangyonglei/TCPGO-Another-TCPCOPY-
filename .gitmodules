@@ -1,0 +1,3 @@
+[submodule "cpp-iniparser"]
+	path = cpp-iniparser
+	url = https://github.com/zausiu/cpp-iniparser

@@ -2,6 +2,8 @@ Debug/
 .svn/
 .metadata/
 .settings/
+.deps/
+.bins/
 horos
 *.o
 *~
@@ -11,6 +13,9 @@ horos
 .gdbinit
 INSTALL
 missing
-.deps/
 *so
 *so.*
+*.a
+*.dep
+*.pcap
+core*

@@ -25,6 +25,7 @@ CPPFLAGS += -I$(public_dirs) -g -fPIC -D__DEBUG__
 LINKFLAGS := -lpthread -lpcap 
 LINKFLAGS4LIB := -shared -Wl,-soname,$(soname) -lpthread -lpcap  
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
+MAKECMDGOAL := 
 RM := rm -rf
 MV := mv
 
@@ -69,7 +70,7 @@ $(deps):
 $(objs):
 	-mkdir $@
 
-ifneq "$(MAKECMDGOALS)" "clean"
+ifneq "$(MAKECMDGOAL)" "clean"
   -include $(dependencies)
 endif
 

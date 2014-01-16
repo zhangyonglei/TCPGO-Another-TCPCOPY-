@@ -1,3 +1,5 @@
 # Debug console support.
 
 # compilable on windows with visual studio.
+
+# embed lua script.
