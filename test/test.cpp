@@ -18,8 +18,9 @@ int main(int argc, char** argv)
 	int seconds;
 	struct timespec req, rem;
 
-	ret = horos_init("/home/kamus/projs/horoscope/public/traffic.smallsize.pcap",
-			"192.168.44.129", 80, 10);
+	//ret = horos_init("/home/kamus/projs/horoscope/public/traffic.smallsize.pcap",
+	//		"192.168.44.129", 80, 10);
+	ret = horos_init();
 	if (ret != 0)
 	{
 		cerr << "horos_init() failed.\n";

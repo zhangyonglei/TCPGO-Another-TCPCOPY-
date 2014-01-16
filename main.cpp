@@ -26,17 +26,13 @@
 #include "thetimer.h"
 #include "poller.h"
 #include "realtime_captureer.h"
+#include "configuration.h"
 
 using namespace std;
 
-string   g_pcap_file_path;
-string   g_dst_addr;
-uint16_t g_dst_port;
-int g_concurrency_limit = 20;  // default to 20 connections run concurrently.
-bool g_generate_random_port = true; // for debug's convenience.
-
 static void output_help();
 static void output_version();
+
 int run();
 
 int main(int argc, char **argv)
@@ -44,6 +40,7 @@ int main(int argc, char **argv)
 	int ch;
 	int option_index;
 	struct option long_options[] = {
+			{"conf", required_argument, NULL, 'x'},
 			{"pcapfile", required_argument, NULL,  'f' },
 			{"dst-addr", required_argument, NULL, 'd' },
 			{"dst-port", required_argument, NULL, 'p'},
@@ -54,30 +51,42 @@ int main(int argc, char **argv)
 			{0, 0, 0, 0}
 	};
 
+	std::string conf_file_path;
+	std::string pcap_file_path;
+	std::string dst_addr;
+	std::string dst_port;
+	std::string concurrency_limit;
+	std::string onoff_random_port;
+
 	while (true) {
-		ch = getopt_long(argc, argv, "f:d:p:c:r:hv", long_options, &option_index);
+		ch = getopt_long(argc, argv, "x:f:d:p:c:r:hv", long_options, &option_index);
 		if (ch == -1)
 			break;
 
-		switch (ch) {
+		switch (ch)
+		{
+		case 'x':
+			conf_file_path = optarg;
+			break;
+
 		case 'f':
-			g_pcap_file_path = optarg;
+			pcap_file_path = optarg;
 			break;
 
 		case 'd':
-			g_dst_addr = optarg;
+			dst_addr = optarg;
 			break;
 
 		case 'p':
-			g_dst_port = strtol(optarg, NULL, 10);
+			dst_port = optarg;
 			break;
 
 		case 'c':
-			g_concurrency_limit = strtol(optarg, NULL, 10);
+			concurrency_limit = optarg;
 			break;
 
 		case 'r':
-			g_generate_random_port = strtol(optarg, NULL, 10);
+			onoff_random_port = optarg;
 			break;
 
 		case 'h':
@@ -110,6 +119,34 @@ int main(int argc, char **argv)
 	}
 	else
 	{
+		if(!conf_file_path.empty())
+		{
+			g_configuration.set_conf_file_path(conf_file_path);
+		}
+		if(!pcap_file_path.empty())
+		{
+			g_configuration.set_pcap_file_path(pcap_file_path);
+		}
+		if(!dst_addr.empty())
+		{
+			g_configuration.set_dst_addr(dst_addr);
+		}
+		if(!dst_port.empty())
+		{
+			g_configuration.set_dst_port(dst_port);
+		}
+		if(!concurrency_limit.empty())
+		{
+			g_configuration.set_concurrency_limit(concurrency_limit);
+		}
+		if(!onoff_random_port.empty())
+		{
+			g_configuration.set_onoff_random_port(onoff_random_port);
+		}
+
+		bool valid = g_configuration.check_validity();
+		assert(valid);
+
 		run();
 	}
 
@@ -133,14 +170,17 @@ static void output_help()
 int run()
 {
 	int ret;
+	std::string pcap_file_path;
 
 	srand(time(NULL));
-	if (!g_pcap_file_path.empty())
+
+	pcap_file_path = g_configuration.get_pcap_file_path();
+	if (pcap_file_path.empty())
 	{
-		ret = g_session_manager.read_from_capfile(g_pcap_file_path, "tcp");
+		ret = g_session_manager.read_from_capfile(pcap_file_path, "tcp");
 		if (0 != ret)
 		{
-			g_logger.printf("failed to open pcap file %s.\n", g_pcap_file_path.c_str());
+			g_logger.printf("failed to open pcap file %s.\n", pcap_file_path.c_str());
 			return ret;
 		}
 	}

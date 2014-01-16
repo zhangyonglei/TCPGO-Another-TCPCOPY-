@@ -17,7 +17,7 @@
  * @param concurrency At least how many TCP connections will be established at the same time.
  * @return 0 on success, non-zero on failure.
  */
-int horos_init(const char* pcap_file_path, const char* dst_ip_addr, unsigned short dst_port, int concurrency);
+int horos_init();
 
 /**
  * This function blocks until all resources has been cleaned.

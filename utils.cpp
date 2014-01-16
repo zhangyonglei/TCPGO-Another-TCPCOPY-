@@ -6,8 +6,7 @@
  ********************************************/
 
 #include "misc.h"
-
-extern bool g_generate_random_port;
+#include "configuration.h"
 
 struct eth_hdr
 {
@@ -176,8 +175,8 @@ int detect_l2head_len(const char *frame)
 unsigned short generate_the_port(unsigned short ori_src_port)
 {
 	static unsigned short rand = random();
-
-	if (g_generate_random_port)
+	bool b = g_configuration.get_onoff_random_port();
+	if (b)
 	{
 		return ((ori_src_port + rand) % 30000) + 4096;
 	}

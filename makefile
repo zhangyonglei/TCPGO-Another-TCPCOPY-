@@ -17,13 +17,16 @@ soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
 objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
 dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
-public_dirs := ./public
+public_dirs := ./public ./cpp-iniparser/include 
+
+iniparser = cpp-iniparser
+iniparser_a = $(iniparser)/lib$(iniparser).a
 
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
-CPPFLAGS += -I$(public_dirs) -g -fPIC -D__DEBUG__
-LINKFLAGS := -lpthread -lpcap 
-LINKFLAGS4LIB := -shared -Wl,-soname,$(soname) -lpthread -lpcap  
+CPPFLAGS += $(addprefix -I,$(public_dirs)) -g -D__DEBUG__ -fPIC
+LINKFLAGS := -L./$(iniparser) -lpthread -lpcap -l$(iniparser)
+LINKFLAGS4LIB := -L./$(iniparser) -shared -Wl,-soname,$(soname) -lpthread -lpcap -l$(iniparser)
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 MAKECMDGOAL := 
 RM := rm -rf
@@ -36,19 +39,22 @@ vpath %.h . $(public_dirs)
 
 all : $(projname) $(projname_alias) $(libname) $(test) 
 
-$(projname) : $(bins) $(deps) $(objs) $(objects) 
-	g++ $(LINKFLAGS) -o $@ $(objects)
+$(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a)
+	g++ -o $@ $(objects) $(LINKFLAGS) 
 
 $(projname_alias) : $(projname)
 	-ln $(projname) $(projname_alias)
+
+$(iniparser_a) : 
+	make -C $(iniparser)
 	
 $(libname) : $(objects)
-	g++ $(LINKFLAGS4LIB) -o $@ $^	
+	g++ -o $@ $^ $(LINKFLAGS4LIB) 
 	-ln -s $(PWD)/$@ $(lib_linkname)
 	
 $(test) : test/test.o
 #	ld -rpath . -o test test/test.o
-	g++ $(LINKFLAGS4TEST) -o $@  $^
+	g++ -o $@  $^ $(LINKFLAGS4TEST) 
 
 # for debug's purpose
 dummy:
@@ -87,6 +93,8 @@ endef
 $(objs)%.o : %.cpp
 	$(call make-depend, $<,$@,$(addprefix $(deps),$(subst .cpp,.d,$<)))
 	$(COMPILE.C) $(OUTPUT_OPTION) $<
+#g++ $(CXXFLAGS) $(CPPFLAGS) $< # lacks -c -o 
 
 clean :
-	$(RM) $(objects) $(dependencies) $(projname) $(libname) $(bins) $(objs) $(deps)
+	$(RM) $(objects) $(dependencies) $(projname) $(libname) $(bins) $(objs) $(deps) $(iniparser_a)
+	make -C $(iniparser) clean

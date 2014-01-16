@@ -10,14 +10,13 @@
 #include "cute_logger.h"
 #include "postoffice.h"
 #include "session_manager.h"
+#include "configuration.h"
 
 #define SNAP_LEN 8192
 
 using namespace std;
 
 postoffice g_postoffice;
-extern int g_concurrency_limit;
-extern int g_dst_port;
 
 postoffice::postoffice()
 {
@@ -92,7 +91,7 @@ postoffice::~postoffice()
 
 void postoffice::get_ready()
 {
-	_svr_port = htons(g_dst_port);
+	_svr_port = htons(g_configuration.get_dst_port());
 	g_poller.register_evt(_send_fd, poller::POLLOUT, this);
 	g_poller.register_evt(_recv_fd, poller::POLLIN, this);
 }
@@ -183,6 +182,7 @@ void postoffice::pollout_handler(int fd)
 	struct sockaddr_in  dst_addr;
 	postoffice_callback_interface* callback;
 	int  concurrency_num;
+	int  concurrency_limit_num;
 	bool data_has_been_sent;
 
 	if (fd != _send_fd)
@@ -200,10 +200,11 @@ void postoffice::pollout_handler(int fd)
 	dst_addr.sin_family = AF_INET;
 	concurrency_num = 0;
 	data_has_been_sent = false;
+	concurrency_limit_num = g_configuration.get_concurrency_limit();
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{
-		if (concurrency_num >= g_concurrency_limit)
+		if (concurrency_num >= concurrency_limit_num)
 			break;
 
 		++concurrency_num;
