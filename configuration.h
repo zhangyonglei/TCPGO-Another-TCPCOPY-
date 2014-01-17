@@ -67,8 +67,10 @@ public:
 
 	void set_onoff_random_port(const std::string& onoff_random_port);
 
-private:
-	void read_in(const std::string& conf_file_path);
+	/**
+	 * read in conf file.
+	 */
+	void readin();
 
 private:
 	std::string  _conf_file_path;   ///< self-explanatory.

@@ -28,14 +28,14 @@ configuration::~configuration()
 
 bool configuration::check_validity()
 {
-	if(!_dst_addr.empty())
+	if(_dst_addr.empty())
 	{
 		g_logger.printf("dst_addr was not set.\n");
 		abort();
 		return false;
 	}
 
-	if(!_dst_port.empty())
+	if(_dst_port.empty())
 	{
 		g_logger.printf("dst_port was not set.\n");
 		abort();
@@ -94,15 +94,13 @@ void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 	}
 }
 
-void configuration::read_in(const std::string& conf_file_path)
+void configuration::readin()
 {
 	INIConfig config;
 
-	_conf_file_path = conf_file_path;
-
 	try
 	{
-		config = INIParser::Read(conf_file_path.c_str());
+		config = INIParser::Read(_conf_file_path.c_str());
 	}
 	catch(INIReaderException& e)
 	{
@@ -136,21 +134,21 @@ void configuration::read_in(const std::string& conf_file_path)
 	option_name = "dst_port";
 	if (config.HasOption(section_name, option_name))
 	{
-		value = config.HasOption(section_name, option_name);
-		set_dst_addr(value);
+		value = config.GetOption(section_name, option_name);
+		set_dst_port(value);
 	}
 
 	option_name = "concurrency_limit";
 	if (config.HasOption(section_name, option_name))
 	{
-		value = config.HasOption(section_name, option_name);
+		value = config.GetOption(section_name, option_name);
 		set_concurrency_limit(value);
 	}
 
 	option_name = "onoff_random_port";
 	if (config.HasOption(section_name, option_name))
 	{
-		value = config.HasOption(section_name, option_name);
+		value = config.GetOption(section_name, option_name);
 		set_onoff_random_port(value);
 	}
 }

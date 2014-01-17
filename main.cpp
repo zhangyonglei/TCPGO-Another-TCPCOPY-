@@ -113,42 +113,37 @@ int main(int argc, char **argv)
 		cout << endl;
 	}
 
-	if (argc == 1)
+	if(!conf_file_path.empty())
 	{
-		output_help();
+		g_configuration.set_conf_file_path(conf_file_path);
 	}
-	else
+	if(!pcap_file_path.empty())
 	{
-		if(!conf_file_path.empty())
-		{
-			g_configuration.set_conf_file_path(conf_file_path);
-		}
-		if(!pcap_file_path.empty())
-		{
-			g_configuration.set_pcap_file_path(pcap_file_path);
-		}
-		if(!dst_addr.empty())
-		{
-			g_configuration.set_dst_addr(dst_addr);
-		}
-		if(!dst_port.empty())
-		{
-			g_configuration.set_dst_port(dst_port);
-		}
-		if(!concurrency_limit.empty())
-		{
-			g_configuration.set_concurrency_limit(concurrency_limit);
-		}
-		if(!onoff_random_port.empty())
-		{
-			g_configuration.set_onoff_random_port(onoff_random_port);
-		}
-
-		bool valid = g_configuration.check_validity();
-		assert(valid);
-
-		run();
+		g_configuration.set_pcap_file_path(pcap_file_path);
 	}
+	if(!dst_addr.empty())
+	{
+		g_configuration.set_dst_addr(dst_addr);
+	}
+	if(!dst_port.empty())
+	{
+		g_configuration.set_dst_port(dst_port);
+	}
+	if(!concurrency_limit.empty())
+	{
+		g_configuration.set_concurrency_limit(concurrency_limit);
+	}
+	if(!onoff_random_port.empty())
+	{
+		g_configuration.set_onoff_random_port(onoff_random_port);
+	}
+
+	g_configuration.readin();
+
+	bool valid = g_configuration.check_validity();
+	assert(valid);
+
+	run();
 
 	return 0;
 }
@@ -175,7 +170,7 @@ int run()
 	srand(time(NULL));
 
 	pcap_file_path = g_configuration.get_pcap_file_path();
-	if (pcap_file_path.empty())
+	if (!pcap_file_path.empty())
 	{
 		ret = g_session_manager.read_from_capfile(pcap_file_path, "tcp");
 		if (0 != ret)

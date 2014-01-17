@@ -121,6 +121,7 @@ const char* strip_l2head(pcap_t *pcap, const char *frame)
 	case DLT_RAW:
 		l2_len = 0;
 		break;
+
 	case DLT_EN10MB:
 		ethhdr = (struct eth_hdr *)frame;
 		switch (ntohs(ethhdr->_type)) {
@@ -132,7 +133,12 @@ const char* strip_l2head(pcap_t *pcap, const char *frame)
 			break;
 		}
 		break;
-		default:
+
+	case DLT_LINUX_SLL:
+		l2_len = 16;
+		break;
+
+	default:
 			l2_len = -1;
 			break;
 	}
