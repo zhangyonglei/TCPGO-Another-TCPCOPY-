@@ -2,3 +2,6 @@
 	path = cpp-iniparser
 	url = https://github.com/zausiu/cpp-iniparser
 	ignore = dirty
+[submodule "lua-mirror"]
+	path = lua-mirror
+	url = https://github.com/EtherealWake/lua-mirror
