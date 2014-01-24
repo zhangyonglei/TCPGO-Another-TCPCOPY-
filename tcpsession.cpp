@@ -22,10 +22,10 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
 
-	_recv_time_out = 3 * HZ;
-	_have_to_send_data_within_this_timeperiod = 3 * HZ;
-	_snd_speed_control = HZ / 4;
-	_wait_for_fin_from_peer_time_out = 4 * HZ;
+	_recv_time_out = g_configuration.get_recv_time_out();
+	_have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod();
+	_snd_speed_control = g_configuration.get_snd_speed_control();
+	_wait_for_fin_from_peer_time_out = g_configuration.get_wait_for_fin_from_peer_time_out();
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
 	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);

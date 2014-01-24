@@ -25,6 +25,7 @@ public:
 	 */
 	bool check_validity();
 
+	// getters
 	std::string get_conf_file_path()
 	{
 		return _conf_file_path;
@@ -42,19 +43,40 @@ public:
 
 	unsigned short get_dst_port()
 	{
-		return _dst_port_num;
+		return _dst_port;
 	}
 
 	int get_concurrency_limit()
 	{
-		return _concurrency_limit_num;
+		return _concurrency_limit;
 	}
 
 	bool get_onoff_random_port()
 	{
-		return _onoff_random_port_boolean;
+		return _onoff_random_port;
 	}
 
+	int get_recv_time_out()
+	{
+		return _recv_time_out;
+	}
+
+	int get_have_to_send_data_within_this_timeperiod()
+	{
+		return _have_to_send_data_within_this_timeperiod;
+	}
+
+	int get_snd_speed_control()
+	{
+		return _snd_speed_control;
+	}
+
+	int get_wait_for_fin_from_peer_time_out()
+	{
+		return _wait_for_fin_from_peer_time_out;
+	}
+
+	// setters
 	void set_conf_file_path(const std::string& conf_file_path);
 
 	void set_pcap_file_path(const std::string& pcap_file_path);
@@ -66,6 +88,18 @@ public:
 	void set_concurrency_limit(const std::string& concurrency_limit);
 
 	void set_onoff_random_port(const std::string& onoff_random_port);
+
+	void set_recv_time_out(const std::string& recv_time_out);
+	void set_recv_time_out(int recv_time_out);
+
+	void set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod);
+	void set_have_to_send_data_within_this_timeperiod(int timeperiod);
+
+	void set_snd_speed_control(const std::string& speed_control);
+	void set_snd_speed_control(int speed_control);
+
+	void set_wait_for_fin_from_peer_time_out(const std::string& time_out);
+	void set_wait_for_fin_from_peer_time_out(int time_out);
 
 	/**
 	 * read in conf file.
@@ -79,14 +113,19 @@ private:
 
 	std::string  _dst_addr;         ///< the desination IP address to which traffic will be forward.
 
-	std::string  _dst_port;         ///< the destination port to which traffic will be forward.
-	unsigned short _dst_port_num;
+	unsigned short _dst_port;   ///< the destination port to which traffic will be forward. host-byte order.
 
-	std::string  _concurrency_limit;  ///< the maximum number of concurrent TCP connections.
-	int _concurrency_limit_num;
+	int _concurrency_limit;     ///< the maximum number of concurrent TCP connections.
 
-	std::string  _onoff_random_port;    ///< specify if the source port of TCP segment will be replaced with a random number.
-	bool _onoff_random_port_boolean;
+	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
+
+	/// The following parameters are for tuning tcpsession.
+	/// More details can be found in class tcpsession.
+	/// They are all in unit of centisecond.
+	int  _recv_time_out;
+	int  _have_to_send_data_within_this_timeperiod;
+	int  _snd_speed_control;
+	int  _wait_for_fin_from_peer_time_out;
 };
 
 #endif /* _CONFIGURATION_H_ */

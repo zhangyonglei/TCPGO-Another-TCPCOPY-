@@ -10,6 +10,7 @@
 #include "INIReaderException.h"
 #include "INIWriterException.h"
 #include "cute_logger.h"
+#include "thetimer.h"
 
 configuration g_configuration;
 
@@ -17,9 +18,15 @@ using namespace cppiniparser;
 
 configuration::configuration()
 {
+	// the default settings.
 	set_conf_file_path("my.conf");
-	set_concurrency_limit("100");
+	set_concurrency_limit("1000");
 	set_onoff_random_port("1");
+	set_dst_port("0");
+	set_recv_time_out(3 * HZ);
+	set_have_to_send_data_within_this_timeperiod(3 * HZ);
+	set_snd_speed_control(HZ / 4);
+	set_wait_for_fin_from_peer_time_out(4 * HZ);
 }
 
 configuration::~configuration()
@@ -30,14 +37,14 @@ bool configuration::check_validity()
 {
 	if(_dst_addr.empty())
 	{
-		g_logger.printf("dst_addr was not set.\n");
+		g_logger.printf("dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
 		abort();
 		return false;
 	}
 
-	if(_dst_port.empty())
+	if(0 == _dst_port)
 	{
-		g_logger.printf("dst_port was not set.\n");
+		g_logger.printf("dst_port was not set. Specify -p option on command line or set MAIN.dst_port in conf file.\n");
 		abort();
 		return false;
 	}
@@ -62,36 +69,76 @@ void configuration::set_dst_addr(const std::string& dst_addr)
 
 void configuration::set_dst_port(const std::string& dst_port)
 {
-	char buff[256];
-
-	_dst_port_num = strtol(dst_port.c_str(), NULL, 10);
-	assert(0 != _dst_port_num);
-	snprintf(buff, sizeof(buff), "%d", _dst_port_num);
-	_dst_port = buff;
+	_dst_port = strtol(dst_port.c_str(), NULL, 10);
 }
 
 void configuration::set_concurrency_limit(const std::string& concurrency_limit)
 {
-	char buff[256];
-
-	_concurrency_limit_num = strtol(concurrency_limit.c_str(), NULL, 10);
-	assert(0 != _concurrency_limit_num);
-	snprintf(buff, sizeof(buff), "%d", _concurrency_limit_num);
-	_concurrency_limit = buff;
+	_concurrency_limit = strtol(concurrency_limit.c_str(), NULL, 10);
 }
 
 void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 {
 	if (onoff_random_port == "0" || onoff_random_port == "off" || onoff_random_port.empty())
 	{
-		_onoff_random_port_boolean = false;
-		_onoff_random_port = "0";
+		_onoff_random_port = false;
 	}
 	else
 	{
-		_onoff_random_port_boolean = true;
-		_onoff_random_port = "1";
+		_onoff_random_port = true;
 	}
+}
+
+void configuration::set_recv_time_out(const std::string& recv_time_out)
+{
+	int val;
+	val = strtol(recv_time_out.c_str(), NULL, 10);
+	set_recv_time_out(val);
+}
+
+void configuration::set_recv_time_out(int recv_time_out)
+{
+	assert(recv_time_out != 0);
+	_recv_time_out = recv_time_out;
+}
+
+void configuration::set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod)
+{
+	int val;
+	val = strtol(timeperiod.c_str(), NULL, 10);
+	set_have_to_send_data_within_this_timeperiod(val);
+}
+
+void configuration::set_have_to_send_data_within_this_timeperiod(int timeperiod)
+{
+	assert(timeperiod != 0);
+	_have_to_send_data_within_this_timeperiod = timeperiod;
+}
+
+void configuration::set_snd_speed_control(const std::string& speed_control)
+{
+	int val;
+	val = strtol(speed_control.c_str(), NULL, 10);
+	set_snd_speed_control(val);
+}
+
+void configuration::set_snd_speed_control(int speed_control)
+{
+	assert(speed_control != 0);
+	_snd_speed_control = speed_control;
+}
+
+void configuration::set_wait_for_fin_from_peer_time_out(const std::string& time_out)
+{
+	int val;
+	val = strtol(time_out.c_str(), NULL, 10);
+	set_wait_for_fin_from_peer_time_out(val);
+}
+
+void configuration::set_wait_for_fin_from_peer_time_out(int time_out)
+{
+	assert(time_out != 0);
+	_wait_for_fin_from_peer_time_out = time_out;
 }
 
 void configuration::readin()
@@ -112,6 +159,8 @@ void configuration::readin()
 	std::string section_name;
 	std::string option_name;
 	std::string value;
+
+	// the MAIN section.
 	section_name = "MAIN";
 
 	if (!config.HasSection(section_name))
@@ -150,5 +199,39 @@ void configuration::readin()
 	{
 		value = config.GetOption(section_name, option_name);
 		set_onoff_random_port(value);
+	}
+
+	// the session section
+	section_name = "SESSION";
+
+	if (!config.HasSection(section_name))
+		return;
+
+	option_name = "recv_time_out";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		set_recv_time_out(value);
+	}
+
+	option_name = "have_to_send_data_within_this_timeperiod";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		set_have_to_send_data_within_this_timeperiod(value);
+	}
+
+	option_name = "snd_speed_control";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		set_snd_speed_control(value);
+	}
+
+	option_name = "wait_for_fin_from_peer_time_out";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		set_wait_for_fin_from_peer_time_out(value);
 	}
 }
