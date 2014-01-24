@@ -27,6 +27,7 @@
 #include "poller.h"
 #include "realtime_captureer.h"
 #include "configuration.h"
+#include "version.h"
 
 using namespace std;
 
@@ -150,7 +151,7 @@ int main(int argc, char **argv)
 
 static void output_version()
 {
-	cout << "Horoscope v0.1\n";
+	cout << "Horoscope "VERSION_NUM"\n";
 	cout << "This tool is aimed to replay captured client's requests to server.\n";
 	cout << "Author: kamuszhou www.dogeye.net.\n";
 	cout << "Copyrights Reserved by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;

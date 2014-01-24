@@ -27,7 +27,7 @@
 #include <signal.h>
 
 
-// c++ standard library
+// c++ standard libraries
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -35,7 +35,7 @@
 #include <map>
 #include <algorithm>
 
-// c standard library
+// c standard libraries
 #include <time.h>
 #include <errno.h>
 #include <math.h>

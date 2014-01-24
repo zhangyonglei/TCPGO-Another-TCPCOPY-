@@ -17,16 +17,23 @@ soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
 objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
 dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
-public_dirs := ./public ./cpp-iniparser/include 
+public_dirs = ./public ./$(iniparser)/include ./$(lua_vm_src)
 
+# third-party ini parser
 iniparser = cpp-iniparser
-iniparser_a = $(iniparser)/lib$(iniparser).a
+iniparser_a := $(iniparser)/lib$(iniparser).a
+
+# lua virtual machine
+lua_lib := lua
+lua_vm_root = lua-mirror/
+lua_vm_src := $(lua_vm_root)src/
+lua_vm_a := $(lua_vm_src)/liblua.a
 
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
 CPPFLAGS += $(addprefix -I,$(public_dirs)) -g -D__DEBUG__ -fPIC
-LINKFLAGS := -L./$(iniparser) -lpthread -lpcap -l$(iniparser)
-LINKFLAGS4LIB := -L./$(iniparser) -shared -Wl,-soname,$(soname) -lpthread -lpcap -l$(iniparser)
+LINKFLAGS := -L./$(iniparser) -L./$(lua_vm_src) -lpthread -lpcap -l$(iniparser) -l$(lua_lib)
+LINKFLAGS4LIB := -L./$(iniparser) -L./$(lua_vm_src) -shared -Wl,-soname,$(soname) -lpthread -lpcap -l$(iniparser) -l$(lua_lib)
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 MAKECMDGOAL := 
 RM := rm -rf
@@ -39,7 +46,7 @@ vpath %.h . $(public_dirs)
 
 all : $(projname) $(projname_alias) $(libname) $(test) 
 
-$(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a)
+$(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a) $(lua_vm_a)
 	g++ -o $@ $(objects) $(LINKFLAGS) 
 
 $(projname_alias) : $(projname)
@@ -47,6 +54,9 @@ $(projname_alias) : $(projname)
 
 $(iniparser_a) : 
 	make -C $(iniparser)
+
+$(lua_vm_a) :
+	make -C $(lua_vm_root) linux
 	
 $(libname) : $(objects)
 	g++ -o $@ $^ $(LINKFLAGS4LIB) 
@@ -65,8 +75,8 @@ install :
 #	-ln -s /usr/local/lib/$(libname) /usr/lib/$(soname)
  	
 test/test.o: test/test.cpp public/misc.h public/horos.h $(libname)
-	g++ -c -o $@ test/test.cpp  
-	
+	$(COMPILE.C) $(OUTPUT_OPTION) $<
+
 $(bins):
 	-mkdir $@
 	 
