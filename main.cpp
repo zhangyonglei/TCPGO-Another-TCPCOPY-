@@ -114,6 +114,8 @@ int main(int argc, char **argv)
 		cout << endl;
 	}
 
+	g_configuration.readin();
+
 	if(!conf_file_path.empty())
 	{
 		g_configuration.set_conf_file_path(conf_file_path);
@@ -138,8 +140,6 @@ int main(int argc, char **argv)
 	{
 		g_configuration.set_onoff_random_port(onoff_random_port);
 	}
-
-	g_configuration.readin();
 
 	bool valid = g_configuration.check_validity();
 	assert(valid);

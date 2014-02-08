@@ -554,9 +554,9 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	// I will commit a suicide.
 	if (now - _last_recorded_recv_time > _wait_for_fin_from_peer_time_out)
 	{
-		kill_me();
 		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
+		kill_me();
 		return;
 	}
 
@@ -736,7 +736,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		++ite;
 	}
 	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
-	std::cout << distance << " packets are in the sliding window.\n";
+	std::cout << distance << " packet(s) is(are) in the sliding window.\n";
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
@@ -778,7 +778,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
 		std::cout << "sliding window has been expanded to " << distance << " packets.\n";
-		std::cout << _ippkts_samples.size() << " packets are in the _ippkts_samples.\n";
+		std::cout << _ippkts_samples.size() << " packet(s) is(are) in the _ippkts_samples.\n";
 	}
 }
 
