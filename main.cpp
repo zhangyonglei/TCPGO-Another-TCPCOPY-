@@ -114,12 +114,12 @@ int main(int argc, char **argv)
 		cout << endl;
 	}
 
-	g_configuration.readin();
-
 	if(!conf_file_path.empty())
 	{
 		g_configuration.set_conf_file_path(conf_file_path);
 	}
+	g_configuration.readin();
+
 	if(!pcap_file_path.empty())
 	{
 		g_configuration.set_pcap_file_path(pcap_file_path);
