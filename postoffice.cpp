@@ -201,6 +201,7 @@ void postoffice::pollout_handler(int fd)
 	concurrency_num = 0;
 	data_has_been_sent = false;
 	concurrency_limit_num = g_configuration.get_concurrency_limit();
+	concurrency_limit_num = 1;
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{
