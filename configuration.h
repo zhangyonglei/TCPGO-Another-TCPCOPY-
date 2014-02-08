@@ -56,9 +56,9 @@ public:
 		return _onoff_random_port;
 	}
 
-	int get_recv_time_out()
+	int get_response_from_peer_time_out()
 	{
-		return _recv_time_out;
+		return _response_from_peer_time_out;
 	}
 
 	int get_have_to_send_data_within_this_timeperiod()
@@ -89,8 +89,8 @@ public:
 
 	void set_onoff_random_port(const std::string& onoff_random_port);
 
-	void set_recv_time_out(const std::string& recv_time_out);
-	void set_recv_time_out(int recv_time_out);
+	void set_response_from_peer_time_out(const std::string& response_from_peer_time_out);
+	void set_response_from_peer_time_out(int response_from_peer_time_out);
 
 	void set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod);
 	void set_have_to_send_data_within_this_timeperiod(int timeperiod);
@@ -122,7 +122,7 @@ private:
 	/// The following parameters are for tuning tcpsession.
 	/// More details can be found in class tcpsession.
 	/// They are all in unit of centisecond.
-	int  _recv_time_out;
+	int  _response_from_peer_time_out;
 	int  _have_to_send_data_within_this_timeperiod;
 	int  _snd_speed_control;
 	int  _wait_for_fin_from_peer_time_out;

@@ -31,6 +31,13 @@
 
 using namespace std;
 
+std::string conf_file_path;
+std::string pcap_file_path;
+std::string dst_addr;
+std::string dst_port;
+std::string concurrency_limit;
+std::string onoff_random_port;
+
 static void output_help();
 static void output_version();
 
@@ -51,13 +58,6 @@ int main(int argc, char **argv)
 			{"version", no_argument, NULL,  'v' },
 			{0, 0, 0, 0}
 	};
-
-	std::string conf_file_path;
-	std::string pcap_file_path;
-	std::string dst_addr;
-	std::string dst_port;
-	std::string concurrency_limit;
-	std::string onoff_random_port;
 
 	while (true) {
 		ch = getopt_long(argc, argv, "x:f:d:p:c:r:hv", long_options, &option_index);
@@ -114,6 +114,32 @@ int main(int argc, char **argv)
 		cout << endl;
 	}
 
+	run();
+
+	return 0;
+}
+
+static void output_version()
+{
+	cout << "Horoscope "VERSION_NUM"\n";
+	cout << "This tool is aimed to replay captured client's requests to server.\n";
+	cout << "Author: kamuszhou www.dogeye.net.\n";
+	cout << "Copyrights Reserved by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
+}
+
+static void output_help()
+{
+	cout << "Usage: \n";
+	cout << "horos [-f pcap_file_path] -d destination_ip -p port [-c concurrency]\n";
+}
+
+int run()
+{
+	int ret;
+	std::string pcap_file_path;
+
+	srand(time(NULL));
+
 	if(!conf_file_path.empty())
 	{
 		g_configuration.set_conf_file_path(conf_file_path);
@@ -143,32 +169,6 @@ int main(int argc, char **argv)
 
 	bool valid = g_configuration.check_validity();
 	assert(valid);
-
-	run();
-
-	return 0;
-}
-
-static void output_version()
-{
-	cout << "Horoscope "VERSION_NUM"\n";
-	cout << "This tool is aimed to replay captured client's requests to server.\n";
-	cout << "Author: kamuszhou www.dogeye.net.\n";
-	cout << "Copyrights Reserved by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
-}
-
-static void output_help()
-{
-	cout << "Usage: \n";
-	cout << "horos [-f pcap_file_path] -d destination_ip -p port [-c concurrency]\n";
-}
-
-int run()
-{
-	int ret;
-	std::string pcap_file_path;
-
-	srand(time(NULL));
 
 	pcap_file_path = g_configuration.get_pcap_file_path();
 	if (!pcap_file_path.empty())

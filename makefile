@@ -32,8 +32,8 @@ lua_vm_a := $(lua_vm_src)/liblua.a
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
 CPPFLAGS += $(addprefix -I,$(public_dirs)) -g -D__DEBUG__ -fPIC
-LINKFLAGS := -L./$(iniparser) -L./$(lua_vm_src) -lpthread -lpcap -l$(iniparser) -l$(lua_lib)
-LINKFLAGS4LIB := -L./$(iniparser) -L./$(lua_vm_src) -shared -Wl,-soname,$(soname) -lpthread -lpcap -l$(iniparser) -l$(lua_lib)
+LINKFLAGS := -L./$(iniparser) -L./$(lua_vm_src) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib)
+LINKFLAGS4LIB := -L./$(iniparser) -L./$(lua_vm_src) -shared -Wl,-soname,$(soname) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib)
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 MAKECMDGOAL := 
 RM := rm -rf

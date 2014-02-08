@@ -7,6 +7,8 @@
 
 #include "mylua.h"
 #include "version.h"
+#include "statistics_bureau.h"
+#include "horos.h"
 
 lua_State* mylua::_lua_state;
 class mylua g_mylua;
@@ -22,6 +24,7 @@ extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State
 	return 1;
 }
 
+// the following are functions exposed to lua state.
 int mylua::version(lua_State* L)
 {
 	lua_pushstring(_lua_state, VERSION_NUM);
@@ -29,18 +32,60 @@ int mylua::version(lua_State* L)
 	return 1;
 }
 
+int mylua::sess_statistics(lua_State* L)
+{
+	std::string s;
+
+	s = g_statistics_bureau.sess_statistics();
+
+	lua_pushstring(_lua_state, s.c_str());
+
+	return 1;
+}
+
+int mylua::horos_run(lua_State* L)
+{
+	horos_init();
+}
+
+int mylua::horos_stop(lua_State* L)
+{
+	horos_uninit();
+}
+
+// the above are functions exposed to lua state.
+
 static const struct luaL_Reg lua_funcs[] = {
 	{"version",   mylua::version},
+	{"sess_stat", mylua::sess_statistics},
+	{"run", mylua::horos_run},
+	{"stop", mylua::horos_stop},
 	{NULL, NULL}
 };
 
 mylua::mylua()
 {
-	set_lua_state(NULL);
+	lua_State* state;
+
+	state = luaL_newstate();
+	assert(NULL != state);
+
+	luaL_openlibs(state);
+	set_lua_state(state);
 }
 
 mylua::~mylua()
 {
+}
+
+void mylua::set_lua_state(lua_State* state)
+{
+	_lua_state = state;
+}
+
+lua_State* mylua::get_lua_state()
+{
+	return _lua_state;
 }
 
 void mylua::register_funcs()
@@ -49,4 +94,3 @@ void mylua::register_funcs()
 	// luaL_setfuncs(lua_state, lua_tests, 0);  // use luaL_newlib() to simplify the code.
 	luaL_newlib(_lua_state, lua_funcs);
 }
-

@@ -23,7 +23,7 @@ configuration::configuration()
 	set_concurrency_limit("1000");
 	set_onoff_random_port("1");
 	set_dst_port("0");
-	set_recv_time_out(3 * HZ);
+	set_response_from_peer_time_out(3 * HZ);
 	set_have_to_send_data_within_this_timeperiod(3 * HZ);
 	set_snd_speed_control(HZ / 4);
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
@@ -89,17 +89,17 @@ void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 	}
 }
 
-void configuration::set_recv_time_out(const std::string& recv_time_out)
+void configuration::set_response_from_peer_time_out(const std::string& response_from_peer_time_out)
 {
 	int val;
-	val = strtol(recv_time_out.c_str(), NULL, 10);
-	set_recv_time_out(val);
+	val = strtol(response_from_peer_time_out.c_str(), NULL, 10);
+	set_response_from_peer_time_out(val);
 }
 
-void configuration::set_recv_time_out(int recv_time_out)
+void configuration::set_response_from_peer_time_out(int response_from_peer_time_out)
 {
-	assert(recv_time_out != 0);
-	_recv_time_out = recv_time_out;
+	assert(response_from_peer_time_out != 0);
+	_response_from_peer_time_out = response_from_peer_time_out;
 }
 
 void configuration::set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod)
@@ -207,11 +207,11 @@ void configuration::readin()
 	if (!config.HasSection(section_name))
 		return;
 
-	option_name = "recv_time_out";
+	option_name = "response_from_peer_time_out";
 	if (config.HasOption(section_name, option_name))
 	{
 		value = config.GetOption(section_name, option_name);
-		set_recv_time_out(value);
+		set_response_from_peer_time_out(value);
 	}
 
 	option_name = "have_to_send_data_within_this_timeperiod";

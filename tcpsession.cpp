@@ -11,6 +11,7 @@
 #include "thetimer.h"
 #include "session_manager.h"
 #include "configuration.h"
+#include "statistics_bureau.h"
 
 tcpsession::tcpsession(uint32_t ip, uint16_t port)
 {
@@ -22,7 +23,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_port = ntohs(port);
 	_session_key = mk_sess_key(ip, port);
 
-	_recv_time_out = g_configuration.get_recv_time_out();
+	_response_from_peer_time_out = g_configuration.get_response_from_peer_time_out();
 	_have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod();
 	_snd_speed_control = g_configuration.get_snd_speed_control();
 	_wait_for_fin_from_peer_time_out = g_configuration.get_wait_for_fin_from_peer_time_out();
@@ -60,6 +61,7 @@ tcpsession::~tcpsession()
 void tcpsession::kill_me()
 {
 	_dead = true;
+	g_logger.printf("session: %s.%hu ended.\n", _client_src_ip_str.c_str(), _client_src_port);
 }
 
 bool tcpsession::still_alive()
@@ -301,11 +303,12 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	else
 	{
 		// timeout. No responses has received from peer for a long time.
-		if (jiffies - _last_recorded_recv_time > _recv_time_out )
+		if (jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
 			g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
+			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
 			kill_me();
 			return -1;
 		}
@@ -335,6 +338,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		// Give only one chance for peer's FIN to be acked.
 		g_logger.printf("session %s.%hu exits from state TIME_WAIT.\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_statistics_bureau.inc_sess_active_close_count();
 		kill_me();
 	}
 
@@ -361,6 +365,7 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	if (pkt->is_rst_set())
 	{
 		g_logger.printf("session: %s.%hu reset kills me.\n", _client_src_ip_str.c_str(), _client_src_port);
+		g_statistics_bureau.inc_sess_killed_by_reset();
 		kill_me();
 		return;
 	}
@@ -496,6 +501,7 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
+		g_statistics_bureau.inc_sess_passive_close_count();
 		kill_me();
 		return;
 	}
@@ -556,6 +562,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	{
 		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
+		g_statistics_bureau.inc_sess_active_close_timeout_count();
 		kill_me();
 		return;
 	}
