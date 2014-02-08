@@ -491,7 +491,7 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 	uint32_t ack_seq;
 
 	ack_seq = pkt->get_ack_seq();
-	if (seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
+	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
 		_current_state = tcpsession::CLOSED;
 		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
