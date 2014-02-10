@@ -27,6 +27,8 @@ configuration::configuration()
 	set_have_to_send_data_within_this_timeperiod(3 * HZ);
 	set_snd_speed_control(HZ / 4);
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
+	set_log_on(true);
+	set_duplicate_log_to_stdout(true);
 }
 
 configuration::~configuration()
@@ -35,16 +37,18 @@ configuration::~configuration()
 
 bool configuration::check_validity()
 {
-	if(_dst_addr.empty())
+	if (_dst_addr.empty())
 	{
-		g_logger.printf("dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
+		g_logger.printf(
+				"dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
 		abort();
 		return false;
 	}
 
-	if(0 == _dst_port)
+	if (0 == _dst_port)
 	{
-		g_logger.printf("dst_port was not set. Specify -p option on command line or set MAIN.dst_port in conf file.\n");
+		g_logger.printf(
+				"dst_port was not set. Specify -p option on command line or set MAIN.dst_port in conf file.\n");
 		abort();
 		return false;
 	}
@@ -79,7 +83,8 @@ void configuration::set_concurrency_limit(const std::string& concurrency_limit)
 
 void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 {
-	if (onoff_random_port == "0" || onoff_random_port == "off" || onoff_random_port.empty())
+	if (onoff_random_port == "0" || onoff_random_port == "off"
+			|| onoff_random_port.empty())
 	{
 		_onoff_random_port = false;
 	}
@@ -89,20 +94,23 @@ void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 	}
 }
 
-void configuration::set_response_from_peer_time_out(const std::string& response_from_peer_time_out)
+void configuration::set_response_from_peer_time_out(
+		const std::string& response_from_peer_time_out)
 {
 	int val;
 	val = strtol(response_from_peer_time_out.c_str(), NULL, 10);
 	set_response_from_peer_time_out(val);
 }
 
-void configuration::set_response_from_peer_time_out(int response_from_peer_time_out)
+void configuration::set_response_from_peer_time_out(
+		int response_from_peer_time_out)
 {
 	assert(response_from_peer_time_out != 0);
 	_response_from_peer_time_out = response_from_peer_time_out;
 }
 
-void configuration::set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod)
+void configuration::set_have_to_send_data_within_this_timeperiod(
+		const std::string& timeperiod)
 {
 	int val;
 	val = strtol(timeperiod.c_str(), NULL, 10);
@@ -128,7 +136,8 @@ void configuration::set_snd_speed_control(int speed_control)
 	_snd_speed_control = speed_control;
 }
 
-void configuration::set_wait_for_fin_from_peer_time_out(const std::string& time_out)
+void configuration::set_wait_for_fin_from_peer_time_out(
+		const std::string& time_out)
 {
 	int val;
 	val = strtol(time_out.c_str(), NULL, 10);
@@ -141,6 +150,26 @@ void configuration::set_wait_for_fin_from_peer_time_out(int time_out)
 	_wait_for_fin_from_peer_time_out = time_out;
 }
 
+void configuration::set_log_on(const std::string& log_on)
+{
+	set_log_on(log_on != "0");
+}
+
+void configuration::set_log_on(bool log_on)
+{
+	_log_on = log_on;
+}
+
+void configuration::set_duplicate_log_to_stdout(const std::string& dup)
+{
+	set_duplicate_log_to_stdout(dup != "0");
+}
+
+void configuration::set_duplicate_log_to_stdout(bool dup)
+{
+	_duplicate_log_to_stdout = dup;
+}
+
 void configuration::readin()
 {
 	INIConfig config;
@@ -148,11 +177,13 @@ void configuration::readin()
 	try
 	{
 		config = INIParser::Read(_conf_file_path.c_str());
+		g_logger.printf("Read conf file: %s\n", _conf_file_path.c_str());
 	}
-	catch(INIReaderException& e)
+	catch (INIReaderException& e)
 	{
 		_conf_file_path.clear();
 		g_logger.printf("%s\n", e.what());
+
 		return;
 	}
 
@@ -163,12 +194,15 @@ void configuration::readin()
 	// the MAIN section.
 	section_name = "MAIN";
 
-	if (!config.HasSection(section_name))
-		return;
+	if (config.HasSection(section_name))
+	{
+		g_logger.printf("MAIN section exists.\n");
+	}
 
 	option_name = "pcap_file_path";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("pcap_file_path: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_pcap_file_path(value);
 	}
@@ -176,6 +210,7 @@ void configuration::readin()
 	option_name = "dst_addr";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("dst_addr: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_dst_addr(value);
 	}
@@ -183,6 +218,7 @@ void configuration::readin()
 	option_name = "dst_port";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("dst_port: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_dst_port(value);
 	}
@@ -190,6 +226,7 @@ void configuration::readin()
 	option_name = "concurrency_limit";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("concurrency_limit: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_concurrency_limit(value);
 	}
@@ -197,6 +234,7 @@ void configuration::readin()
 	option_name = "onoff_random_port";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("onoff_random_port: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_onoff_random_port(value);
 	}
@@ -204,12 +242,15 @@ void configuration::readin()
 	// the session section
 	section_name = "SESSION";
 
-	if (!config.HasSection(section_name))
-		return;
+	if (config.HasSection(section_name))
+	{
+		g_logger.printf("SESSION section exists.\n");
+	}
 
 	option_name = "response_from_peer_time_out";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("response_from_peer_time_out: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_response_from_peer_time_out(value);
 	}
@@ -217,6 +258,7 @@ void configuration::readin()
 	option_name = "have_to_send_data_within_this_timeperiod";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("have_to_send_data_within_this_timeperiod: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_have_to_send_data_within_this_timeperiod(value);
 	}
@@ -224,6 +266,7 @@ void configuration::readin()
 	option_name = "snd_speed_control";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("snd_speed_control: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_snd_speed_control(value);
 	}
@@ -231,7 +274,35 @@ void configuration::readin()
 	option_name = "wait_for_fin_from_peer_time_out";
 	if (config.HasOption(section_name, option_name))
 	{
+		g_logger.printf("wait_for_fin_from_peer_time_out: %s\n", value.c_str());
 		value = config.GetOption(section_name, option_name);
 		set_wait_for_fin_from_peer_time_out(value);
 	}
+
+	// the LOG session
+	section_name = "LOG";
+
+	if (config.HasSection(section_name))
+	{
+		g_logger.printf("LOG section exists.\n");
+	}
+
+	option_name = "log_on";
+	if (config.HasOption(section_name, option_name))
+	{
+		g_logger.printf("log_on: %s\n", value.c_str());
+		value = config.GetOption(section_name, option_name);
+		set_log_on(value);
+	}
+
+	option_name = "duplicate_log_to_stdout";
+	if (config.HasOption(section_name, option_name))
+	{
+		g_logger.printf("duplicate_log_to_stdout: %s\n", value.c_str());
+		value = config.GetOption(section_name, option_name);
+		set_duplicate_log_to_stdout(value);
+	}
+
+	g_logger.printf("Finished reading conf file.\n");
+	g_logger.flush();
 }

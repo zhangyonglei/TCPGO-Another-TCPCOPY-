@@ -76,6 +76,16 @@ public:
 		return _wait_for_fin_from_peer_time_out;
 	}
 
+	bool get_log_on()
+	{
+		return _log_on;
+	}
+
+	bool get_duplicate_log_to_stdout()
+	{
+		return _duplicate_log_to_stdout;
+	}
+
 	// setters
 	void set_conf_file_path(const std::string& conf_file_path);
 
@@ -100,6 +110,12 @@ public:
 
 	void set_wait_for_fin_from_peer_time_out(const std::string& time_out);
 	void set_wait_for_fin_from_peer_time_out(int time_out);
+
+	void set_duplicate_log_to_stdout(const std::string& dup);
+	void set_duplicate_log_to_stdout(bool dup);
+
+	void set_log_on(const std::string& log_on);
+	void set_log_on(bool log_on);
 
 	/**
 	 * read in conf file.
@@ -126,6 +142,9 @@ private:
 	int  _have_to_send_data_within_this_timeperiod;
 	int  _snd_speed_control;
 	int  _wait_for_fin_from_peer_time_out;
+
+	bool _log_on;
+	bool _duplicate_log_to_stdout;
 };
 
 #endif /* _CONFIGURATION_H_ */

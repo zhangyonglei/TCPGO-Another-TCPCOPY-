@@ -1,0 +1,3 @@
+t = require("libhoros")
+print(t.version())
+t.run()

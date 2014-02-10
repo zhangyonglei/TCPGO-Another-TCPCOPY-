@@ -1,0 +1,5 @@
+# 
+"lua -i lua_init_script" works
+however
+"lua lua_init_script" -i failed. When parsing the conf file, code detect the SECTION exists, but failed to retrieve the OPTION value.
+I don't know why.

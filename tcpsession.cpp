@@ -743,7 +743,8 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		++ite;
 	}
 	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
-	std::cout << distance << " packet(s) is(are) in the sliding window.\n";
+	g_logger.printf("%d packet(s) is(are) in the sliding window.\n", distance);
+
 	// // try to increase the sliding window size
 	if (current_sliding_win_size < _advertised_window_size)
 	{
@@ -784,8 +785,9 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		}
 
 		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
-		std::cout << "sliding window has been expanded to " << distance << " packets.\n";
-		std::cout << _ippkts_samples.size() << " packet(s) is(are) in the _ippkts_samples.\n";
+
+		g_logger.printf("sliding window has been expanded to %d packets.\n", distance);
+		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
 	}
 }
 

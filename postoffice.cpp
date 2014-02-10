@@ -77,6 +77,10 @@ postoffice::postoffice()
 	_err:
 	// I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
 	//strerror_r(errno, _buff, sizeof(_buff));
+	// The mentioned problem above is clear.
+	// The GNU-specific strerror_r() returns a pointer to a string containing the error message.
+	// This may be either a pointer to a string that the function stores in buf, or a pointer to
+	// some (immutable) static string (in which case buf is unused).
 	//g_logger.printf("%s\n", _buff);
 
 	perror(err_hint);

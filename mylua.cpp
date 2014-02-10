@@ -45,6 +45,7 @@ int mylua::sess_statistics(lua_State* L)
 
 int mylua::horos_run(lua_State* L)
 {
+
 	horos_init();
 }
 

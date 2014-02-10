@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <iostream>
+#include "configuration.h"
 
 class cute_logger;
 extern cute_logger g_logger;
@@ -40,20 +41,21 @@ int cute_logger::printf(const char* format, ...)
 	char buff[2048] = { 0 };
 
 	ret = 0;
-	if (_on)
+	if (g_configuration.get_log_on())
 	{
 		va_start(ap, format);
 		ret = vfprintf(_stream, format, ap);
 		va_end(ap);
 	}
 
-#ifdef __DEBUG__
-	va_start(ap, format);
-	vsnprintf(buff, sizeof(buff), format, ap);
-	va_end(ap);
-	std::cout << buff;
-	fflush(_stream);
-#endif
+	if (g_configuration.get_duplicate_log_to_stdout())
+	{
+		va_start(ap, format);
+		vsnprintf(buff, sizeof(buff), format, ap);
+		va_end(ap);
+		std::cout << buff;
+		fflush(_stream);
+	}
 
 	return ret;
 }
