@@ -55,7 +55,7 @@ public:
 
 private:
 	volatile bool _stop;
-	int   _epoll_fd;
+	int _epoll_fd;
 	std::map<int, evt_workhorse*> _workhorses;
 };
 

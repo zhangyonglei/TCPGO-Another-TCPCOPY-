@@ -14,7 +14,7 @@ realtime_captureer g_realtime_captureer;
 
 realtime_captureer::realtime_captureer()
 {
-	_listening_port = 1993;
+	_traffic_listening_port = 1993;
 }
 
 realtime_captureer::~realtime_captureer()
@@ -28,19 +28,19 @@ int realtime_captureer::get_ready()
 	socklen_t len;
 	struct sockaddr_in addr;
 
-	_listening_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listening_fd == -1)
+	_traffic_listening_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_traffic_listening_fd == -1)
 	{
 		perror("socket");
 		abort();
 	}
 
 	memset(&addr, 0, sizeof(addr));
-	addr.sin_port = ntohs(_listening_port);
+	addr.sin_port = ntohs(_traffic_listening_port);
 	addr.sin_family = AF_INET;
 
 	opt = 1;
-	ret = setsockopt(_listening_fd, SOL_SOCKET, SO_REUSEADDR, &opt,
+	ret = setsockopt(_traffic_listening_fd, SOL_SOCKET, SO_REUSEADDR, &opt,
 			sizeof(opt));
 	if (ret == -1)
 	{
@@ -48,13 +48,13 @@ int realtime_captureer::get_ready()
 		abort();
 	}
 
-	if (bind(_listening_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+	if (bind(_traffic_listening_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
 	{
 		perror("bind");
 		abort();
 	}
 
-	if (listen(_listening_fd, 10) == -1)
+	if (listen(_traffic_listening_fd, 10) == -1)
 	{
 		perror("listen");
 		abort();
@@ -67,7 +67,7 @@ int realtime_captureer::get_ready()
 		_conns[i]._buffer_used_len = 0;
 	}
 
-	g_poller.register_evt(_listening_fd, poller::POLLIN, this);
+	g_poller.register_evt(_traffic_listening_fd, poller::POLLIN, this);
 
 	return 0;
 }
@@ -76,7 +76,7 @@ void realtime_captureer::pollin_handler(int fd)
 {
 	int connected_fd;
 
-	if (_listening_fd == fd)
+	if (_traffic_listening_fd == fd)
 	{
 		accept_conn();
 	}
@@ -96,7 +96,7 @@ void realtime_captureer::accept_conn()
 	int fd;
 	conn_info* conn;
 
-	fd = ::accept(_listening_fd, NULL, NULL);
+	fd = ::accept(_traffic_listening_fd, NULL, NULL);
 	if (fd < 0)
 	{
 		perror("accept");

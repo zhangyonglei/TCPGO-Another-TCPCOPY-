@@ -97,11 +97,11 @@ void poller::bigbang()
 		{
 			fd = events[n].data.fd;
 			workhorse = _workhorses.at(fd);
-			if (events[n].events | EPOLLIN)
+			if (events[n].events & EPOLLIN)
 			{
 				workhorse->pollin_handler(fd);
 			}
-			if (events[n].events | EPOLLOUT)
+			if (events[n].events & EPOLLOUT)
 			{
 				workhorse->pollout_handler(fd);
 			}

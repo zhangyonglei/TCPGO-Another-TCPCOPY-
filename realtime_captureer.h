@@ -47,8 +47,8 @@ private:
 	void parse_buff_and_get_ip_pkts(int index);
 
 private:
-	uint16_t _listening_port;   ///< in host byte order.
-	int _listening_fd;
+	uint16_t _traffic_listening_port;   ///< in host byte order.
+	int _traffic_listening_fd;
 
 	struct conn_info
 	{
