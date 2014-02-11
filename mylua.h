@@ -29,6 +29,8 @@ public:
 
 	int get_ready();
 
+	void disable_console();
+
 public:
 	// implement the evt_workhorse interface.
 	virtual void pollin_handler(int fd);
@@ -52,6 +54,7 @@ private:
 private:
 	static lua_State* _lua_state;
 
+	bool _enable_console;  ///< if horos is loaded as a so from within lua console, it's not necessarily open another lua console.
 	uint16_t _console_listening_port;
 	int _console_listening_fd;
 	int _console_connected_fd;
