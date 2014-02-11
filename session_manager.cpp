@@ -86,7 +86,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	}
 	pcap_close(pcap);
 
-	clean();
+	clean_sick_session();
 }
 
 void session_manager::dispatch_ip_pkt(const char* ip_pkt)
@@ -141,7 +141,7 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 	}
 }
 
-int session_manager::clean()
+int session_manager::clean_sick_session()
 {
 	int healthy, total_sess_count, sick_sess_count;
 	std::map<uint64_t, tcpsession>::iterator ite;

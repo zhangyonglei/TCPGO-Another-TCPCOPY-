@@ -66,7 +66,7 @@ private:
 	char  _buff[8192];   ///< self-explanatory.
 	int _l2hdr_len;   ///< it's usually 14.
 
-	std::map<uint64_t, postoffice_callback_interface*> _callbacks;  ///< I'm tired, i don't wanna leave comments.
+	std::map<uint64_t, postoffice_callback_interface*> _callbacks;
 };
 
 #endif /* _POSTMAN_H_ */

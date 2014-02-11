@@ -41,6 +41,8 @@ public:
 
 	void get_ready();
 
+	tcpsession* next();
+
 public:
 	/// refer to the interface postoffice_callback_interface for details.
 	virtual int pls_send_these_packets(std::vector<const ip_pkt*>& pkts);
@@ -118,6 +120,12 @@ private:
 
 	bool _dead;
 	bool _enable_active_close;     ///< default to false. That means tcpsession default to close passively.
+
+private:
+	/// no class other than session_manager is allowed to access the double linked list directly.
+	friend class session_manager;
+	typedef std::pair<tcpsession*, tcpsession*> double_linked_list_t;
+	double_linked_list_t _linked_list; ///< link all the tcpsessions in chronological order.
 };
 
 #endif /* _TCPSESSION_H_ */

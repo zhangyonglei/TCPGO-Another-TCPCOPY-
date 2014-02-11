@@ -17,7 +17,7 @@ soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
 objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
 dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
-public_dirs = ./public ./$(iniparser)/include ./$(lua_vm_src)
+public_dirs = . ./public ./$(iniparser)/include ./$(lua_vm_src) 
 
 # third-party ini parser
 iniparser = cpp-iniparser

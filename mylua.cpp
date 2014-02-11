@@ -20,16 +20,31 @@ class mylua g_mylua;
  */
 extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State* L)
 {
+	g_mylua.disable_console();
 	g_mylua.set_lua_state(L);
 	g_mylua.register_funcs();
 
 	return 1;
 }
 
+mylua::mylua()
+{
+	_console_listening_port = 1994;
+	_console_listening_fd = -1;
+	_console_connected_fd = -1;
+	_lua_state = NULL;
+	_enable_console = true;
+}
+
+mylua::~mylua()
+{
+	set_lua_state(NULL);
+}
+
 // the following are functions exposed to lua state.
 int mylua::version(lua_State* L)
 {
-	lua_pushstring(L, VERSION_NUM);
+	lua_pushstring(L, "Horos "VERSION_NUM"\n");
 
 	return 1;
 }
@@ -47,7 +62,6 @@ int mylua::sess_statistics(lua_State* L)
 
 int mylua::horos_run(lua_State* L)
 {
-
 	horos_init();
 }
 
@@ -91,19 +105,13 @@ static const struct luaL_Reg lua_funcs[] = {
 	{NULL, NULL}
 };
 
-mylua::mylua()
-{
-	_console_listening_port = 1994;
-	_console_listening_fd = -1;
-	_console_connected_fd = -1;
-}
-
-mylua::~mylua()
-{
-}
-
 void mylua::set_lua_state(lua_State* state)
 {
+	if (_lua_state != NULL)
+	{
+		lua_close(_lua_state);
+	}
+
 	_lua_state = state;
 }
 
@@ -114,23 +122,50 @@ lua_State* mylua::get_lua_state()
 
 void mylua::register_funcs()
 {
+	const char* key;
+
 	// luaL_newlibtable(lua_state, 1);
 	// luaL_setfuncs(lua_state, lua_tests, 0);  // use luaL_newlib() to simplify the code.
 	luaL_newlib(_lua_state, lua_funcs);
+
+    // table holding all the functions exported to lua is on stack top
+    lua_pushnil(_lua_state);  // first key is nil
+
+    while (lua_next(_lua_state, -2) != 0)
+    {
+    	// 'key' is at index -2 and 'value' is at index -1
+    	assert(LUA_TSTRING == lua_type(_lua_state, -2)); // function name is a string
+    	key = lua_tolstring(_lua_state, -2, NULL);
+    	lua_setglobal(_lua_state, key);
+    }
+    luaL_dostring(_lua_state, "p = print");  // alias p to print to save typing efforts.
+}
+
+void mylua::disable_console()
+{
+	_enable_console = false;
 }
 
 int mylua::get_ready()
 {
 	lua_State* state;
 
-	state = luaL_newstate();
-	assert(NULL != state);
+	// in the case libhoros.so is loaded from lua console whose state has already
+	// passed in. There is no need to create another lua state.
+	if (NULL == _lua_state)
+	{
+		state = luaL_newstate();
+		assert(NULL != state);
 
-	luaL_openlibs(state);
-	set_lua_state(state);
-	register_funcs();
+		luaL_openlibs(state);
+		set_lua_state(state);
+		register_funcs();
+	}
 
-	open_listening_port();
+	if (_enable_console)
+	{
+		open_listening_port();
+	}
 }
 
 void mylua::open_listening_port()
@@ -211,7 +246,7 @@ void mylua::accept_conn(int fd)
 
 	g_poller.register_evt(_console_connected_fd, poller::POLLIN, this);
 
-	welcome = "welcome to the horos console v"VERSION_NUM"\n";
+	welcome = "Welcome to the horos console v"VERSION_NUM"\n";
 	write(_console_connected_fd, welcome.c_str(), welcome.length());
 	print_console_prompt(_console_connected_fd, false);
 }
@@ -250,23 +285,29 @@ void mylua::print_console_prompt(int fd, bool newline)
 int mylua::run_lua_string(char* str)
 {
 	int orig_top, curr_top;
-	int args_count;
+	int new_stack_frame;
 	int retcode;
+	std::ostringstream ss;
+
+	if (!strstr(str, "return"))
+	{
+		ss << "return " << str;
+	}
+	else
+	{
+		ss << str;
+	}
 
 	orig_top = lua_gettop(_lua_state);
-	retcode = luaL_dostring(_lua_state, str);
-	if (!retcode)
-	{
-		goto _exit;
-	}
+	retcode = luaL_dostring(_lua_state, ss.str().c_str());
 	curr_top = lua_gettop(_lua_state);
 
-	args_count = curr_top - orig_top;
-	assert(args_count >= 0);
-	// got return values.
-	if (args_count > 0)
+	new_stack_frame = curr_top - orig_top;
+	assert(new_stack_frame >= 0);
+	// got info on stack.
+	if (new_stack_frame > 0)
 	{
-		for (int i = 1; i <= args_count; i++)
+		for (int i = 1; i <= new_stack_frame; i++)
 		{
 			const char* retval = luaL_checkstring(_lua_state, -i);
 			write(_console_connected_fd, retval, strlen(retval));
@@ -276,7 +317,7 @@ int mylua::run_lua_string(char* str)
 _exit:
 	// clear the lua top.
 	lua_settop(_lua_state, 0);
-	print_console_prompt(_console_connected_fd, true);
+	print_console_prompt(_console_connected_fd, false);
 	return retcode;
 }
 

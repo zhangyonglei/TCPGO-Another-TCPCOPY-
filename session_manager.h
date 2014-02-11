@@ -30,7 +30,7 @@ private:
 	/**
 	 * weed out tcpsession with unhealthy IP samples.
 	 */
-	int clean();
+	int clean_sick_session();
 		
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.

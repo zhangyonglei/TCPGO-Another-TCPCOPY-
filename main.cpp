@@ -28,6 +28,7 @@
 #include "realtime_captureer.h"
 #include "configuration.h"
 #include "mylua.h"
+#include "listmap.h"
 #include "version.h"
 
 using namespace std;
@@ -41,6 +42,7 @@ std::string onoff_random_port;
 
 static void output_help();
 static void output_version();
+static void hook_here_for_tmp_test_code();
 
 int run();
 
@@ -59,6 +61,8 @@ int main(int argc, char **argv)
 			{"version", no_argument, NULL,  'v' },
 			{0, 0, 0, 0}
 	};
+
+	hook_here_for_tmp_test_code();
 
 	while (true) {
 		ch = getopt_long(argc, argv, "x:f:d:p:c:r:hv", long_options, &option_index);
@@ -182,11 +186,16 @@ int run()
 		}
 	}
 
-	g_session_manager.get_ready();
 	g_postoffice.get_ready();
 	g_mylua.get_ready();
+	g_session_manager.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
 	/// the word starts from a big bang.Refer to function declarations for yummy explanations.
 	g_poller.bigbang();
+}
+
+void hook_here_for_tmp_test_code()
+{
+	listmap<int, void*> lm;
 }

@@ -8,6 +8,7 @@
 
 #include "../public/horos.h"
 #include "../public/misc.h"
+#include "../listmap.h"
 #include <iostream>
 
 using namespace std;

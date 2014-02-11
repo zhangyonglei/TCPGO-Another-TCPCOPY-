@@ -239,6 +239,11 @@ void tcpsession::get_ready()
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
 }
 
+tcpsession* tcpsession::next()
+{
+	return _linked_list.second;
+}
+
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
