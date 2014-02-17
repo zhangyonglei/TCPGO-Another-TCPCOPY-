@@ -197,5 +197,4 @@ int run()
 
 void hook_here_for_tmp_test_code()
 {
-	listmap<int, void*> lm;
 }
