@@ -6,54 +6,156 @@
  ********************************************/
 
 /**
- * NOTICE: several articles may be referenced to clearly understand this file.
+ * NOTICE: several articles may be referenced to fully understand this file.
  * http://www.boost.org/doc/libs/1_55_0/libs/iterator/doc/index.html
  * http://www.boost.org/doc/libs/1_55_0/libs/iterator/doc/iterator_facade.html
- * http://www.boost.org/doc/libs/1_55_0/libs/iterator/doc/iterator_adaptor.html
  * http://www.codeproject.com/Articles/36530/An-Introduction-to-Iterator-Traits
-*/
+ * http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
+ */
 
 #ifndef _LISTMAP_H_
 #define _LISTMAP_H_
 
 #include <map>
 #include <boost/utility/enable_if.hpp>
-#include <boost/iterator_adaptors.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+
+// This class is intended for double-linking.
+template<typename V> struct Quadrille  // 四元组 is a proxy to implement iterator.
+{
+	// to comply with STL specification.
+	typedef V          value_type;
+	typedef ptrdiff_t  difference_type;
+	typedef boost::forward_traversal_tag iterator_category;
+	typedef V*         pointer;
+	typedef V&         reference;
+
+	Quadrille() : _prev(NULL), _next(NULL), _data(NULL), _auxil_info(NULL)
+	{}
+
+	reference dereference()
+	{
+		return *_data;
+	}
+
+	bool equal(const V* v)
+	{
+		bool b;
+		if (v == NULL || _data == NULL)
+		{
+			b = (v == _data);
+		}
+		else
+		{
+			b = (*v == *_data);
+		}
+
+		return b;
+	}
+
+	bool equal(const Quadrille<V>& t)
+	{
+		return equal(t._data);
+	}
+
+	void increment()
+	{
+		if (NULL != _next)
+		{
+			_prev = this;
+			_data = _next->_data;
+			_auxil_info = _next->_auxil_info;
+			_next = _next->_next;
+		}
+		else
+		{
+			// the position past the last element.
+			_prev = this;
+			_data = NULL;
+			_auxil_info = NULL;
+			_next = NULL;
+		}
+	}
+
+	bool operator==(const Quadrille& t)
+	{
+		bool b;
+		b = (_data == t._data);
+		assert(_auxil_info == t._auxil_info);
+
+		return b;
+	}
+
+	bool operator!=(const Quadrille& t)
+	{
+		return !operator==(t);
+	}
+
+	Quadrille<V>* _prev;
+	Quadrille<V>* _next;
+	V* _data;
+	void* _auxil_info;
+};
 
 /**
  * The iterator for class listmap.
+>
+class iterator_adaptor : public iterator_facade<Derived, V', C', R', D'> // see details
  */
-template <class Value>
-class listmap_iter : public boost::iterator_adaptor<
-		listmap_iter<Value>               // Derived
-		, typename Value::Base            // Base
-		, boost::use_default              // Value
-		, boost::forward_traversal_tag    // CategoryOrTraversal
+template <typename Value>
+class listmap_iter
+: public boost::iterator_facade<
+  listmap_iter<Value>             // CRTP
+, Value                           // The actual value that listmap_iter wraps.
+, boost::forward_traversal_tag    // CategoryOrTraversal
 >
 {
-private:
-	struct enabler {};  // a private type avoids misuse
-
 public:
-	listmap_iter()
-	: listmap_iter::iterator_adaptor_(0) {}
+	explicit listmap_iter(Quadrille<Value>* p) : _ptr2quadrille(p)
+	{
+		if (NULL == _ptr2quadrille)
+			_ptr2quadrille = NULL;
+	}
 
-	explicit listmap_iter(Value* p)
-	: listmap_iter::iterator_adaptor_(p) {}
-
-    template <class OtherValue>
-    listmap_iter(
-    	  listmap_iter<OtherValue> const& other
-    	  , typename boost::enable_if<boost::is_convertible<OtherValue*,Value*>, enabler >::type = enabler()
-    )
-      : listmap_iter::iterator_adaptor_(other.base()) {}
+    template <class OtherValue> listmap_iter(listmap_iter<OtherValue> const& other)
+     	 	 : _ptr2quadrille(other._ptr2quadrille) {}
 
 private:
-	friend class boost::iterator_core_access;
-	void increment()
-	{
-		this->base_reference() = this->base()->next();
-	}
+   friend class boost::iterator_core_access;
+   template <class, class> friend class listmap;
+   template <class> friend class listmap_iter;
+
+   template <class OtherValue>
+   bool equal(listmap_iter<OtherValue> const& other)const
+   {
+	   bool b;
+	   if ( NULL == _ptr2quadrille || NULL == other._ptr2quadrille)
+	   {
+		   b = (_ptr2quadrille == other._ptr2quadrille);
+		   return b;
+	   }
+
+       b = _ptr2quadrille->equal(*other._ptr2quadrille);
+       return b;
+   }
+
+   void increment()
+   {
+	   _ptr2quadrille = _ptr2quadrille->_next;
+   }
+
+   Value& dereference()const
+   {
+	   return _ptr2quadrille->dereference();
+   }
+
+   Quadrille<Value>* current_quadrille()
+   {
+	   return _ptr2quadrille;
+   }
+
+private:
+   Quadrille<Value>* _ptr2quadrille;
 };
 
 /**
@@ -65,113 +167,221 @@ private:
 template<typename K, typename V>
 class listmap
 {
-private:
-	// This class is intended for double-linking.
-	struct Trident  // 三叉戟
-	{
-		typedef V*         value_type;
-		typedef ptrdiff_t  difference_type;
-		typedef boost::forward_traversal_tag iterator_category;
-		typedef V**        pointer;
-		typedef V*&        reference;
-
-		Trident* _pre;
-		Trident* _next;
-		V* _value;
-
-		Trident() : _pre(NULL), _next(NULL), _value(NULL)
-		{}
-
-		typedef Trident Base;
-
-		void next()
-		{
-			if (NULL != _next)
-			{
-				_pre = this;
-				_value = _next->_value;
-				_next = _next->_next;
-			}
-			else
-			{
-				abort();
-			}
-		}
-	};
-
 public:
-	typedef listmap_iter<Trident> listmap_iterator;
-	typedef listmap_iter<Trident const> listmap_const_iterator;
+	typedef Quadrille<V> MappedElementType;
+	typedef std::map<K, MappedElementType> InternalMap;
+	typedef listmap_iter<V> iterator;
+	typedef listmap_iter<V const> const_iterator;
+	typedef int size_type;
+	typedef K key_type;
+	typedef V value_type;
 
 public:
 	listmap();
 	virtual ~listmap();
 
-	listmap_iterator begin();
-	listmap_iterator end();
-
-	listmap_const_iterator begin()const;
-	listmap_const_iterator end()const;
+	iterator begin();
+	iterator end();
+	// just lack the motivation to support the const version until it's necessary to do so.
+//	const_iterator begin()const;
+//	const_iterator end()const;
 
 	// comply with the std::map's behavior of operator[].
 	V& operator[](K key);
 
+	iterator find (const key_type& k);
+
+	void erase (iterator position);
+	size_type erase (const key_type& k);
+
+	void clear();
+
+	size_type size();
+
 private:
-	typedef std::map<K, Trident> InternalMap;
+	MappedElementType* _head; ///< this variable is intended for building the iterator returned by begin()
+	MappedElementType* _tail;   ///< point to the tail
+
 	InternalMap _map_elements;
 };
 
 template<typename K, typename V>
 listmap<K, V>::listmap()
 {
+	_head = NULL;
+	_tail = NULL;
 }
 
 template<typename K, typename V>
 listmap<K, V>::~listmap()
 {
-	for (typename InternalMap::iterator ite = _map_elements.begin();
-			ite != _map_elements.end();
-			++ite )
-	{
-		delete ite->second._value;
-	}
+	clear();
 }
 
 template<typename K, typename V>
 V& listmap<K, V>::operator[](K key)
 {
-	Trident t;
-	t = _map_elements[key];
-	if (NULL == t->_value)
+	std::pair<typename InternalMap::iterator, bool> ret;
+
+	ret = _map_elements.insert(std::pair<K, MappedElementType>(key, MappedElementType()));
+	MappedElementType& elem = ret.first->second;
+	if (ret.second)  // the newly created element has been inserted successfully..
 	{
-		t->_value = new V;
+		int sz;
+
+		elem._data = new V;
+		elem._auxil_info = new typename InternalMap::iterator(ret.first);
+		sz = _map_elements.size();
+
+		if ( sz != 1)
+		{
+			_tail->_next = &elem;
+			elem._prev = _tail;
+			elem._next = NULL;
+			_tail = &elem;
+		}
+		else  // the first element.
+		{
+			assert(sz == 1);
+			assert(_head == NULL);
+			assert(_tail == NULL);
+
+			elem._prev = NULL;
+			elem._next = NULL;
+			_head = &elem;
+			_tail = _head;
+		}
 	}
 
-	return *t->_value;
+	return *elem._data;
 }
 
 template<typename K, typename V>
-typename listmap<K, V>::listmap_iterator listmap<K, V>::begin()
+typename listmap<K, V>::iterator listmap<K, V>::find(const key_type& k)
 {
-	return listmap_iterator();
+	typename InternalMap::iterator map_ite;
+
+	map_ite = _map_elements.find(k);
+	if (map_ite != _map_elements.end())
+	{
+		return iterator(&map_ite->second);
+	}
+	else  // failed to find the key.
+	{
+		return end();
+	}
 }
 
 template<typename K, typename V>
-typename listmap<K, V>::listmap_iterator listmap<K, V>::end()
+void listmap<K, V>::erase(iterator position)
 {
-	return listmap_iterator();
+	assert(position != end());
+
+	// remove the first element.
+	if (position == iterator(_head))
+	{
+		assert(NULL != _head);
+
+		MappedElementType* orig_head;
+		orig_head = _head;
+		_head = _head->_next;
+
+		delete orig_head->_data;
+		typename InternalMap::iterator* ptr_ite = (typename InternalMap::iterator*)orig_head->_auxil_info;
+		_map_elements.erase(*ptr_ite);
+		delete ptr_ite;
+	}
+	else
+	{
+		MappedElementType* prev;
+		MappedElementType* next;
+		MappedElementType* current;
+
+		current = position.current_quadrille();
+		prev = current->_prev;
+		next = current->_next;
+
+		// relink
+		prev->_next = current->_next;
+		if (next != NULL)
+		{
+			next->_prev = current->_prev;
+		}
+		else  // the tail will be removed
+		{
+			_tail = prev;
+		}
+
+		delete current->_data;
+		typename InternalMap::iterator* ptr_ite = (typename InternalMap::iterator*)current->_auxil_info;
+		_map_elements.erase(*ptr_ite);
+		delete ptr_ite;
+	}
 }
 
 template<typename K, typename V>
-typename listmap<K, V>::listmap_const_iterator listmap<K, V>::begin()const
+typename listmap<K, V>::size_type listmap<K, V>::erase(const key_type& k)
 {
-	return listmap_iterator();
+	typename InternalMap::iterator ite;
+	MappedElementType* elem;
+
+	ite = _map_elements.find(k);
+	if (ite == _map_elements.end())
+	return 0;
+
+	elem = &ite->second;
+	iterator ite_rm(elem);
+	erase(ite_rm);
+	return 1;
 }
 
 template<typename K, typename V>
-typename listmap<K, V>::listmap_const_iterator listmap<K, V>::end()const
+void listmap<K, V>::clear()
 {
-	return listmap_iterator();
+	typename InternalMap::iterator* ptr;
+	for (typename InternalMap::iterator ite = _map_elements.begin();
+			ite != _map_elements.end();
+			++ite )
+	{
+		ptr = (typename InternalMap::iterator*)ite->second._auxil_info;
+		delete ptr;
+		delete ite->second._data;
+	}
+
+	_map_elements.clear();
+	_head = NULL;
+	_tail = NULL;
 }
+
+template<typename K, typename V>
+typename listmap<K, V>::size_type listmap<K, V>::size()
+{
+	return _map_elements.size();
+}
+
+template<typename K, typename V>
+typename listmap<K, V>::iterator listmap<K, V>::begin()
+{
+	return iterator(_head);
+}
+
+template<typename K, typename V>
+typename listmap<K, V>::iterator listmap<K, V>::end()
+{
+	return iterator(NULL);
+}
+
+/*
+template<typename K, typename V>
+typename listmap<K, V>::const_iterator listmap<K, V>::begin()const
+{
+	return iterator();
+}
+
+template<typename K, typename V>
+typename listmap<K, V>::const_iterator listmap<K, V>::end()const
+{
+	return iterator();
+}*/
 
 #endif /* _LISTMAP_H_ */
