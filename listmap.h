@@ -99,8 +99,6 @@ template<typename V> struct Quadrille  // 四元组 is a proxy to implement iter
 
 /**
  * The iterator for class listmap.
->
-class iterator_adaptor : public iterator_facade<Derived, V', C', R', D'> // see details
  */
 template <typename Value>
 class listmap_iter
@@ -111,10 +109,7 @@ class listmap_iter
 >
 {
 public:
-	explicit listmap_iter(Quadrille<Value>* p) : _ptr2quadrille(p)
-	{
-		if (NULL == _ptr2quadrille)
-			_ptr2quadrille = NULL;
+	explicit listmap_iter(Quadrille<Value>* p = NULL) : _ptr2quadrille(p) {
 	}
 
     template <class OtherValue> listmap_iter(listmap_iter<OtherValue> const& other)
@@ -196,7 +191,11 @@ public:
 
 	void clear();
 
-	size_type size();
+	size_type size()const;
+
+	bool empty()const;
+
+	K get_key(iterator ite)const;
 
 private:
 	MappedElementType* _head; ///< this variable is intended for building the iterator returned by begin()
@@ -354,9 +353,23 @@ void listmap<K, V>::clear()
 }
 
 template<typename K, typename V>
-typename listmap<K, V>::size_type listmap<K, V>::size()
+typename listmap<K, V>::size_type listmap<K, V>::size()const
 {
 	return _map_elements.size();
+}
+
+template<typename K, typename V>
+bool listmap<K, V>::empty()const
+{
+	int sz = size();
+	return sz == 0;
+}
+
+template<typename K, typename V>
+typename listmap<K, V>::key_type listmap<K, V>::get_key(iterator ite)const
+{
+	typename InternalMap::iterator* stdmap_ite = (typename InternalMap::iterator*)(ite._ptr2quadrille->_auxil_info);
+	return (*stdmap_ite)->first;
 }
 
 template<typename K, typename V>

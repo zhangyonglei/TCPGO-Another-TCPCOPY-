@@ -19,7 +19,7 @@ class timer_event
 {
 public:
 	virtual void one_shot_timer_event_run() = 0;
-	~timer_event(){};
+	virtual ~timer_event(){};
 };
 
 class the_timer

@@ -102,7 +102,7 @@ void postoffice::get_ready()
 
 void postoffice::register_callback(uint64_t key, postoffice_callback_interface* callback)
 {
-	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
+	mylistmap::iterator ite;
 	ite = _callbacks.find(key);
 	assert(ite == _callbacks.end());
 	_callbacks[key] = callback;
@@ -110,7 +110,7 @@ void postoffice::register_callback(uint64_t key, postoffice_callback_interface* 
 
 void postoffice::deregister_callback(uint64_t key)
 {
-	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
+	mylistmap::iterator ite;
 	ite = _callbacks.find(key);
 	assert(ite != _callbacks.end());
 	_callbacks.erase(ite);
@@ -123,7 +123,7 @@ void postoffice::pollin_handler(int fd)
 	uint16_t src_port;
 	char *ptr_ippkt;
 	postoffice_callback_interface* callback;
-	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
+	mylistmap::iterator ite;
 
 	if (fd != _recv_fd)
 		return;
@@ -171,7 +171,7 @@ void postoffice::pollin_handler(int fd)
 		if (ite != _callbacks.end())
 		{
 			ip_pkt pkt(ptr_ippkt);
-			ite->second->got_a_packet(&pkt);
+			(*ite)->got_a_packet(&pkt);
 		}
 	}
 }
@@ -182,7 +182,7 @@ void postoffice::pollout_handler(int fd)
 	const ip_pkt* pkt;
 	const char* starting_addr;
 	int tot_len;
-	std::map<uint64_t, postoffice_callback_interface*>::iterator ite;
+	mylistmap::iterator ite;
 	struct sockaddr_in  dst_addr;
 	postoffice_callback_interface* callback;
 	int  concurrency_num;
@@ -213,7 +213,7 @@ void postoffice::pollout_handler(int fd)
 			break;
 
 		++concurrency_num;
-		callback = ite->second;
+		callback = *ite;
 
 		int num;
 		vector<const ip_pkt*> pkts;
@@ -225,7 +225,7 @@ void postoffice::pollout_handler(int fd)
 		}
 		else if (-1 == num)
 		{
-			g_session_manager.erase_a_session(ite->first);
+			g_session_manager.erase_a_session(_callbacks.get_key(ite));
 			_callbacks.erase(ite++);
 			continue;
 		}

@@ -14,6 +14,7 @@
 #include "poller.h"
 #include "ip_pkt.h"
 #include "thetimer.h"
+#include "listmap.h"
 
 class postoffice;
 extern postoffice g_postoffice;
@@ -66,7 +67,8 @@ private:
 	char  _buff[8192];   ///< self-explanatory.
 	int _l2hdr_len;   ///< it's usually 14.
 
-	std::map<uint64_t, postoffice_callback_interface*> _callbacks;
+	typedef listmap<uint64_t, postoffice_callback_interface*> mylistmap;
+	mylistmap _callbacks;
 };
 
 #endif /* _POSTMAN_H_ */
