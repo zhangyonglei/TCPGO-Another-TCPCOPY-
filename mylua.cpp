@@ -44,7 +44,7 @@ mylua::~mylua()
 // the following are functions exposed to lua state.
 int mylua::version(lua_State* L)
 {
-	lua_pushstring(L, "Horos "VERSION_NUM"\n");
+	lua_pushstring(L, "Horos "VERSION_NUM);
 
 	return 1;
 }
@@ -82,11 +82,11 @@ int mylua::turn_on_log(lua_State* L)
 
 	if (g_configuration.get_log_on())
 	{
-		ret_val = "Log is on.\n";
+		ret_val = "Log is on.";
 	}
 	else
 	{
-		ret_val = "Log is off.\n";
+		ret_val = "Log is off.";
 	}
 
 	lua_pushstring(L, ret_val.c_str());
@@ -317,7 +317,7 @@ int mylua::run_lua_string(char* str)
 _exit:
 	// clear the lua top.
 	lua_settop(_lua_state, 0);
-	print_console_prompt(_console_connected_fd, false);
+	print_console_prompt(_console_connected_fd, true);
 	return retcode;
 }
 

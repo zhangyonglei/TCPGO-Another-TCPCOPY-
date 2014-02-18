@@ -36,9 +36,10 @@ std::string statistics_bureau::sess_statistics()
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
 	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response within "
 	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out << " micro seconds.\n"
-	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server with "
+	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
 	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
-	   << _sess_killed_by_reset << " sessions were killed by RESET.\n";
+	   << _sess_killed_by_reset << " sessions were killed by RESET.\n"
+	   << "success rate " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "";
 
 	return ss.str();
 }
