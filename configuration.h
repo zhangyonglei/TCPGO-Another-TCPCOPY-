@@ -31,6 +31,7 @@ public:
 		return _conf_file_path;
 	}
 
+	// [MAIN]
 	std::string get_pcap_file_path()
 	{
 		return _pcap_file_path;
@@ -56,6 +57,7 @@ public:
 		return _onoff_random_port;
 	}
 
+	// [SESSION]
 	int get_response_from_peer_time_out()
 	{
 		return _response_from_peer_time_out;
@@ -76,6 +78,12 @@ public:
 		return _wait_for_fin_from_peer_time_out;
 	}
 
+	bool get_enable_active_close()
+	{
+		return _enable_active_close;
+	}
+
+	// [LOG]
 	bool get_log_on()
 	{
 		return _log_on;
@@ -89,15 +97,20 @@ public:
 	// setters
 	void set_conf_file_path(const std::string& conf_file_path);
 
+	// [MAIN]
 	void set_pcap_file_path(const std::string& pcap_file_path);
 
 	void set_dst_addr(const std::string& dst_addr);
 
 	void set_dst_port(const std::string& dst_port);
+	void set_dst_port(unsigned short dst_port);
 
 	void set_concurrency_limit(const std::string& concurrency_limit);
+	void set_concurrency_limit(int concurrency_limit);
 
+	// [SESSION]
 	void set_onoff_random_port(const std::string& onoff_random_port);
+	void set_onoff_random_port(bool onoff_random_port);
 
 	void set_response_from_peer_time_out(const std::string& response_from_peer_time_out);
 	void set_response_from_peer_time_out(int response_from_peer_time_out);
@@ -111,6 +124,10 @@ public:
 	void set_wait_for_fin_from_peer_time_out(const std::string& time_out);
 	void set_wait_for_fin_from_peer_time_out(int time_out);
 
+	void set_enable_active_close(const std::string& enable);
+	void set_enable_active_close(bool enable);
+
+	// [LOG]
 	void set_duplicate_log_to_stdout(const std::string& dup);
 	void set_duplicate_log_to_stdout(bool dup);
 
@@ -125,16 +142,14 @@ public:
 private:
 	std::string  _conf_file_path;   ///< self-explanatory.
 
+	// [MAIN]
 	std::string  _pcap_file_path;   ///< load traffic from the pcap file.
-
 	std::string  _dst_addr;         ///< the desination IP address to which traffic will be forward.
-
 	unsigned short _dst_port;   ///< the destination port to which traffic will be forward. host-byte order.
-
 	int _concurrency_limit;     ///< the maximum number of concurrent TCP connections.
-
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
 
+	// [SESSION]
 	/// The following parameters are for tuning tcpsession.
 	/// More details can be found in class tcpsession.
 	/// They are all in unit of centisecond.
@@ -142,7 +157,9 @@ private:
 	int  _have_to_send_data_within_this_timeperiod;
 	int  _snd_speed_control;
 	int  _wait_for_fin_from_peer_time_out;
+	bool _enable_active_close;
 
+	// [LOG]
 	bool _log_on;
 	bool _duplicate_log_to_stdout;
 };

@@ -27,6 +27,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod();
 	_snd_speed_control = g_configuration.get_snd_speed_control();
 	_wait_for_fin_from_peer_time_out = g_configuration.get_wait_for_fin_from_peer_time_out();
+	_enable_active_close = g_configuration.get_enable_active_close();
 
 	struct iphdr *iphdr = (struct iphdr*)_ack_template;
 	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
@@ -209,7 +210,6 @@ void tcpsession::get_ready()
 	std::list<ip_pkt>::iterator ite, tmp_ite;
 
 	_dead = false;
-	_enable_active_close = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;

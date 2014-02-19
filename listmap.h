@@ -284,11 +284,21 @@ void listmap<K, V>::erase(iterator position)
 		MappedElementType* orig_head;
 		orig_head = _head;
 		_head = _head->_next;
+		if (NULL == _head)  // the first element is also the last element.
+		{
+			_tail = NULL;
+		}
 
 		delete orig_head->_data;
 		typename InternalMap::iterator* ptr_ite = (typename InternalMap::iterator*)orig_head->_auxil_info;
 		_map_elements.erase(*ptr_ite);
 		delete ptr_ite;
+
+		if (0 == _map_elements.size())
+		{
+			assert(NULL == _head);
+			assert(NULL == _tail);
+		}
 	}
 	else
 	{

@@ -309,8 +309,17 @@ int mylua::run_lua_string(char* str)
 	{
 		for (int i = 1; i <= new_stack_frame; i++)
 		{
-			const char* retval = luaL_checkstring(_lua_state, -i);
-			write(_console_connected_fd, retval, strlen(retval));
+			const char* retval;
+			if (!lua_isnil(_lua_state, -i))
+			{
+				retval = luaL_checkstring(_lua_state, -i);
+				write(_console_connected_fd, retval, strlen(retval));
+			}
+			else
+			{
+				retval = "Not recognizable command.";
+				write(_console_connected_fd, retval, strlen(retval));
+			}
 		}
 	}
 
