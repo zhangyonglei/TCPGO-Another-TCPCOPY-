@@ -37,15 +37,23 @@ std::string statistics_bureau::sess_statistics()
 {
 	int response_from_server_time_out;
 	int wait_for_fin_from_server_time_out;
-	int total_conns_in_15mins = 0;
-	int total_conns_in_5mins = 0;
-	int total_conns_in_1min = 0;
-
+	int total_conns_in_15mins;
+	int total_conns_in_5mins;
+	int total_conns_in_1min;
+	int conns_per_second_in_15mins;
+	int conns_per_second_in_5mins;
+	int conns_per_second_in_1min;
+	uint64_t now;
 	std::ostringstream ss;
+
+	now = g_timer.get_jiffies();
 
 	response_from_server_time_out = g_configuration.get_response_from_peer_time_out() * (1000 / HZ);
 	wait_for_fin_from_server_time_out = g_configuration.get_wait_for_fin_from_peer_time_out() * (1000 / HZ);
 
+	total_conns_in_15mins = 0;
+	total_conns_in_5mins = 0;
+	total_conns_in_1min = 0;
 	for (int i = 0; i < _TIME_DURATION_IN_MIN - 1; i++)
 	{
 		int idx = (_current_slot_index + i + 1) % _TIME_DURATION_IN_MIN;
@@ -62,6 +70,20 @@ std::string statistics_bureau::sess_statistics()
 		}
 	}
 
+	conns_per_second_in_15mins = total_conns_in_15mins/15/60;
+	conns_per_second_in_5mins = total_conns_in_5mins/5/60;
+	conns_per_second_in_1min = total_conns_in_1min/1/60;
+
+	if (now < 15*60*HZ)
+	{
+		conns_per_second_in_15mins = conns_per_second_in_5mins;
+	}
+	if (now < 5*60*HZ)
+	{
+		conns_per_second_in_5mins = conns_per_second_in_1min;
+		conns_per_second_in_15mins = conns_per_second_in_1min;
+	}
+
 	ss << _total_processed_sess_count << " sessions have been processed.\n"
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
@@ -70,10 +92,15 @@ std::string statistics_bureau::sess_statistics()
 	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
 	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
 	   << _sess_killed_by_reset << " sessions were killed by RESET.\n"
-	   << "success rate " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << ""
+	   << "success rate " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "\n"
 
-	   << "Connections Per Second in the past 15mins, 10mins, and 1min\n"
-	   << total_conns_in_15mins/15/60 << " " << total_conns_in_5mins/5/60 << " " << total_conns_in_1min/1/60;
+	   << "Up " << now/HZ/60 << " min(s) and " << now/HZ%60 << " second(s).\n";
+
+	if (now/HZ/60 > 0)
+	{
+		ss << "Average Connections Per Second in the past 15mins, 10mins, and 1min\n"
+		   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min;
+	}
 
 	return ss.str();
 }

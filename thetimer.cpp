@@ -13,7 +13,6 @@ the_timer g_timer;
 void sig_alarm_handler(int sig)
 {
 	g_timer._jiffies++;
-
 	//std::cout << g_timer._jiffles << std::endl;
 }
 
@@ -68,6 +67,10 @@ void the_timer::loop_through_all_timer_event()
 		{
 			ite->second->one_shot_timer_event_run();
 			_events.erase(ite++);
+		}
+		else
+		{
+			++ite;
 		}
 	}
 }

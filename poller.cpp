@@ -10,7 +10,7 @@
 #include "poller.h"
 #include "thetimer.h"
 
-#define MAX_EVENTS_COUNT 8
+#define MAX_EVENTS_COUNT 32
 
 poller g_poller;
 
@@ -78,17 +78,26 @@ void poller::bigbang()
 {
 	int nfds, n;
 	int fd;
+	sigset_t sigmask;
 	evt_workhorse *workhorse;
 	struct epoll_event  events[MAX_EVENTS_COUNT];
 
+	sigemptyset(&sigmask);
+	sigaddset(&sigmask, SIGALRM);
+
 	while(true)
 	{
-		nfds = epoll_wait(_epoll_fd, events, MAX_EVENTS_COUNT, 100/*in unit of millisecond*/);
+		nfds = epoll_pwait(_epoll_fd, events, MAX_EVENTS_COUNT, 10/*in unit of millisecond*/, &sigmask);
 		if (_stop)
 			return;
 
-		if (nfds == -1 && errno == EINTR)
+		if (nfds == -1)
 		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+
 			perror("epoll_pwait");
 			abort();
 		}
