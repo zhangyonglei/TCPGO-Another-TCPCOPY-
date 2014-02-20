@@ -34,6 +34,8 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 		return -1;
 	}
 
+	g_logger.printf("read traffic from file: %s\n", path.c_str());
+
 	if (!filter.empty())
 	{
 		// some old version libpcap library declares the third parameter of pcap_compile as type of char*

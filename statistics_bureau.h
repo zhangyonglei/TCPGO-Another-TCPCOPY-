@@ -20,7 +20,7 @@ extern statistics_bureau g_statistics_bureau;
 /**
  * This class records various kinds of statistics.
  */
-class statistics_bureau
+class statistics_bureau : public timer_event
 {
 public:
 	statistics_bureau();
@@ -30,16 +30,22 @@ public:
 	std::string sess_statistics();
 
 public:
+	void get_ready();
+
 	void inc_sess_active_close_count()
 	{
 		_sess_active_close_count++;
 		_total_processed_sess_count++;
+
+		conn_ended_normally();
 	}
 
 	void inc_sess_passive_close_count()
 	{
 		_sess_passive_close_count++;
 		_total_processed_sess_count++;
+
+		conn_ended_normally();
 	}
 
 	void inc_sess_cancelled_by_no_response_count()
@@ -60,6 +66,15 @@ public:
 		_total_processed_sess_count++;
 	}
 
+public:
+	void one_shot_timer_event_run();
+
+private:
+	void conn_ended_normally()
+	{
+		_conns_completed_stat[_current_slot_index]++;
+	}
+
 private:
 	int _total_processed_sess_count;
 	int _sess_active_close_count;
@@ -67,6 +82,12 @@ private:
 	int _sess_cancelled_by_no_response_count;
 	int _sess_active_close_timeout_count;
 	int _sess_killed_by_reset;
+
+	// the following variables are intended for make statistics of normally
+	// ended connections in the past (_TIME_DURATION_IN_MIN-1) minutes.
+	static const int _TIME_DURATION_IN_MIN = 16;
+	int _conns_completed_stat[_TIME_DURATION_IN_MIN];
+	int _current_slot_index;
 };
 
 #endif /* _STATISTICSBUREAU_H_ */
