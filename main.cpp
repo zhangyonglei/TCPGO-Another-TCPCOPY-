@@ -30,6 +30,7 @@
 #include "configuration.h"
 #include "mylua.h"
 #include "statistics_bureau.h"
+#include "testsuite.h"
 #include "listmap.h"
 #include "version.h"
 
@@ -191,10 +192,11 @@ int run()
 	g_postoffice.get_ready();
 	g_statistics_bureau.get_ready();
 	g_mylua.get_ready();
+	g_testsuite.get_ready();
 	g_session_manager.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
-	/// the word starts from a big bang.Refer to function declarations for yummy explanations.
+	/// the word starts from a big bang. Refer to function declarations for yummy explanations.
 	g_poller.bigbang();
 }
 

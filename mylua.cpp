@@ -352,7 +352,7 @@ void mylua::pollout_handler(int fd)
 void mylua::load_test_scripts()
 {
 	fs::path script_home("/tmp");
-	boost::regex pattern(".*\.lua$"); // list all .lua files.
+	boost::regex pattern(".*\\.lua$"); // list all .lua files.
 
 	try
 	{

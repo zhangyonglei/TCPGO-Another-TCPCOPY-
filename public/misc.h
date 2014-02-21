@@ -50,6 +50,9 @@
 #include <stdint.h>
 #include <memory.h>
 
+// boost
+#include <boost/shared_ptr.hpp>
+
 // other libraries
 #include <pcap.h>
 

@@ -47,6 +47,10 @@ public:
 	virtual int pls_send_these_packets(std::vector<const ip_pkt*>& pkts);
 	virtual void got_a_packet(const ip_pkt* pkt);
 
+public:
+    // Declares
+	enum cause_of_death{ACTIVE_CLOSE, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
+
 private:
 	/// in the case of active close and the sent FIN has be acked by peer, _ippkts_samples is empty at this time
 	/// if a tcp segment received, ack cann't be piggybacked by sample, so create a pure ack without payload just
@@ -77,7 +81,7 @@ private:
 
 	void refresh_status(const ip_pkt* pkt);
 
-	void kill_me();
+	void kill_me(cause_of_death cause);
 
 	bool still_alive();
 

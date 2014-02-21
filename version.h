@@ -10,7 +10,7 @@
 #define _VERSION_H_
 
 
-#define VERSION_NUM  "0.5.1"
+#define VERSION_NUM  "0.6.0"
 
 
 #endif /* _VERSION_H_ */

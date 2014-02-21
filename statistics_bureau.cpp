@@ -24,7 +24,8 @@ void statistics_bureau::get_ready()
 	_sess_passive_close_count = 0;
 	_sess_cancelled_by_no_response_count = 0;
 	_sess_active_close_timeout_count = 0;
-	_sess_killed_by_reset = 0;
+	_sess_killed_by_reset_count = 0;
+	_sess_dormancy_count = 0;
 
 	// if _TIME_DURATION_IN_MIN changed, the corresponding logic has to been modified, too.
 	assert(_TIME_DURATION_IN_MIN == 16);
@@ -38,6 +39,7 @@ std::string statistics_bureau::sess_statistics()
 {
 	int response_from_server_time_out;
 	int wait_for_fin_from_server_time_out;
+	int have_to_send_data_within_this_timeperiod;
 	int total_conns_in_15mins;
 	int total_conns_in_5mins;
 	int total_conns_in_1min;
@@ -51,6 +53,7 @@ std::string statistics_bureau::sess_statistics()
 
 	response_from_server_time_out = g_configuration.get_response_from_peer_time_out() * (1000 / HZ);
 	wait_for_fin_from_server_time_out = g_configuration.get_wait_for_fin_from_peer_time_out() * (1000 / HZ);
+	have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod() * (1000 / HZ);
 
 	total_conns_in_15mins = 0;
 	total_conns_in_5mins = 0;
@@ -92,7 +95,9 @@ std::string statistics_bureau::sess_statistics()
 	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out << " micro seconds.\n"
 	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
 	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
-	   << _sess_killed_by_reset << " sessions were killed by RESET.\n"
+	   << _sess_dormancy_count << " sessions ended prematurely because no incoming traffice within "
+	                                           << have_to_send_data_within_this_timeperiod << " micros seconds.\n"
+	   << _sess_killed_by_reset_count << " sessions were killed by RESET.\n"
 	   << "success rate " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "\n"
 
 	   << "Up " << now/HZ/60 << " min(s) and " << now/HZ%60 << " second(s).\n";

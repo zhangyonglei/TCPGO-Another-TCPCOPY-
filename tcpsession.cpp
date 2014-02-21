@@ -13,6 +13,7 @@
 #include "session_manager.h"
 #include "configuration.h"
 #include "statistics_bureau.h"
+#include "testsuite.h"
 
 tcpsession::tcpsession(uint32_t ip, uint16_t port)
 {
@@ -60,10 +61,11 @@ tcpsession::~tcpsession()
 {
 }
 
-void tcpsession::kill_me()
+void tcpsession::kill_me(cause_of_death cause)
 {
 	_dead = true;
 	g_logger.printf("session: %s.%hu ended.\n", _client_src_ip_str.c_str(), _client_src_port);
+	g_testsuite.report_sess_traffic(_client_src_ip_str, _client_src_port, _traffic_history, cause);
 }
 
 bool tcpsession::still_alive()
@@ -310,7 +312,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			ip_str = _client_src_ip_str.c_str();
 			g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
 			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
-			kill_me();
+			kill_me(PEER_TIME_OUT);
 			return -1;
 		}
 	}
@@ -335,12 +337,12 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		_last_seq_beyond_fin_at_localhost_side = pkt->get_seq() + pkt->get_tcp_payload_len();
 	}
 
-	if (_current_state == tcpsession::TIME_WAIT)
+	if (count > 0 && _current_state == tcpsession::TIME_WAIT)
 	{
 		// Give only one chance for peer's FIN to be acked.
 		g_logger.printf("session %s.%hu exits from state TIME_WAIT.\n", _client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_active_close_count();
-		kill_me();
+		kill_me(ACTIVE_CLOSE);
 	}
 
 	if (count > 0)
@@ -349,6 +351,8 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	}
 	else if (jiffies - _last_recorded_snd_time > _have_to_send_data_within_this_timeperiod)
 	{
+		g_statistics_bureau.inc_sess_dormancy_count();
+		kill_me(DORMANCY);
 		return -1;
 	}
 
@@ -366,8 +370,9 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	if (pkt->is_rst_set())
 	{
 		g_logger.printf("session: %s.%hu reset kills me.\n", _client_src_ip_str.c_str(), _client_src_port);
-		g_statistics_bureau.inc_sess_killed_by_reset();
-		kill_me();
+		g_statistics_bureau.inc_sess_killed_by_reset_count();
+		_traffic_history.push_back(*pkt);
+		kill_me(RESET);
 		return;
 	}
 
@@ -503,7 +508,8 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_passive_close_count();
-		kill_me();
+		_traffic_history.push_back(*pkt);
+		kill_me(PASSIVE_CLOSE);
 		return;
 	}
 	refresh_status(pkt);
@@ -564,7 +570,8 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_active_close_timeout_count();
-		kill_me();
+		_traffic_history.push_back(*pkt);
+		kill_me(NO_FIN_FROM_PEER);
 		return;
 	}
 

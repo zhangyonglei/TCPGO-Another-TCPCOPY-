@@ -1,0 +1,4 @@
+849 total healthy sessions.
+76 sessions quit because of time out.
+20 sessions quit because of reset.
+700 sessions quit normallly.

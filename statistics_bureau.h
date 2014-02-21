@@ -61,9 +61,15 @@ public:
 		_total_processed_sess_count++;
 	}
 
-	void inc_sess_killed_by_reset()
+	void inc_sess_killed_by_reset_count()
 	{
-		_sess_killed_by_reset++;
+		_sess_killed_by_reset_count++;
+		_total_processed_sess_count++;
+	}
+
+	void inc_sess_dormancy_count()
+	{
+		_sess_dormancy_count++;
 		_total_processed_sess_count++;
 	}
 
@@ -82,7 +88,8 @@ private:
 	int _sess_passive_close_count;
 	int _sess_cancelled_by_no_response_count;
 	int _sess_active_close_timeout_count;
-	int _sess_killed_by_reset;
+	int _sess_killed_by_reset_count;
+	int _sess_dormancy_count;
 
 	// the following variables are intended for make statistics of normally
 	// ended connections in the past (_TIME_DURATION_IN_MIN-1) minutes.
