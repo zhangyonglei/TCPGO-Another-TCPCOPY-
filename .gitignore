@@ -7,7 +7,6 @@ Debug/
 horos
 *.o
 *~
-*.sh
 *.d
 *.log
 .gdbinit
@@ -19,5 +18,8 @@ missing
 *.dep
 *.pcap
 core*
+*.png
+*.html
+*.htm
 
 !readline

@@ -46,11 +46,16 @@ public:
 	static int turn_on_log(lua_State* L);
 
 private:
+	// debug console based on lua
 	void open_listening_port();
 	void accept_conn(int fd);
 	void readin_console_cmd(int fd);
 	int run_lua_string(char* str);
 	void print_console_prompt(int fd, bool newline);
+
+private:
+	// load all lua scripts for testing.
+	void load_test_scripts();
 
 private:
 	static lua_State* _lua_state;

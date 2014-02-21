@@ -10,38 +10,19 @@
 #include "version.h"
 #include "statistics_bureau.h"
 #include "horos.h"
+#include "cute_logger.h"
+
+#include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 
 #define HOROS_CONSOLE_PROMPT  "horos>"
+
+namespace fs = boost::filesystem;
 
 lua_State* mylua::_lua_state;
 class mylua g_mylua;
 
-/**
- * This function will be invoked while .so is loaded from within lua environment using "require".
- */
-extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State* L)
-{
-	g_mylua.disable_console();
-	g_mylua.set_lua_state(L);
-	g_mylua.register_funcs();
-
-	return 1;
-}
-
-mylua::mylua()
-{
-	_console_listening_port = 1994;
-	_console_listening_fd = -1;
-	_console_connected_fd = -1;
-	_lua_state = NULL;
-	_enable_console = true;
-}
-
-mylua::~mylua()
-{
-	set_lua_state(NULL);
-}
-
+/////////////////////////////////////////////////////////////////////////////////////
 // the following are functions exposed to lua state.
 int mylua::version(lua_State* L)
 {
@@ -105,6 +86,33 @@ static const struct luaL_Reg lua_funcs[] = {
 	{"log_on", mylua::turn_on_log},
 	{NULL, NULL}
 };
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * This function will be invoked while .so is loaded from within lua environment using "require".
+ */
+extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State* L)
+{
+	g_mylua.disable_console();
+	g_mylua.set_lua_state(L);
+	g_mylua.register_funcs();
+
+	return 1;
+}
+
+mylua::mylua()
+{
+	_console_listening_port = 1994;
+	_console_listening_fd = -1;
+	_console_connected_fd = -1;
+	_lua_state = NULL;
+	_enable_console = true;
+}
+
+mylua::~mylua()
+{
+	set_lua_state(NULL);
+}
 
 void mylua::set_lua_state(lua_State* state)
 {
@@ -167,6 +175,8 @@ int mylua::get_ready()
 	{
 		open_listening_port();
 	}
+
+	load_test_scripts();
 }
 
 void mylua::open_listening_port()
@@ -292,6 +302,8 @@ int mylua::run_lua_string(char* str)
 
 	if (!strstr(str, "return"))
 	{
+		// str will be executed in a new module environment.
+		// "return" keyword has to be specified to get returned values from module environment.
 		ss << "return " << str;
 	}
 	else
@@ -335,4 +347,41 @@ void mylua::pollout_handler(int fd)
 {
 	// not supposed to reach here.
 	abort();
+}
+
+void mylua::load_test_scripts()
+{
+	fs::path script_home("/tmp");
+	boost::regex pattern(".*\.lua$"); // list all .lua files.
+
+	try
+	{
+		if (!exists(script_home))
+		{
+			g_logger.printf("%s doest not exist.\n", script_home.c_str());
+			abort();
+		}
+		
+		if (!is_directory(script_home))
+		{
+			g_logger.printf("%s is not a directory.\n", script_home.c_str());
+			abort();
+		}
+
+		for (fs::recursive_directory_iterator ite(script_home), end_ptr;
+		     ite != end_ptr;
+                     ++ite)	
+                {
+			std::string filename = ite->path().native();
+			if (regex_match(filename, pattern))
+			{
+				g_logger.printf("%s\n", filename.c_str());
+			}
+                }
+	}
+	catch (const fs::filesystem_error& ex)
+	{
+		g_logger.printf(ex.what());
+		abort();
+	}
 }

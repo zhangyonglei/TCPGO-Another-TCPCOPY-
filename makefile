@@ -17,7 +17,11 @@ soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
 objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
 dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
-public_dirs = . ./public ./$(iniparser)/include ./$(lua_vm_src) 
+include_dirs = . public $(iniparser)/include $(lua_vm_src) $(boost_home)
+
+# the great boost library
+boost_home = boost_1_55_0/
+boost_lib_path = $(boost_home)stage/lib 
 
 # third-party ini parser
 iniparser = cpp-iniparser
@@ -31,16 +35,16 @@ lua_vm_a := $(lua_vm_src)/liblua.a
 
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
-CPPFLAGS += $(addprefix -I,$(public_dirs)) -g -D__DEBUG__ -fPIC
-LINKFLAGS := -L./$(iniparser) -L./$(lua_vm_src) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib)
-LINKFLAGS4LIB := -L./$(iniparser) -L./$(lua_vm_src) -shared -Wl,-soname,$(soname) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib)
+CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D__DEBUG__ -fPIC
+LINKFLAGS := -L$(iniparser) -L$(lua_vm_src) -L$(boost_lib_path) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex
+LINKFLAGS4LIB := -L$(iniparser) -L$(lua_vm_src) -L$(boost_lib_path) -shared -Wl,-soname,$(soname) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
 MAKECMDGOAL := 
 RM := rm -rf
 MV := mv
 
 vpath %.cpp .
-vpath %.h . $(public_dirs)
+vpath %.h . $(include_dirs)
 
 .PHONY : clean install dummy
 
@@ -79,6 +83,7 @@ test/test.o: test/test.cpp public/misc.h public/horos.h $(libname)
 
 $(bins):
 	-mkdir $@
+	cp my.conf.template $(bins)my.conf
 	 
 $(deps):
 	-mkdir $@

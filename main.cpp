@@ -1,7 +1,7 @@
 /*********************************************
  * main.c
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
- * website: www.dogeye.net
+ * website: v.qq.com www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
  /*
