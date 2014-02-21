@@ -5,6 +5,7 @@
  * Created on: 8 Feb, 2014
  * Happy the Chinese new year of Horse.
  * Today is the first working day after spring festival vacation.
+ * Praise Be to the Lord. BUG-FREE CODE !
  *****************************************************************/
 
 #ifndef _STATISTICSBUREAU_H_
@@ -37,7 +38,7 @@ public:
 		_sess_active_close_count++;
 		_total_processed_sess_count++;
 
-		conn_ended_normally();
+		conn_ends_normally();
 	}
 
 	void inc_sess_passive_close_count()
@@ -45,7 +46,7 @@ public:
 		_sess_passive_close_count++;
 		_total_processed_sess_count++;
 
-		conn_ended_normally();
+		conn_ends_normally();
 	}
 
 	void inc_sess_cancelled_by_no_response_count()
@@ -70,7 +71,7 @@ public:
 	void one_shot_timer_event_run();
 
 private:
-	void conn_ended_normally()
+	void conn_ends_normally()
 	{
 		_conns_completed_stat[_current_slot_index]++;
 	}

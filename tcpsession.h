@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
  * website: www.dogeye.net
  * Created on: Dec 9, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #ifndef _TCPSESSION_H_
@@ -40,8 +41,6 @@ public:
 	int check_samples_integrity();
 
 	void get_ready();
-
-	tcpsession* next();
 
 public:
 	/// refer to the interface postoffice_callback_interface for details.
@@ -84,6 +83,7 @@ private:
 
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
+	std::list<ip_pkt>  _traffic_history;   ///< Records the traffic of this session.
 	char _ack_template[40];   ///< a template to create a ack without payload.
 
 	// reserved for the possible future version if i can still play with this stuff.
@@ -120,12 +120,6 @@ private:
 
 	bool _dead;
 	bool _enable_active_close;     ///< default to false. That means tcpsession default to close passively.
-
-private:
-	/// no class other than session_manager is allowed to access the double linked list directly.
-	friend class session_manager;
-	typedef std::pair<tcpsession*, tcpsession*> double_linked_list_t;
-	double_linked_list_t _linked_list; ///< link all the tcpsessions in chronological order.
 };
 
 #endif /* _TCPSESSION_H_ */

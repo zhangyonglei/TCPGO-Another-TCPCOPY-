@@ -1,6 +1,7 @@
 /************************************************************
  * Author: kamuszhou www.dogeye.net
  * Miscellaneous code ....
+ * Praise Be to the Lord. BUG-FREE CODE !
  *************************************************************/
 
 #ifndef _MISC_H_

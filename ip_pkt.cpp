@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com, 16236914@qq.com
  * website: www.dogeye.net
  * Created on: 12 Dec, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include "ip_pkt.h"
@@ -82,12 +83,12 @@ bool ip_pkt::operator>(const ip_pkt& challenger)const
 }
 
 bool ip_pkt::operator==(const ip_pkt& ip_pkt)const
-		{
+{
 	if (!(*this < ip_pkt) && !(ip_pkt < *this))
 		return true;
 	else
 		return false;
-		}
+}
 
 void ip_pkt::cp(const char* pkt)
 {

@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 27 Dec, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #ifndef _REALTIME_CAPTUREER_H_

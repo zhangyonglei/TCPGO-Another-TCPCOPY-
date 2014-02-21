@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com, 16236914@qq.com
  * website: www.dogeye.net
  * Created on: Dec 10, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #ifndef _UTILS_H_

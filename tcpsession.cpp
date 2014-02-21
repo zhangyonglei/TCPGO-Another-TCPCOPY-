@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com, 16236914@qq.com
  * website: www.dogeye.net
  * Created on: Dec 9, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include "tcpsession.h"
@@ -237,11 +238,6 @@ void tcpsession::get_ready()
 	}
 
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
-}
-
-tcpsession* tcpsession::next()
-{
-	return _linked_list.second;
 }
 
 int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
@@ -667,8 +663,8 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	seq = pkt->get_seq();
 	ack_seq = pkt->get_ack_seq();
 
-	// the second handshake.
-	if (pkt->is_syn_set() && pkt->is_ack_set())
+	// the following logic compute some sequence number
+	if (pkt->is_syn_set() && pkt->is_ack_set())   // the second handshake.
 	{
 		_expected_next_sequence_from_peer = pkt->get_seq() + 1;
 		_latest_acked_sequence_by_peer = pkt->get_ack_seq();
@@ -687,7 +683,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		}
 		else
 		{
-			// drop outdated packets.
+			// drop the outdated incoming packets.
 			if(seq_before(next_sequence_from_peer, _expected_next_sequence_from_peer))
 			{
 				return;
@@ -697,11 +693,10 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 	if (pkt->is_ack_set() && !pkt->is_syn_set())
 	{
-		ack_seq_tmp = pkt->get_ack_seq();
 		// the peer acked new packe.
-		if (seq_before(_latest_acked_sequence_by_peer, ack_seq_tmp))
+		if (seq_before(_latest_acked_sequence_by_peer, ack_seq))
 		{
-			_latest_acked_sequence_by_peer = pkt->get_ack_seq();
+			_latest_acked_sequence_by_peer = ack_seq;
 		}
 	}
 
@@ -711,6 +706,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	{
 		if (seq_before(ite->get_seq(), _latest_acked_sequence_by_peer))
 		{
+			_traffic_history.push_back(*ite);  // save the outgoing packets that have been sent
 			_ippkts_samples.erase(ite++);
 			_sliding_window_left_boundary = ite;
 		}
@@ -719,6 +715,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			break;
 		}
 	}
+	_traffic_history.push_back(*pkt);  // save the incoming traffic.
 
 	win_size_saved = _advertised_window_size;
 	_advertised_window_size = pkt->get_win_size();

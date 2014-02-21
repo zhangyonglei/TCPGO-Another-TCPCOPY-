@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 8 Feb, 2014
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include "statistics_bureau.h"

@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
  * website: www.dogeye.net
  * Created on: Dec 10, 2013
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include "cute_logger.h"

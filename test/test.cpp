@@ -4,6 +4,7 @@
  * website: v.qq.com  www.dogeye.net
  * Created on: 25 Dec, 2013
  * I'm not a christian. I don't celebrate the christmas day.
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include "../public/horos.h"

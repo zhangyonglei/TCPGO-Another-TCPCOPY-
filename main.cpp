@@ -16,6 +16,7 @@
  *            C/ ,--___/
  *
  *      www.tencent.com & www.dogeye.net co-present
+ *      Praise Be to the Lord. BUG-FREE CODE !
  */
 
 #include <getopt.h>
@@ -199,43 +200,4 @@ int run()
 
 void hook_here_for_tmp_test_code()
 {
-/*	listmap<int, double> lm;
-	lm[0] = 0.0;
-	lm[1] = 1.1;
-	lm[3] = 3.3;
-	lm[2] = 2.2;
-	lm[4] = 4.4;
-	lm[3] = 3.6;
-
-	for(listmap<int, double>::iterator ite = lm.begin(); ite != lm.end();)
-	{
-		std::cout << *ite << std::endl;
-		int key = lm.get_key(ite);
-		if (key == 3)
-		{
-			lm.erase(ite++);
-		}
-		else
-		{
-			++ite;
-		}
-	}
-
-	std::cout << "//////////////\n";
-
-	for(listmap<int, double>::iterator ite = lm.begin(); ite != lm.end();)
-	{
-		std::cout << *ite << std::endl;
-		int key = lm.get_key(ite);
-		if (key == 3)
-		{
-			lm.erase(ite++);
-		}
-		else
-		{
-			++ite;
-		}
-	}
-
-	exit(0);*/
 }
