@@ -14,7 +14,6 @@
 class ip_pkt {
 public:
 	ip_pkt();
-	ip_pkt(const ip_pkt& pkt);
 	ip_pkt(const char* pkt);
 
 	/**
@@ -25,8 +24,6 @@ public:
 	void cp(const char* pkt);
 
 	void swap(ip_pkt& pkt);
-
-	const ip_pkt& operator=(const ip_pkt& pkt);
 
 	bool operator<(const ip_pkt& challenger)const;
 	bool operator>(const ip_pkt& challenger)const;
@@ -64,7 +61,7 @@ public:
 	
 	const char* get_starting_addr()const
 	{
-		return _pkt;
+		return _pkt.get();
 	}
 	
 
@@ -160,7 +157,8 @@ private:
 	void warm_up();
 
 private:
-	char *_pkt;   ///< the starting address of the IP packet.
+	// char *_pkt;   ///< the starting address of the IP packet.
+	boost::shared_ptr<char> _pkt;
 
 	int  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header
