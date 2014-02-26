@@ -36,6 +36,10 @@ configuration::configuration()
 	// [LOG]
 	set_log_on(true);
 	set_duplicate_log_to_stdout(true);
+
+	// [TESTSUITE]
+	set_lua_scripts_home("./lua_scripts");
+	set_so_home("./so_home");
 }
 
 configuration::~configuration()
@@ -200,6 +204,16 @@ void configuration::set_duplicate_log_to_stdout(const std::string& dup)
 void configuration::set_duplicate_log_to_stdout(bool dup)
 {
 	_duplicate_log_to_stdout = dup;
+}
+
+void configuration::set_lua_scripts_home(const std::string& home)
+{
+	_lua_scripts_home = home;
+}
+
+void configuration::set_so_home(const std::string& home)
+{
+	_so_home = home;
 }
 
 void configuration::readin()

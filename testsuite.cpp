@@ -17,22 +17,34 @@ testsuite::testsuite()
 
 testsuite::~testsuite()
 {
+	_done = true;
 	_tester->join();
 }
 
 void testsuite::get_ready()
 {
+	_count_jobs = 0;
 	_tester.reset(
 			new boost::thread(boost::bind(&testsuite::run_worker, this))
 	);
 }
 
-void testsuite::report_sess_traffic(std::string client_src_ip,
+void testsuite::report_sess_traffic(const std::string& client_src_ip,
 						 uint16_t port,
 						 const std::list<ip_pkt>& traffic,
 						 tcpsession::cause_of_death cause)
 {
-
+	boost::shared_ptr<job_block> job(new job_block(client_src_ip, port, traffic, cause));
+	bool success = _jobs.push(job);
+	if (success)
+	{
+		_count_jobs++;
+		if (_count_jobs == 1)
+		{
+			boost::mutex::scoped_lock lock(_mutex);
+			_con_var.notify_one();
+		}
+	}
 }
 
 void testsuite::run_worker()
@@ -86,6 +98,5 @@ void testsuite::load_shared_objects()
 		ite != shared_objs.end();
 		++ite)
 	{
-
 	}
 }

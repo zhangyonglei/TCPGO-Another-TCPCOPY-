@@ -95,6 +95,17 @@ public:
 		return _duplicate_log_to_stdout;
 	}
 
+	// [TESTSUITE]
+	const std::string& get_lua_scripts_home()
+	{
+		return _lua_scripts_home;
+	}
+
+	const std::string get_so_home()
+	{
+		return _so_home;
+	}
+
 	// setters
 	void set_conf_file_path(const std::string& conf_file_path);
 
@@ -135,6 +146,10 @@ public:
 	void set_log_on(const std::string& log_on);
 	void set_log_on(bool log_on);
 
+	// [TESTSUITE]
+	void set_lua_scripts_home(const std::string& home);
+	void set_so_home(const std::string& home);
+
 	/**
 	 * read in conf file.
 	 */
@@ -163,6 +178,10 @@ private:
 	// [LOG]
 	bool _log_on;
 	bool _duplicate_log_to_stdout;
+
+	// [TESTSUITE]
+	std::string _lua_scripts_home;
+	std::string _so_home;
 };
 
 #endif /* _CONFIGURATION_H_ */
