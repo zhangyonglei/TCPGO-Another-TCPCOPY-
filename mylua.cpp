@@ -11,16 +11,11 @@
 #include "statistics_bureau.h"
 #include "horos.h"
 #include "cute_logger.h"
-#include <boost/filesystem.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
 
 #define HOROS_CONSOLE_PROMPT  "horos>"
-
-namespace fs = boost::filesystem;
 
 lua_State* mylua::_lua_state;
 class mylua g_mylua;
@@ -189,7 +184,7 @@ int mylua::load_lua_module(const std::string& module_path)
 	int orig_top, curr_top;
 	int new_stack_frame;
 	int retcode;
-	bool success;
+	bool well_formated;
 	std::ostringstream ss;
 
 	// extract the stem from a path and use the stem as the module name
@@ -198,16 +193,24 @@ int mylua::load_lua_module(const std::string& module_path)
 	std::string module_name = the_path.stem().generic_string();
 
 	ss << boost::format("%s = dofile('%s')\n") % module_name % module_path
-	   << boost::format("return %s.request ~= nil and %s.response == nil\n") % module_name % module_name;
+	   << boost::format("return %s.request ~= nil and %s.response ~= nil\n") % module_name % module_name;
 
-	retcode = do_lua_string(ss.str().c_str(), "b", &success);
-	if (success && 0 == retcode)
+	retcode = do_lua_string(ss.str().c_str(), "b", &well_formated);
+	if (well_formated && 0 == retcode)
 	{
 		_lua_modules.push_back(module_name);
 	}
 	else
 	{
-		g_logger.printf("Something wrong detected in lua script %s.\n", module_path.c_str());
+		if (well_formated)
+		{
+			g_logger.printf("Something wrong detected in lua script %s.\n", module_path.c_str());
+		}
+		else
+		{
+			g_logger.printf("Lua script %s should return a tuple with both request and response defined",
+					module_path.c_str());
+		}
 		abort();
 	}
 
@@ -472,41 +475,4 @@ void mylua::pollout_handler(int fd)
 {
 	// not supposed to reach here.
 	abort();
-}
-
-void mylua::load_test_scripts()
-{
-	fs::path script_home("/tmp");
-	boost::regex pattern(".*\\.lua$"); // list all .lua files.
-
-	try
-	{
-		if (!exists(script_home))
-		{
-			g_logger.printf("%s doest not exist.\n", script_home.c_str());
-			abort();
-		}
-		
-		if (!is_directory(script_home))
-		{
-			g_logger.printf("%s is not a directory.\n", script_home.c_str());
-			abort();
-		}
-
-		for (fs::recursive_directory_iterator ite(script_home), end_ptr;
-		     ite != end_ptr;
-                     ++ite)	
-                {
-			std::string filename = ite->path().native();
-			if (regex_match(filename, pattern))
-			{
-				g_logger.printf("%s\n", filename.c_str());
-			}
-                }
-	}
-	catch (const fs::filesystem_error& ex)
-	{
-		g_logger.printf(ex.what());
-		abort();
-	}
 }

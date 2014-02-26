@@ -83,4 +83,12 @@ unsigned short generate_the_port(unsigned short ori_src_port);
 		*ptr = port;                            \
 		k;   })
 
+/**
+ * @param dir The base directory that will be searched.
+ * @param regexp the regular expression that will be applied to the file name.
+ * @param files The OUT parameter that will hold all the file paths on return.
+ * @return 0 on success, non-zero on failure.
+ */
+int find_files(const std::string& dir, const std::string& regexp, std::list<std::string>& files);
+
 #endif

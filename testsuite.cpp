@@ -52,6 +52,9 @@ void testsuite::run_worker()
 	bool success;
 	boost::shared_ptr<job_block> job;
 
+	load_lua_scripts();
+	load_shared_objects();
+
 	while (!_done)
 	{
 		success = _jobs.pop(job);

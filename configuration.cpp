@@ -363,6 +363,30 @@ void configuration::readin()
 		set_duplicate_log_to_stdout(value);
 	}
 
+	// the TESTSUITE session
+	section_name = "TESTSUITE";
+
+	if (config.HasSection(section_name))
+	{
+		g_logger.printf("TESTSUITE section exists.\n");
+	}
+
+	option_name = "lua_scripts_home";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("lua_scripts_home: %s\n", value.c_str());
+		set_lua_scripts_home(value);
+	}
+
+	option_name = "so_home";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("so_home: %s\n", value.c_str());
+		set_so_home(value);
+	}
+
 	g_logger.printf("Finished reading conf file.\n");
 	g_logger.flush();
 }

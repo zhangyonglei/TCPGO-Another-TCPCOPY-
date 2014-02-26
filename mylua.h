@@ -72,10 +72,6 @@ private:
 	int bind_lua_panic(lua_State* L);
 
 private:
-	// load all lua scripts for testing.
-	void load_test_scripts();
-
-private:
 	static lua_State* _lua_state;
 
 	bool _enable_console;  ///< if horos is loaded as a so from within lua console, it's not necessarily open another lua console.

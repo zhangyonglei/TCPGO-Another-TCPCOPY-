@@ -9,6 +9,10 @@
 #include "misc.h"
 #include "utils.h"
 #include "configuration.h"
+#include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
+
+namespace fs = boost::filesystem;
 
 struct eth_hdr
 {
@@ -140,13 +144,13 @@ const char* strip_l2head(pcap_t *pcap, const char *frame)
 		}
 		break;
 
-	case DLT_LINUX_SLL:
-		l2_len = 16;
-		break;
+		case DLT_LINUX_SLL:
+			l2_len = 16;
+			break;
 
-	default:
-		l2_len = -1;
-		break;
+		default:
+			l2_len = -1;
+			break;
 	}
 
 	if (-1 != l2_len)
@@ -197,4 +201,48 @@ unsigned short generate_the_port(unsigned short ori_src_port)
 	{
 		return ori_src_port;
 	}
+}
+
+int find_files(const std::string& dir, const std::string& regexp, std::list<std::string>& files)
+{
+	int retcode = 0;
+	fs::path script_home(dir);
+	boost::regex pattern(regexp); // list all .lua files.
+
+	try
+	{
+		if (!exists(script_home))
+		{
+			std::cerr << script_home << " doest not exist.\n";
+			retcode = -1;
+		}
+
+		if (!is_directory(script_home))
+		{
+			std::cerr << script_home << " is not a directory.\n";
+			retcode = -1;
+		}
+
+		for (fs::recursive_directory_iterator ite(script_home), end_ptr;
+				ite != end_ptr;
+				++ite)
+		{
+			std::string filename = ite->path().filename().native();
+			std::string filepath = ite->path().native();
+			if (regex_match(filename, pattern))
+			{
+				files.push_back(filepath);
+			}
+		}
+	}
+	catch (const fs::filesystem_error& ex)
+	{
+		std::cerr << ex.what() << std::endl;
+		abort();
+		retcode = -1;
+	}
+
+	files.sort();
+
+	return retcode;
 }
