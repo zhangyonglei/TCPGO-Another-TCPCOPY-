@@ -799,4 +799,3 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
 	}
 }
-

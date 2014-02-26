@@ -11,6 +11,9 @@
 #include "statistics_bureau.h"
 #include "horos.h"
 #include "cute_logger.h"
+#include <boost/filesystem.hpp>
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
@@ -75,7 +78,6 @@ int mylua::turn_on_log(lua_State* L)
 
 	return 1;
 }
-
 // the above are functions exposed to lua state.
 
 static const struct luaL_Reg lua_funcs[] = {
@@ -95,7 +97,7 @@ extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State
 {
 	g_mylua.disable_console();
 	g_mylua.set_lua_state(L);
-	g_mylua.register_funcs();
+	g_mylua.register_APIs4lua(lua_funcs);
 
 	return 1;
 }
@@ -129,7 +131,7 @@ lua_State* mylua::get_lua_state()
 	return _lua_state;
 }
 
-void mylua::register_funcs()
+void mylua::register_APIs4lua(const luaL_Reg* lua_funcs)
 {
 	const char* key;
 
@@ -147,7 +149,7 @@ void mylua::register_funcs()
     	key = lua_tolstring(_lua_state, -2, NULL);
     	lua_setglobal(_lua_state, key);
     }
-    luaL_dostring(_lua_state, "p = print");  // alias p to print to save typing efforts.
+//  luaL_dostring(_lua_state, "p = print");  // alias p to print to save typing efforts.
 }
 
 void mylua::disable_console()
@@ -168,15 +170,48 @@ int mylua::get_ready()
 
 		luaL_openlibs(state);
 		set_lua_state(state);
-		register_funcs();
+		register_APIs4lua(lua_funcs);
 	}
+
+	lua_atpanic(_lua_state, &mylua::lua_panic);
+	// lua_atpanic(_lua_state, boost::bind(&mylua::bind_lua_panic, this, _1));
 
 	if (_enable_console)
 	{
 		open_listening_port();
 	}
 
-	load_test_scripts();
+	_lua_modules.clear();
+}
+
+int mylua::load_lua_module(const std::string& module_path)
+{
+	int orig_top, curr_top;
+	int new_stack_frame;
+	int retcode;
+	bool success;
+	std::ostringstream ss;
+
+	// extract the stem from a path and use the stem as the module name
+	// which will be registered in the global lua environment.
+	boost::filesystem::path the_path(module_path);
+	std::string module_name = the_path.stem().generic_string();
+
+	ss << boost::format("%s = dofile('%s')\n") % module_name % module_path
+	   << boost::format("return %s.request ~= nil and %s.response == nil\n") % module_name % module_name;
+
+	retcode = do_lua_string(ss.str().c_str(), "b", &success);
+	if (success && 0 == retcode)
+	{
+		_lua_modules.push_back(module_name);
+	}
+	else
+	{
+		g_logger.printf("Something wrong detected in lua script %s.\n", module_path.c_str());
+		abort();
+	}
+
+	return retcode;
 }
 
 void mylua::open_listening_port()
@@ -271,7 +306,7 @@ void mylua::readin_console_cmd(int fd)
 	if (ret > 0)
 	{
 		buff[ret] = 0;
-		run_lua_string(buff);
+		do_lua_console_cmd(buff);
 	}
 	else
 	{
@@ -293,7 +328,7 @@ void mylua::print_console_prompt(int fd, bool newline)
 	}
 }
 
-int mylua::run_lua_string(char* str)
+int mylua::do_lua_console_cmd(const char* str)
 {
 	int orig_top, curr_top;
 	int new_stack_frame;
@@ -341,6 +376,96 @@ _exit:
 	lua_settop(_lua_state, 0);
 	print_console_prompt(_console_connected_fd, true);
 	return retcode;
+}
+
+int mylua::do_lua_string(const char* lua_str, const char* retval_formats, ...)
+{
+	int retcode;
+	int orig_top, curr_top;
+	int new_stack_frame;
+	va_list ap;
+
+	va_start(ap, retval_formats);
+
+	assert(NULL != lua_str && NULL != retval_formats);
+
+	orig_top = lua_gettop(_lua_state);
+	retcode = luaL_dostring(_lua_state, lua_str);
+	curr_top = lua_gettop(_lua_state);
+
+	new_stack_frame = curr_top - orig_top;
+	// got info on stack.
+	for (int i = 1; i <= new_stack_frame; i++)
+	{
+		if (!lua_isnil(_lua_state, -i))
+		{
+			char  retval_type;
+			const char* retval_str;
+			int*  ptr2i;
+			bool* ptr2bool;
+			double* ptr2d;
+			std::string* ptr2str;
+			retval_type = *(retval_formats + i - 1);
+
+			if (0 != retcode)
+			{
+				retval_str = luaL_checkstring(_lua_state, -i);
+				g_logger.printf("%s\n", retval_str);
+			}
+
+			switch (retval_type)
+			{
+			case 'i':
+				ptr2i = va_arg(ap, int*);
+				*ptr2i = luaL_checkinteger(_lua_state, -i);
+				break;
+
+			case 'b':
+				ptr2bool = va_arg(ap, bool*);
+				*ptr2bool = lua_toboolean(_lua_state, -i);
+				break;
+
+			case 'd':
+			    ptr2d = va_arg(ap, double*);
+				*ptr2d = luaL_checknumber(_lua_state, -i);
+				break;
+
+			case 's':
+				ptr2str = va_arg(ap, std::string*);
+				*ptr2str = luaL_checkstring(_lua_state, -i);
+				break;
+
+			default:
+				retcode = -1;
+				abort();
+			}
+		}
+		else
+		{
+			retcode = -1;
+			abort();
+		}
+	}
+
+	va_end(ap);
+
+	lua_settop(_lua_state, 0);
+	return retcode;
+}
+
+int mylua::lua_panic(lua_State* L)
+{
+	// catch the lua panic here.
+	std::string errinfo = lua_tostring(L, -1);
+	g_logger.printf(errinfo.c_str());
+	return 0;
+}
+
+// obsoleted
+int mylua::bind_lua_panic(lua_State* L)
+{
+	// catch the lua panic here.
+	return 0;
 }
 
 void mylua::pollout_handler(int fd)

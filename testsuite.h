@@ -19,11 +19,20 @@ extern testsuite g_testsuite;
 class testsuite
 {
 private:
-	struct jobblock
+	struct job_block
 	{
+		job_block(const std::list<ip_pkt>& traffic,
+				  const std::string client_str_ip,
+				  uint16_t port,
+				  tcpsession::cause_of_death cause)
+			:_traffic(traffic), _port(port), _client_str_ip(client_str_ip), _cause(cause)
+		{
+		}
+
 		std::list<ip_pkt> _traffic;
 		uint16_t  _port;
 		std::string _client_str_ip;
+		tcpsession::cause_of_death _cause;
 	};
 
 public:
@@ -43,7 +52,7 @@ public:
 	void run_worker();
 
 private:
-	typedef boost::lockfree::spsc_queue<jobblock, boost::lockfree::capacity<1024> > LockFreeQueue;
+	typedef boost::lockfree::spsc_queue<job_block, boost::lockfree::capacity<1024> > LockFreeQueue;
 	LockFreeQueue _jobs;
 	boost::shared_ptr<boost::thread> _tester;
 };

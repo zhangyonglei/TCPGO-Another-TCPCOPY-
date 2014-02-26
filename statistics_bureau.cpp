@@ -91,7 +91,7 @@ std::string statistics_bureau::sess_statistics()
 	ss << _total_processed_sess_count << " sessions have been processed.\n"
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
-	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response within "
+	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response from peer within "
 	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out << " micro seconds.\n"
 	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
 	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
