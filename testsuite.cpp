@@ -47,6 +47,7 @@ testsuite::~testsuite()
 void testsuite::get_ready()
 {
 	_count_jobs = 0;
+	_current_traffic_on_test = NULL;
 
 //	if (NULL == _pcap_handle)
 //	{
@@ -94,18 +95,23 @@ void testsuite::run_worker()
 			//std::cout << "consumed " << job->_client_str_ip << std::endl;
 			//std::cout << _count_jobs << " left" << std::endl;
 
+			_current_traffic_on_test = &job->_traffic;
+
 			// let's do the job.
 			if (job->_cause == tcpsession::RESET)
 			{
+				_current_traffic_on_test = NULL;
 				continue;
 			}
 
+			// this session closes unexpectedly.
 			if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
 			{
 				std::ostringstream ss;
 				ss << boost::format("accident_death_%s_%d_%d.pcap") % job->_client_str_ip % job->_port % job->_cause;
 				save_traffic(job->_traffic, ss.str());
 
+				_current_traffic_on_test = NULL;
 				continue;
 			}
 
@@ -114,8 +120,10 @@ void testsuite::run_worker()
 			std::vector<char> response;
 			split_traffic(traffic, request, response);
 			do_tests(job->_client_str_ip, job->_port, request, response);
+
+			_current_traffic_on_test = NULL;
 		}
-		else
+		else  // no jobs to be done at present.
 		{
 			boost::mutex::scoped_lock lock(_mutex);
 			_con_var.timed_wait(lock, boost::posix_time::milliseconds(5000));
@@ -167,7 +175,7 @@ void testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char
 	}
 }
 
-void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file)
+int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file)
 {
 //	pcap_dumper_t *pdumper;
 //
@@ -179,11 +187,13 @@ void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string
 //                 pcap_file.c_str(), pcap_geterr(_pcap_handle));
 //		return;
 //	}
-	static int most_saved_files_count = 64;
+	int retcode = 0;
+	static int most_saved_files_count = 500;
 
 	if (0 == most_saved_files_count)
 	{
-		return;
+		retcode = -2;
+		return retcode;
 	}
 	most_saved_files_count--;
 
@@ -200,6 +210,13 @@ void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string
 	pcaphdr.network = DLT_RAW;
 
 	std::ofstream os(pcap_file.c_str(), std::ios::out | std::ios::binary);
+
+	if (!os)
+	{
+		retcode = -1;
+		g_logger.printf("Failed to open file %s.\n", pcap_file.c_str());
+		return retcode;
+	}
 
 	os.write((const char*)&pcaphdr, sizeof(pcaphdr));
 
@@ -220,7 +237,17 @@ void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string
 
 	os.close();
 
+	return retcode;
+
 //	pcap_dump_close(pdumper);
+}
+
+int testsuite::save_traffic(const std::string& pcap_file)
+{
+	int retcode;
+	retcode = save_traffic(*_current_traffic_on_test, pcap_file);
+
+	return retcode;
 }
 
 void testsuite::do_tests(const std::string& client_str_ip, uint16_t port,

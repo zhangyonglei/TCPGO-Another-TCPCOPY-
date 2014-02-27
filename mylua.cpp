@@ -10,6 +10,7 @@
 #include "version.h"
 #include "statistics_bureau.h"
 #include "horos.h"
+#include "testsuite.h"
 #include "cute_logger.h"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -73,6 +74,32 @@ int mylua::turn_on_log(lua_State* L)
 
 	return 1;
 }
+
+int mylua::save_traffic(lua_State* L)
+{
+	int retcode = 0;
+	std::string pcap_file_path;
+
+	int argc = lua_gettop(L);
+	if (argc < 1)
+	{
+		lua_pushstring(L, "no parameter specified.\n");
+		return 1;
+	}
+
+	pcap_file_path = luaL_checkstring(L, -1);
+	retcode = g_testsuite.save_traffic(pcap_file_path);
+	if (0 == retcode)
+	{
+		lua_pushstring(L, "Saved Successfully.\n");
+	}
+	else
+	{
+		lua_pushstring(L, "Failed to save traffic to pcap file.\n");
+	}
+
+	return 1;
+}
 // the above are functions exposed to lua state.
 
 static const struct luaL_Reg lua_funcs[] = {
@@ -81,6 +108,7 @@ static const struct luaL_Reg lua_funcs[] = {
 	{"run", mylua::horos_run},
 	{"stop", mylua::horos_stop},
 	{"log_on", mylua::turn_on_log},
+	{"save_traffic", mylua::save_traffic},
 	{NULL, NULL}
 };
 //////////////////////////////////////////////////////////////////////////////////////////////

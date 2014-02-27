@@ -45,6 +45,7 @@ public:
 	static int horos_run(lua_State* L);
 	static int horos_stop(lua_State* L);
 	static int turn_on_log(lua_State* L);
+	static int save_traffic(lua_State* L);
 
 public:
 	/**

@@ -1,11 +1,11 @@
 local m = {}
 
 function m.request(req)
-	print(req)
+--	print(req)
 end
 
 function m.response(resp)
-	print(resp)
+--	print(resp)
 end
 
 function m.main(client_ip, req, resp)

@@ -19,6 +19,8 @@ extern testsuite g_testsuite;
 
 class testsuite
 {
+friend class mylua;
+
 private:
 	struct job_block
 	{
@@ -71,7 +73,10 @@ private:
 	/**
 	 * save the traffic to the pcap file.
 	 */
-	void save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file);
+	static int save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file);
+
+private:
+	int save_traffic(const std::string& pcap_file);
 
 private:
 	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1024> > LockFreeQueue;
@@ -85,6 +90,7 @@ private:
 
 	// // Don't kown why pcap_open_dead doesn't work. So i switched to write a pcap file manually.
 //	pcap_t* _pcap_handle;  ///< used to create pcap files.
+	std::list<ip_pkt>* _current_traffic_on_test; // un-graceful.
 };
 
 #endif /* _TESTSUITE_H_ */
