@@ -18,7 +18,7 @@ struct pcap_hdr_t {
         uint32_t sigfigs;        /* accuracy of timestamps */
         uint32_t snaplen;        /* max length of captured packets, in octets */
         uint32_t network;        /* data link type */
-};
+}; // 24 bytes
 
 struct pcaprec_hdr_t {
         uint32_t ts_sec;         /* timestamp seconds */
@@ -179,12 +179,21 @@ void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string
 //                 pcap_file.c_str(), pcap_geterr(_pcap_handle));
 //		return;
 //	}
+	static int most_saved_files_count = 64;
+
+	if (0 == most_saved_files_count)
+	{
+		return;
+	}
+	most_saved_files_count--;
+
 	struct pcap_hdr_t pcaphdr;
-	struct pcap_pkthdr pkthdr;
+	struct pcaprec_hdr_t pkthdr;
 
 	pcaphdr.magic_number = 0xa1b2c3d4;
+//	pcaphdr.magic_number = 0xd4c3b2a1;
 	pcaphdr.version_major = 2;
-	pcaphdr.version_minor = 0;
+	pcaphdr.version_minor = 4;
 	pcaphdr.thiszone = 0;
 	pcaphdr.sigfigs = 0;
 	pcaphdr.snaplen = 65535;
@@ -201,8 +210,8 @@ void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string
 		int pkt_tot_len = ite->get_tot_len();
 		memset(&pkthdr, 0, sizeof(pkthdr));
 		// pkthdr.ts = 0;  // thie info is lost, i don't care. set it as zero.
-		pkthdr.caplen = pkt_tot_len;
-		pkthdr.len = pkt_tot_len;
+		pkthdr.incl_len = pkt_tot_len;
+		pkthdr.orig_len = pkt_tot_len;
 		os.write((const char*)&pkthdr, sizeof(pkthdr));
 		os.write(ite->get_starting_addr(), pkt_tot_len);
 
