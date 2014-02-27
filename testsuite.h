@@ -83,7 +83,8 @@ private:
 	boost::mutex _mutex;
 	boost::condition_variable  _con_var;
 
-	pcap_t* _pcap_handle;  ///< used to create pcap files.
+	// // Don't kown why pcap_open_dead doesn't work. So i switched to write a pcap file manually.
+//	pcap_t* _pcap_handle;  ///< used to create pcap files.
 };
 
 #endif /* _TESTSUITE_H_ */

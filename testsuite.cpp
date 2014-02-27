@@ -10,6 +10,23 @@
 #include "mylua.h"
 #include <boost/format.hpp>
 
+struct pcap_hdr_t {
+        uint32_t magic_number;   /* magic number */
+        uint16_t version_major;  /* major version number */
+        uint16_t version_minor;  /* minor version number */
+        int32_t  thiszone;       /* GMT to local correction */
+        uint32_t sigfigs;        /* accuracy of timestamps */
+        uint32_t snaplen;        /* max length of captured packets, in octets */
+        uint32_t network;        /* data link type */
+};
+
+struct pcaprec_hdr_t {
+        uint32_t ts_sec;         /* timestamp seconds */
+        uint32_t ts_usec;        /* timestamp microseconds */
+        uint32_t incl_len;       /* number of octets of packet saved in file */
+        uint32_t orig_len;       /* actual length of packet */
+};
+
 testsuite g_testsuite;
 
 testsuite::testsuite()
@@ -21,22 +38,21 @@ testsuite::~testsuite()
 	_done = true;
 	_tester->join();
 
-	if (NULL != _pcap_handle)
-	{
-		pcap_close(_pcap_handle);
-	}
+//	if (NULL != _pcap_handle)
+//	{
+//		pcap_close(_pcap_handle);
+//	}
 }
 
 void testsuite::get_ready()
 {
 	_count_jobs = 0;
 
-	if (NULL == _pcap_handle)
-	{
-		_pcap_handle == pcap_open_dead(DLT_RAW, 65535 /* snaplen */);
-		perror("");
-		assert(NULL != _pcap_handle);
-	}
+//	if (NULL == _pcap_handle)
+//	{
+//		_pcap_handle == pcap_open_dead(DLT_RAW, 65535 /* snaplen */);
+//		assert(NULL != _pcap_handle);
+//	}
 
 	_tester.reset(
 			new boost::thread(boost::bind(&testsuite::run_worker, this))
@@ -153,31 +169,49 @@ void testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char
 
 void testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file)
 {
-	pcap_dumper_t *pdumper;
+//	pcap_dumper_t *pdumper;
+//
+//	pdumper = pcap_dump_open(_pcap_handle, pcap_file.c_str());
+//
+//	if (NULL == pdumper)
+//	{
+//        g_logger.printf("Error opening savefile \"%s\" for writing: %s\n",
+//                 pcap_file.c_str(), pcap_geterr(_pcap_handle));
+//		return;
+//	}
+	struct pcap_hdr_t pcaphdr;
+	struct pcap_pkthdr pkthdr;
 
-	pdumper = pcap_dump_open(_pcap_handle, pcap_file.c_str());
+	pcaphdr.magic_number = 0xa1b2c3d4;
+	pcaphdr.version_major = 2;
+	pcaphdr.version_minor = 0;
+	pcaphdr.thiszone = 0;
+	pcaphdr.sigfigs = 0;
+	pcaphdr.snaplen = 65535;
+	pcaphdr.network = DLT_RAW;
 
-	if (NULL == pdumper)
-	{
-        g_logger.printf("Error opening savefile \"%s\" for writing: %s\n",
-                 pcap_file.c_str(), pcap_geterr(_pcap_handle));
-		return;
-	}
+	std::ofstream os(pcap_file.c_str(), std::ios::out | std::ios::binary);
+
+	os.write((const char*)&pcaphdr, sizeof(pcaphdr));
 
 	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
 		 ite != traffic.end();
 		 ++ite)
 	{
-		struct pcap_pkthdr pkthdr;
+		int pkt_tot_len = ite->get_tot_len();
 		memset(&pkthdr, 0, sizeof(pkthdr));
-		//pkthdr.ts = ;  // thie info is lost, i don't care.
-		pkthdr.caplen = ite->get_tot_len();
-		pkthdr.len = ite->get_tot_len();
+		// pkthdr.ts = 0;  // thie info is lost, i don't care. set it as zero.
+		pkthdr.caplen = pkt_tot_len;
+		pkthdr.len = pkt_tot_len;
+		os.write((const char*)&pkthdr, sizeof(pkthdr));
+		os.write(ite->get_starting_addr(), pkt_tot_len);
 
-		pcap_dump((u_char*)pdumper, &pkthdr, (const u_char*)ite->get_starting_addr());
+		//pcap_dump((u_char*)pdumper, &pkthdr, (const u_char*)ite->get_starting_addr());
 	}
 
-	pcap_dump_close(pdumper);
+	os.close();
+
+//	pcap_dump_close(pdumper);
 }
 
 void testsuite::do_tests(const std::string& client_str_ip, uint16_t port,

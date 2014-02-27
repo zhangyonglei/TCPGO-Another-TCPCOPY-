@@ -135,7 +135,7 @@ const char* strip_l2head(pcap_t *pcap, const char *frame)
 		ethhdr = (struct eth_hdr *) frame;
 		switch (ntohs(ethhdr->_type))
 		{
-		case 0x8100: /* IEEE 802.1Q VLAN tagging */
+		case 0x8100:
 			l2_len = 18;
 			break;
 		default:

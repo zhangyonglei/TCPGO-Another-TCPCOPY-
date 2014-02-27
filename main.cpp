@@ -196,7 +196,7 @@ int run()
 	g_session_manager.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
-	/// the word starts from a big bang. Refer to function declarations for yummy explanations.
+	// the word starts from a big bang. Refer to function declarations for yummy explanations.
 	g_poller.bigbang();
 }
 
