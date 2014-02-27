@@ -43,6 +43,7 @@ public:
 		return _dst_addr;
 	}
 
+	// host-byte order.
 	unsigned short get_dst_port()
 	{
 		return _dst_port;

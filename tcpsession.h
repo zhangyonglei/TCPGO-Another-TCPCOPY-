@@ -48,7 +48,7 @@ public:
 	virtual void got_a_packet(const ip_pkt* pkt);
 
 public:
-    // Declares
+    /// declares six causes of session death.
 	enum cause_of_death{ACTIVE_CLOSE, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
 private:

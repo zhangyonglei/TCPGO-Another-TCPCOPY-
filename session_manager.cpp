@@ -44,11 +44,13 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 		if (pcap_compile(pcap, &fp, (char*)filter.c_str(), 0, 0) == -1)
 		{
 			cerr << pcap_geterr(pcap) << endl;
+			pcap_close(pcap);
 			return -1;
 		}
 		if (pcap_setfilter(pcap, &fp) == -1)
 		{
 			pcap_freecode(&fp);
+			pcap_close(pcap);
 			return -1;
 		}
 	}

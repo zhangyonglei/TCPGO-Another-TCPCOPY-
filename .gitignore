@@ -23,5 +23,6 @@ core*
 *.html
 *.htm
 *.jam
+*.pcap
 
 !readline

@@ -142,7 +142,7 @@ void mylua::register_APIs4lua(const luaL_Reg* lua_funcs)
     	// 'key' is at index -2 and 'value' is at index -1
     	assert(LUA_TSTRING == lua_type(_lua_state, -2)); // function name is a string
     	key = lua_tolstring(_lua_state, -2, NULL);
-    	lua_setglobal(_lua_state, key);
+    	lua_setglobal(_lua_state, key);  // pops a value from the stack and sets it as the new value of global name.
     }
 //  luaL_dostring(_lua_state, "p = print");  // alias p to print to save typing efforts.
 }
@@ -193,7 +193,7 @@ int mylua::load_lua_module(const std::string& module_path)
 	std::string module_name = the_path.stem().generic_string();
 
 	ss << boost::format("%s = dofile('%s')\n") % module_name % module_path
-	   << boost::format("return %s.request ~= nil and %s.response ~= nil\n") % module_name % module_name;
+	   << boost::format("return %s.main ~= nil\n") % module_name;
 
 	retcode = do_lua_string(ss.str().c_str(), "b", &well_formated);
 	if (well_formated && 0 == retcode)
@@ -215,6 +215,26 @@ int mylua::load_lua_module(const std::string& module_path)
 	}
 
 	return retcode;
+}
+
+void mylua::run_lua_tests(const std::string& client_str_ip, const std::vector<char>& request,
+		                  const std::vector<char>& response)
+{
+	for (std::vector<std::string>::iterator ite = _lua_modules.begin();
+		 ite != _lua_modules.end();
+		 ++ite)
+	{
+		const std::string& module_name(*ite);
+		lua_getglobal(_lua_state, module_name.c_str()); // [FRAMES1] push the module "lua table" on the stack
+		lua_getfield(_lua_state, -1, "main");        // [FRAMES2] push the module's main function on the stack
+		lua_remove(_lua_state, -2);                  // [FRAMES1] remove the module "lua table" on the -2 level of the stack
+		lua_pushstring(_lua_state, client_str_ip.c_str());       // [FRAMES2] push the second parameter
+		lua_pushlstring(_lua_state, &request[0], request.size());// [FRAMES3] push the first parameter
+		lua_pushlstring(_lua_state, &response[0], response.size());// [FRAMES4] push the third parameter
+		lua_pcall(_lua_state, 3, 0, 0); // int lua_pcall(lua_State *L, int nargs, int nresults, int msgh);
+
+		lua_settop(_lua_state, 0);
+	}
 }
 
 void mylua::open_listening_port()

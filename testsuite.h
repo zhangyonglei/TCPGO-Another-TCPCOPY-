@@ -57,6 +57,23 @@ private:
 	void load_shared_objects();
 
 private:
+	/**
+	 * split the traffic to inbound traffic and outbound traffic.
+	 */
+	void split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response);
+
+	/**
+	 * call all the test cases.
+	 */
+	void do_tests(const std::string& client_str_ip, uint16_t port,
+				  const std::vector<char>& request, const std::vector<char>& response);
+
+	/**
+	 * save the traffic to the pcap file.
+	 */
+	void save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file);
+
+private:
 	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1024> > LockFreeQueue;
 	LockFreeQueue _jobs;
 	boost::shared_ptr<boost::thread> _tester;
@@ -65,6 +82,8 @@ private:
 	boost::atomic<bool> _done;
 	boost::mutex _mutex;
 	boost::condition_variable  _con_var;
+
+	pcap_t* _pcap_handle;  ///< used to create pcap files.
 };
 
 #endif /* _TESTSUITE_H_ */

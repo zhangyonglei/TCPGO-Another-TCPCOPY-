@@ -85,6 +85,11 @@ public:
 		return _tcp_payload_len;
 	}
 
+	const char* get_tcp_payload()const
+	{
+		return _tcp_payload;
+	}
+
 	uint32_t get_seq()const
 	{
 		return _seq;
