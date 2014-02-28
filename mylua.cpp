@@ -75,6 +75,13 @@ int mylua::turn_on_log(lua_State* L)
 	return 1;
 }
 
+int mylua::flush_log(lua_State* L)
+{
+	g_logger.flush();
+
+	return 0;
+}
+
 int mylua::save_traffic(lua_State* L)
 {
 	int retcode = 0;
@@ -108,6 +115,7 @@ static const struct luaL_Reg lua_funcs[] = {
 	{"run", mylua::horos_run},
 	{"stop", mylua::horos_stop},
 	{"log_on", mylua::turn_on_log},
+	{"flush_log", mylua::flush_log},
 	{"save_traffic", mylua::save_traffic},
 	{NULL, NULL}
 };
@@ -331,7 +339,7 @@ void mylua::accept_conn(int fd)
 	// A connection is already in use.
 	if (_console_connected_fd > 0)
 	{
-		return;
+		close_conn_fd(_console_connected_fd);
 	}
 
 	_console_connected_fd = accept(fd, NULL, NULL);
@@ -361,10 +369,15 @@ void mylua::readin_console_cmd(int fd)
 	}
 	else
 	{
-		_console_connected_fd = -1;
-		g_poller.deregister_evt(fd);
-		close(fd);
+		close_conn_fd(fd);
 	}
+}
+
+void mylua::close_conn_fd(int fd)
+{
+	g_poller.deregister_evt(fd);
+	close(fd);
+	_console_connected_fd = -1;
 }
 
 void mylua::print_console_prompt(int fd, bool newline)

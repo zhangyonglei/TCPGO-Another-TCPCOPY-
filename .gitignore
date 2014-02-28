@@ -22,7 +22,7 @@ core*
 *.png
 *.html
 *.htm
-*.jam
+*.jam*
 *.pcap
 
 !readline

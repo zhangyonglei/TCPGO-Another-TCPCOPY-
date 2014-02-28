@@ -45,6 +45,7 @@ public:
 	static int horos_run(lua_State* L);
 	static int horos_stop(lua_State* L);
 	static int turn_on_log(lua_State* L);
+	static int flush_log(lua_State* L);
 	static int save_traffic(lua_State* L);
 
 public:
@@ -60,6 +61,7 @@ private:
 	// debug console based on lua
 	void open_listening_port();
 	void accept_conn(int fd);
+	void close_conn_fd(int fd);
 	void readin_console_cmd(int fd);
 	void print_console_prompt(int fd, bool newline);
 	int do_lua_console_cmd(const char* str);

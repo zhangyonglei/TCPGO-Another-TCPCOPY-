@@ -15,7 +15,6 @@ cute_logger::cute_logger()
 	_stream = fopen("h.log", "w+");
 	if (NULL == _stream)
 		abort();
-	_on = true;
 }
 
 cute_logger::~cute_logger()

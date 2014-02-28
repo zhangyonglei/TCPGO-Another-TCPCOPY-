@@ -32,7 +32,6 @@ private:
 
 private:
 	FILE*      _stream;
-	bool       _on;
 };
 
 int cute_logger::printf(const char* format, ...)
@@ -66,7 +65,7 @@ int cute_logger::flush()
 	int ret;
 
 	ret = 0;
-	if (_on)
+	if (g_configuration.get_log_on())
 	{
 		ret = fflush(_stream);
 	}
