@@ -1,6 +1,14 @@
-a simple and cute tcp traffic replaying tool.
-written by kamuszhou@tencent.com AKA 16236914@qq.com
-visit to my blog site www.dogeye.net is warmly welcomed.
+INSTALL:
+
+1. Install boost library first.
+   a. cd to boost_1_55_0 directory.
+   b. chmod +x bootstrap.sh
+   c. chmod +x tools/build/v2/engine/build.sh
+   d. ./bootstrap.sh --with-libraries=filesystem,regex,thread --prefix=/usr/local
+   e. chmod +x ./b2
+   f. ./b2 install
+   g. ldconfig
+
 
 FAQ:
 Q: failed to compile lua

@@ -51,7 +51,12 @@
 #include <memory.h>
 
 // boost
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 // other libraries
 #include <pcap.h>

@@ -97,8 +97,8 @@ postoffice::~postoffice()
 void postoffice::get_ready()
 {
 	_svr_port = htons(g_configuration.get_dst_port());
-	g_poller.register_evt(_send_fd, poller::POLLOUT, this);
-	g_poller.register_evt(_recv_fd, poller::POLLIN, this);
+	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
+	g_poller.register_evt(_recv_fd, mypoller::MYPOLLIN, this);
 }
 
 void postoffice::register_callback(uint64_t key, postoffice_callback_interface* callback)
@@ -259,5 +259,5 @@ void postoffice::pollout_handler(int fd)
 
 void postoffice::one_shot_timer_event_run()
 {
-	g_poller.register_evt(_send_fd, poller::POLLOUT, this);
+	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
 }

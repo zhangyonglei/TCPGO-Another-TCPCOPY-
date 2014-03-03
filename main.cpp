@@ -25,7 +25,7 @@
 #include "session_manager.h"
 #include "postoffice.h"
 #include "thetimer.h"
-#include "poller.h"
+#include "mypoller.h"
 #include "realtime_captureer.h"
 #include "configuration.h"
 #include "mylua.h"

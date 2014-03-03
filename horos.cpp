@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include "horos.h"
 #include "misc.h"
-#include "poller.h"
+#include "mypoller.h"
 
 pthread_t             thread;
 pthread_attr_t        pta;

@@ -10,6 +10,8 @@
 #define _THETIMER_H_
 
 #include <map>
+#include <boost/thread/thread.hpp>
+#include <boost/atomic.hpp>
 
 #define HZ 100
 
@@ -41,8 +43,13 @@ public:
 
 	void loop_through_all_timer_event();
 
+	void thread_entry();
+
+	void timer_handler();
+
 private:
-	friend void sig_alarm_handler(int sig);
+	// obsolted. Use the boost style timer instead.
+	// friend void sig_alarm_handler(int sig);
 
 private:
 	/// "jiffles" is a buzzword in linux kernel. Here, much like in kernel sourcecode,
@@ -53,6 +60,12 @@ private:
 	volatile uint64_t  _jiffies;
 	std::multimap<uint64_t, timer_event*> _events;
 	std::multimap<uint64_t, timer_event*> _tmp_events; ///< to evade iterator invalidation.
+
+	boost::asio::io_service _io_service;
+	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
+
+	boost::atomic<bool> _done;
+	boost::shared_ptr<boost::thread> _thread;
 };
 
 #endif /* _THETIMER_H_ */

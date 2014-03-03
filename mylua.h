@@ -11,7 +11,7 @@
 
 #include "lua.hpp"
 #include "misc.h"
-#include "poller.h"
+#include "mypoller.h"
 
 class mylua;
 extern mylua g_mylua;

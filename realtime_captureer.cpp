@@ -68,7 +68,7 @@ int realtime_captureer::get_ready()
 		_conns[i]._buffer_used_len = 0;
 	}
 
-	g_poller.register_evt(_traffic_listening_fd, poller::POLLIN, this);
+	g_poller.register_evt(_traffic_listening_fd, mypoller::MYPOLLIN, this);
 
 	return 0;
 }
@@ -124,7 +124,7 @@ void realtime_captureer::accept_conn()
 	assert(conn->_buffer_block != NULL);
 	memset(conn->_buffer_block, 0, BUFFER_LEN_FOR_TRAFFIC);
 	conn->_buffer_used_len = 0;
-	g_poller.register_evt(fd, poller::POLLIN, this);
+	g_poller.register_evt(fd, mypoller::MYPOLLIN, this);
 }
 
 void realtime_captureer::readin_traffic(int fd)

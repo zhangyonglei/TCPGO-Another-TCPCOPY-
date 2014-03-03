@@ -12,9 +12,6 @@
 #include "horos.h"
 #include "testsuite.h"
 #include "cute_logger.h"
-#include <boost/bind.hpp>
-#include <boost/format.hpp>
-#include <boost/filesystem.hpp>
 
 #define HOROS_CONSOLE_PROMPT  "horos>"
 
@@ -311,7 +308,7 @@ void mylua::open_listening_port()
 		abort();
 	}
 
-	g_poller.register_evt(_console_listening_fd, poller::POLLIN, this);
+	g_poller.register_evt(_console_listening_fd, mypoller::MYPOLLIN, this);
 }
 
 void mylua::pollin_handler(int fd)
@@ -349,7 +346,7 @@ void mylua::accept_conn(int fd)
 		return;
 	}
 
-	g_poller.register_evt(_console_connected_fd, poller::POLLIN, this);
+	g_poller.register_evt(_console_connected_fd, mypoller::MYPOLLIN, this);
 
 	welcome = "Welcome to the horos console v"VERSION_NUM"\n";
 	write(_console_connected_fd, welcome.c_str(), welcome.length());

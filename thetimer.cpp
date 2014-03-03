@@ -11,25 +11,29 @@
 
 the_timer g_timer;
 
+/* Obsoleted, use the boost way instead. Refer the the_timer::timer_handler.
 void sig_alarm_handler(int sig)
 {
 	g_timer._jiffies++;
-	//std::cout << g_timer._jiffles << std::endl;
-}
+//	std::cout << g_timer._jiffies << std::endl;
+}*/
 
 the_timer::the_timer()
 {
-    signal(SIGALRM, sig_alarm_handler);
+//    signal(SIGALRM, sig_alarm_handler);
     _jiffies = 0;
 }
 
 the_timer::~the_timer()
 {
+	_done = true;
+	_thread->join();
 }
 
 void the_timer::get_ready()
 {
-    struct itimerval value;
+	// use the boost way instead.
+ /*   struct itimerval value;
     int msec;
 
     msec = 1000 / HZ;
@@ -43,7 +47,33 @@ void the_timer::get_ready()
     {
     	perror("setitimer: ");
     	abort();
-    }
+    }*/
+
+	_done = false;
+	_thread.reset(
+			new boost::thread(boost::bind(&the_timer::thread_entry, this))
+	);
+}
+
+void the_timer::thread_entry()
+{
+	boost::posix_time::time_duration td = boost::posix_time::milliseconds(10);
+	_deadline_timer.reset(new boost::asio::deadline_timer(_io_service, td));
+	_deadline_timer->async_wait(boost::bind(&the_timer::timer_handler, this));
+
+	_io_service.run();
+}
+
+void the_timer::timer_handler()
+{
+	if (_done)
+		return;
+
+	_jiffies++;
+//	std::cout << _jiffies << std::endl;
+
+	_deadline_timer->expires_at(_deadline_timer->expires_at() + boost::posix_time::milliseconds(10));
+	_deadline_timer->async_wait(boost::bind(&the_timer::timer_handler, this));
 }
 
 void the_timer::register_one_shot_timer_event(timer_event* evt, uint32_t relative_time)
