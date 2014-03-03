@@ -107,6 +107,10 @@ std::string statistics_bureau::sess_statistics()
 		ss << "Average Connections Per Second in the past 15mins, 10mins, and 1min\n"
 		   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min;
 	}
+	else
+	{
+		ss << "More statistic info will be provided after 1 minute.\n";
+	}
 
 	return ss.str();
 }

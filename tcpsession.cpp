@@ -231,7 +231,7 @@ void tcpsession::get_ready()
 		// empty
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
-	_last_recorded_recv_time = g_timer.get_jiffies();
+	_last_recorded_recv_time = -1;
 	_last_recorded_snd_time = g_timer.get_jiffies();
 
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end(); ++ite)
@@ -301,12 +301,14 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		_current_state = tcpsession::SYN_SENT;
 		g_logger.printf("session: %s.%hu moves to state SYN_SENT from state CLOSED.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
-		_last_recorded_recv_time = jiffies;
+		// I cannot remember why I write this line, it looks like unnecessary.
+		// So i comment it out.
+		// _last_recorded_recv_time = jiffies;
 	}
 	else
 	{
 		// timeout. No responses has received from peer for a long time.
-		if (jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
+		if (_last_recorded_recv_time != -1 && jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();

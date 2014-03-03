@@ -72,8 +72,9 @@ private:
 
 	/**
 	 * save the traffic to the pcap file.
+	 * @param force If this parameter is set to true, then the file number ceiling control will be suppressed.
 	 */
-	static int save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file);
+	static int save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file, bool force);
 
 private:
 	int save_traffic(const std::string& pcap_file);

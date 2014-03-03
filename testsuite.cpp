@@ -109,7 +109,7 @@ void testsuite::run_worker()
 			{
 				std::ostringstream ss;
 				ss << boost::format("accident_death_%s_%d_%d.pcap") % job->_client_str_ip % job->_port % job->_cause;
-				save_traffic(job->_traffic, ss.str());
+				save_traffic(job->_traffic, ss.str(), false);
 
 				_current_traffic_on_test = NULL;
 				continue;
@@ -175,7 +175,7 @@ void testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char
 	}
 }
 
-int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file)
+int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file, bool force)
 {
 //	pcap_dumper_t *pdumper;
 //
@@ -190,12 +190,16 @@ int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string&
 	int retcode = 0;
 	static int most_saved_files_count = 500;
 
-	if (0 == most_saved_files_count)
+	if (!force)
 	{
-		retcode = -2;
-		return retcode;
+		if (0 == most_saved_files_count)
+		{
+			retcode = -2;
+			return retcode;
+		}
+
+		most_saved_files_count--;
 	}
-	most_saved_files_count--;
 
 	struct pcap_hdr_t pcaphdr;
 	struct pcaprec_hdr_t pkthdr;
@@ -245,7 +249,7 @@ int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string&
 int testsuite::save_traffic(const std::string& pcap_file)
 {
 	int retcode;
-	retcode = save_traffic(*_current_traffic_on_test, pcap_file);
+	retcode = save_traffic(*_current_traffic_on_test, pcap_file, true);
 
 	return retcode;
 }

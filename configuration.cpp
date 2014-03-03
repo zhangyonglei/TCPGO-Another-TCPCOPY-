@@ -38,8 +38,8 @@ configuration::configuration()
 	set_duplicate_log_to_stdout(true);
 
 	// [TESTSUITE]
-	set_lua_scripts_home("./lua_scripts");
-	set_so_home("./so_home");
+	set_lua_scripts_home("/tmp");
+	set_so_home("/tmp");
 }
 
 configuration::~configuration()
@@ -339,30 +339,6 @@ void configuration::readin()
 		set_enable_active_close(value);
 	}
 
-	// the LOG session
-	section_name = "LOG";
-
-	if (config.HasSection(section_name))
-	{
-		g_logger.printf("LOG section exists.\n");
-	}
-
-	option_name = "log_on";
-	if (config.HasOption(section_name, option_name))
-	{
-		value = config.GetOption(section_name, option_name);
-		g_logger.printf("log_on: %s\n", value.c_str());
-		set_log_on(value);
-	}
-
-	option_name = "duplicate_log_to_stdout";
-	if (config.HasOption(section_name, option_name))
-	{
-		value = config.GetOption(section_name, option_name);
-		g_logger.printf("duplicate_log_to_stdout: %s\n", value.c_str());
-		set_duplicate_log_to_stdout(value);
-	}
-
 	// the TESTSUITE session
 	section_name = "TESTSUITE";
 
@@ -385,6 +361,30 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("so_home: %s\n", value.c_str());
 		set_so_home(value);
+	}
+
+	// the LOG session
+	section_name = "LOG";
+
+	if (config.HasSection(section_name))
+	{
+		g_logger.printf("LOG section exists.\n");
+	}
+
+	option_name = "log_on";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("log_on: %s\n", value.c_str());
+		set_log_on(value);
+	}
+
+	option_name = "duplicate_log_to_stdout";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("duplicate_log_to_stdout: %s\n", value.c_str());
+		set_duplicate_log_to_stdout(value);
 	}
 
 	g_logger.printf("Finished reading conf file.\n");

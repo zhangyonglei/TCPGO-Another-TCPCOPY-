@@ -372,6 +372,7 @@ void mylua::readin_console_cmd(int fd)
 
 void mylua::close_conn_fd(int fd)
 {
+	assert(fd > 0);
 	g_poller.deregister_evt(fd);
 	close(fd);
 	_console_connected_fd = -1;
@@ -394,6 +395,7 @@ int mylua::do_lua_console_cmd(const char* str)
 	int orig_top, curr_top;
 	int new_stack_frame;
 	int retcode;
+	const char* retval;
 	std::ostringstream ss;
 
 	if (!strstr(str, "return"))
@@ -407,18 +409,36 @@ int mylua::do_lua_console_cmd(const char* str)
 		ss << str;
 	}
 
+	const std::string& the_cmd_line = ss.str();
+	for (std::string::const_iterator ite = the_cmd_line.begin(); ite != the_cmd_line.end(); ++ite)
+	{
+		char ch = *ite;
+		if ( !isprint(ch) && ch != '\r' && ch != '\n' ) // non-printable characters will corrupt the lua machine.
+		{
+			retval = "Non-printable character is not allowed in command string.";
+			write(_console_connected_fd, retval, strlen(retval));
+			goto _exit;
+		}
+	}
+
 	orig_top = lua_gettop(_lua_state);
-	retcode = luaL_dostring(_lua_state, ss.str().c_str());
+	retcode = luaL_dostring(_lua_state, the_cmd_line.c_str());
 	curr_top = lua_gettop(_lua_state);
 
 	new_stack_frame = curr_top - orig_top;
-	assert(new_stack_frame >= 0);
+	// assert(new_stack_frame >= 0);
+	if (new_stack_frame < 0)  // secure-crt console will give birth this weird phenomenon.
+	{
+		g_logger.printf("weired command line: [%s] causes a negative lua stack.\n", the_cmd_line.c_str());
+		retval = "A error occurred when parsing command line.\n";
+		write(_console_connected_fd, retval, strlen(retval));
+		goto _exit;
+	}
 	// got info on stack.
 	if (new_stack_frame > 0)
 	{
 		for (int i = 1; i <= new_stack_frame; i++)
 		{
-			const char* retval;
 			if (!lua_isnil(_lua_state, -i))
 			{
 				retval = luaL_checkstring(_lua_state, -i);
@@ -518,7 +538,7 @@ int mylua::lua_panic(lua_State* L)
 {
 	// catch the lua panic here.
 	std::string errinfo = lua_tostring(L, -1);
-	g_logger.printf(errinfo.c_str());
+	g_logger.printf("lua_panic: %s", errinfo.c_str());
 	return 0;
 }
 
