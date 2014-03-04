@@ -52,10 +52,11 @@ public:
 	enum cause_of_death{ACTIVE_CLOSE, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
 private:
-	/// in the case of active close and the sent FIN has be acked by peer, _ippkts_samples is empty at this time
+	/// a. in the case of active close and the sent FIN has be acked by peer, _ippkts_samples is empty at this time
 	/// if a tcp segment received, ack cann't be piggybacked by sample, so create a pure ack without payload just
 	/// for the sake of acknowledge.
-	void create_an_ack_without_payload();
+	/// b. in the case of passive close. The some logic applies.
+	void create_an_ack_without_payload(uint32_t seq);
 
 private:
 	/// eleven member functions for their respective tcp state.

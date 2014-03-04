@@ -430,7 +430,7 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	}
 }
 
-void tcpsession::create_an_ack_without_payload()
+void tcpsession::create_an_ack_without_payload(uint32_t seq)
 {
 	struct tcphdr* tcphdr;
 	char buff[40];
@@ -440,7 +440,7 @@ void tcpsession::create_an_ack_without_payload()
 		return;
 
 	tcphdr = (struct tcphdr*)(buff + 20);
-	tcphdr->seq = htons(_last_seq_beyond_fin_at_localhost_side);
+	tcphdr->seq = htons(seq);
 	_ippkts_samples.push_back(buff);
 	assert(!tcphdr->fin);
 }
@@ -496,6 +496,7 @@ void tcpsession::established_state_handler(const ip_pkt* pkt)
 void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 {
 	// this state will be transformed to LAST_ACK in the sending logic, refer to pls_send_these_packets().
+	create_an_ack_without_payload(_latest_acked_sequence_by_peer);
 	refresh_status(pkt);
 }
 
@@ -555,7 +556,7 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 	refresh_status(pkt);
 	if (my_fin_has_been_acked)
 	{
-		create_an_ack_without_payload();
+		create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
@@ -588,7 +589,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 
 	if (pkt->get_tcp_payload_len())
 	{
-		create_an_ack_without_payload();
+		create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
@@ -608,7 +609,7 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 	}
 	refresh_status(pkt);
 
-	create_an_ack_without_payload();
+	create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
@@ -617,7 +618,7 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 {
 	refresh_status(pkt);
 
-	create_an_ack_without_payload();
+	create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
