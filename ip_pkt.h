@@ -155,6 +155,16 @@ public:
 	 */
 	void rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 
+	void increment_sent_counter()
+	{
+		_sent_counter++;
+	}
+
+	int get_sent_counter()
+	{
+		return _sent_counter;
+	}
+
 private:
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.
@@ -183,6 +193,8 @@ private:
 	bool _rst_flag;              ///< reset flag.
 	bool _syn_flag;              ///< self-explanatory.
 	bool _fin_flag;              ///< no explanation.
+
+	int _sent_counter;           ///< record how many times this ip packet has been sent.
 
 	/// the following variables are for debug's convenience.
 	std::string _src_addr;

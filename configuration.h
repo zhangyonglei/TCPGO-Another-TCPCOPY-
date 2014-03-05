@@ -59,6 +59,11 @@ public:
 		return _onoff_random_port;
 	}
 
+	int get_accidental_death_pcap_file_limit()
+	{
+		return _accidental_death_pcap_file_limit;
+	}
+
 	// [SESSION]
 	int get_response_from_peer_time_out()
 	{
@@ -121,6 +126,9 @@ public:
 	void set_concurrency_limit(const std::string& concurrency_limit);
 	void set_concurrency_limit(int concurrency_limit);
 
+	void set_accidental_death_pcap_file_limit(const std::string& limit);
+	void set_accidental_death_pcap_file_limit(int limit);
+
 	// [SESSION]
 	void set_onoff_random_port(const std::string& onoff_random_port);
 	void set_onoff_random_port(bool onoff_random_port);
@@ -165,6 +173,7 @@ private:
 	unsigned short _dst_port;   ///< the destination port to which traffic will be forward. host-byte order.
 	int _concurrency_limit;     ///< the maximum number of concurrent TCP connections.
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
+	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.

@@ -118,8 +118,11 @@ void testsuite::run_worker()
 			const std::list<ip_pkt>& traffic = job->_traffic;
 			std::vector<char> request;
 			std::vector<char> response;
-			split_traffic(traffic, request, response);
-			do_tests(job->_client_str_ip, job->_port, request, response);
+			int integrity = split_traffic(traffic, request, response);
+			if (0 == integrity)  // if the traffic lost packet, do_tests won't be performed.
+			{
+				do_tests(job->_client_str_ip, job->_port, request, response);
+			}
 
 			_current_traffic_on_test = NULL;
 		}
@@ -132,31 +135,84 @@ void testsuite::run_worker()
 	}
 }
 
-void testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response)
+int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response)
 {
-	int request_traffic_size = 0;
-	int response_traffic_size = 0;
-	uint16_t server_port = g_configuration.get_dst_port();
+	int retcode;
+	int request_traffic_size, response_traffic_size;
+	uint16_t server_port;
+
+	uint32_t next_expected_seq_host, next_expected_seq_peer;
+
+	int response_copied_bytes, request_copied_bytes;
+
+	retcode = 0;
+	request_traffic_size = 0;
+	response_traffic_size = 0;
+
+	server_port = g_configuration.get_dst_port();
 
 	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
 		 ite != traffic.end();
 		 ++ite)
 	{
+		const ip_pkt* pkt = &(*ite); // for debug's convenience;
+		bool is_syn_set = pkt->is_syn_set();
+		bool is_fin_set = pkt->is_fin_set();
+		int tcp_payload_len = pkt->get_tcp_payload_len();
+		uint32_t seq = pkt->get_seq();
+
+
 		if (ite->get_src_port() == server_port )
 		{
-			response_traffic_size += ite->get_tcp_payload_len();
+			if (!is_syn_set && 0 != tcp_payload_len)
+			{
+				if (next_expected_seq_host != seq)
+				{
+					retcode = -1;
+					goto _exit;
+				}
+			}
+
+			if (is_syn_set)
+			{
+				next_expected_seq_host = seq + 1;
+			}
+			else if (0 != tcp_payload_len)
+			{
+				next_expected_seq_host = seq + tcp_payload_len;
+			}
+
+			response_traffic_size += tcp_payload_len;
 		}
 		else
 		{
-			request_traffic_size += ite->get_tcp_payload_len();
+			if (!is_syn_set && 0 != tcp_payload_len)
+			{
+				if (next_expected_seq_peer != seq)
+				{
+					retcode = -1;
+					goto _exit;
+				}
+			}
+
+			if (is_syn_set)
+			{
+				next_expected_seq_peer = seq + 1;
+			}
+			else
+			{
+				next_expected_seq_peer = seq + tcp_payload_len;
+			}
+
+			request_traffic_size += tcp_payload_len;
 		}
 	}
 
 	request.resize(request_traffic_size);
 	response.resize(response_traffic_size);
 
-	int response_copied_bytes = 0;
-	int request_copied_bytes = 0;
+	response_copied_bytes = 0;
+	request_copied_bytes = 0;
 	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
 		 ite != traffic.end();
 		 ++ite)
@@ -173,6 +229,9 @@ void testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char
 			request_copied_bytes += payload_len;
 		}
 	}
+
+_exit:
+	return retcode;
 }
 
 int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file, bool force)
@@ -187,18 +246,22 @@ int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string&
 //                 pcap_file.c_str(), pcap_geterr(_pcap_handle));
 //		return;
 //	}
+
+	// Ugly code. just want to implement it fast so i use the static variable here.
+	// refactor related logic to avoid use static variable later.
+	static int saved_traffic_files_counter = 0;
 	int retcode = 0;
-	static int most_saved_files_count = 500;
 
 	if (!force)
 	{
-		if (0 == most_saved_files_count)
+		int limit = g_configuration.get_accidental_death_pcap_file_limit();
+		if (saved_traffic_files_counter >= limit)
 		{
 			retcode = -2;
 			return retcode;
 		}
 
-		most_saved_files_count--;
+		saved_traffic_files_counter++;
 	}
 
 	struct pcap_hdr_t pcaphdr;

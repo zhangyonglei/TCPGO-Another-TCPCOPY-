@@ -25,6 +25,7 @@ configuration::configuration()
 	set_dst_port(0);
 	set_concurrency_limit(1000);
 	set_onoff_random_port(true);
+	set_accidental_death_pcap_file_limit(100);
 
 	// [SESSION]
 	set_response_from_peer_time_out(3 * HZ);
@@ -33,13 +34,13 @@ configuration::configuration()
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
 	set_enable_active_close(false);
 
-	// [LOG]
-	set_log_on(true);
-	set_duplicate_log_to_stdout(true);
-
 	// [TESTSUITE]
 	set_lua_scripts_home("/tmp");
 	set_so_home("/tmp");
+
+	// [LOG]
+	set_log_on(true);
+	set_duplicate_log_to_stdout(true);
 }
 
 configuration::~configuration()
@@ -162,8 +163,7 @@ void configuration::set_snd_speed_control(int speed_control)
 	_snd_speed_control = speed_control;
 }
 
-void configuration::set_wait_for_fin_from_peer_time_out(
-		const std::string& time_out)
+void configuration::set_wait_for_fin_from_peer_time_out(const std::string& time_out)
 {
 	int val;
 	val = strtol(time_out.c_str(), NULL, 10);
@@ -214,6 +214,18 @@ void configuration::set_lua_scripts_home(const std::string& home)
 void configuration::set_so_home(const std::string& home)
 {
 	_so_home = home;
+}
+
+void configuration::set_accidental_death_pcap_file_limit(const std::string& limit)
+{
+	int val;
+	val = strtol(limit.c_str(), NULL, 10);
+	set_accidental_death_pcap_file_limit(val);
+}
+
+void configuration::set_accidental_death_pcap_file_limit(int limit)
+{
+	_accidental_death_pcap_file_limit = limit;
 }
 
 void configuration::readin()
@@ -289,6 +301,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("onoff_random_port: %s\n", value.c_str());
 		set_onoff_random_port(value);
+	}
+
+	option_name = "accidental_death_pcap_file_limit";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("accidental_death_pcap_file_limit: %s", value.c_str());
+		set_accidental_death_pcap_file_limit(value);
 	}
 
 	// the session section

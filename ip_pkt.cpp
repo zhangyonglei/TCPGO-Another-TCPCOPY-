@@ -11,6 +11,7 @@
 
 ip_pkt::ip_pkt()
 {
+	_sent_counter = 0;
 }
 
 ip_pkt::ip_pkt(const char* pkt)
@@ -25,6 +26,14 @@ ip_pkt::~ip_pkt()
 bool ip_pkt::operator<(const ip_pkt& challenger)const
 {
 	bool b;
+
+	uint32_t saddr = get_iphdr()->saddr;
+	uint32_t saddr_ch = challenger.get_iphdr()->saddr;
+	if (saddr < saddr_ch)
+		return true;
+	else if (saddr > saddr_ch)
+		return false;
+
 	b = seq_before(_seq, challenger._seq);
 	if (b)
 	{
@@ -37,6 +46,15 @@ bool ip_pkt::operator<(const ip_pkt& challenger)const
 		if (b)
 		{
 			return true;
+		}
+
+		if (challenger.get_tcp_payload_len() < get_tcp_payload_len())
+		{
+			return true;
+		}
+		else if (challenger.get_tcp_payload_len() > get_tcp_payload_len())
+		{
+			return false;
 		}
 
 		b = challenger._rst_flag - _rst_flag;
@@ -75,6 +93,7 @@ void ip_pkt::cp(const char* pkt)
 	assert(NULL != _pkt);
 	memcpy((char*)_pkt.get(), pkt, ip_tot_len);
 	warm_up();
+	_sent_counter = 0;
 }
 
 void ip_pkt::swap(ip_pkt& pkt)

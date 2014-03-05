@@ -204,7 +204,7 @@ int32_t tcpsession::check_samples_integrity()
 
 	return 0;
 
-	_err:
+_err:
 	return 1;
 }
 
@@ -270,8 +270,20 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			ite != _sliding_window_right_boundary;
 			++ite)
 	{
+
+		bool is_syn_set, is_ack_set, is_fin_set, is_rst_set;
+		int tcp_payload_len;
+
 		pkt = &(*ite);
-		if (pkt->is_fin_set())  // FIN packet
+
+		is_syn_set = pkt->is_syn_set();
+		is_ack_set = pkt->is_ack_set();
+		is_fin_set = pkt->is_fin_set();
+		is_rst_set = pkt->is_rst_set();
+
+		tcp_payload_len = pkt->get_tcp_payload_len();
+
+		if (is_fin_set)  // FIN packet
 		{
 			if (_enable_active_close)
 			{
@@ -279,6 +291,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			}
 			else   // passive close
 			{
+				// halt my FIN and wait for FIN from the peer.
 				if (_current_state != ESTABLISHED)
 				{
 					fin_has_been_sent = true;
@@ -289,10 +302,34 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 				}
 			}
 		}
+
+		// if this is a pure ack
+		if (is_ack_set && 0 == tcp_payload_len && !is_syn_set && !is_rst_set && !is_fin_set )
+		{
+			int sent_count;
+			sent_count = pkt->get_sent_counter();
+
+			if (0 == sent_count)  // record the pure ack that will be send.
+			{
+				_traffic_history.push_back(*pkt);
+			}
+			else  // pure ack is one-shot only.
+			{
+				if (ite == _sliding_window_left_boundary)
+				{
+					++_sliding_window_left_boundary;
+				}
+				_ippkts_samples.erase(ite++);
+
+				continue;
+			}
+		}
+
+		pkt->increment_sent_counter();
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
-	}
+	} // end the loop of the sliding window
 
 	count = pkts.size();
 
@@ -496,13 +533,21 @@ void tcpsession::established_state_handler(const ip_pkt* pkt)
 void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 {
 	// this state will be transformed to LAST_ACK in the sending logic, refer to pls_send_these_packets().
-	create_an_ack_without_payload(_latest_acked_sequence_by_peer);
 	refresh_status(pkt);
+
+	if (0 != pkt->get_tcp_payload() && _ippkts_samples.empty() )
+	{
+		create_an_ack_without_payload(_latest_acked_sequence_by_peer);
+		_sliding_window_left_boundary = _ippkts_samples.begin();
+		_sliding_window_right_boundary = _ippkts_samples.end();
+	}
 }
 
 void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 {
 	uint32_t ack_seq;
+
+	refresh_status(pkt);
 
 	ack_seq = pkt->get_ack_seq();
 	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
@@ -515,7 +560,6 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 		kill_me(PASSIVE_CLOSE);
 		return;
 	}
-	refresh_status(pkt);
 }
 
 void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
@@ -698,12 +742,16 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			{
 				return;
 			}
+			else  // lost packets or packets are out of order. just let it go.
+			{
+				// NOTICE. Packets losing or packets out of order will be found in the traffic history.
+			}
 		}
 	}
 
 	if (pkt->is_ack_set() && !pkt->is_syn_set())
 	{
-		// the peer acked new packe.
+		// the peer acked new packet.
 		if (seq_before(_latest_acked_sequence_by_peer, ack_seq))
 		{
 			_latest_acked_sequence_by_peer = ack_seq;

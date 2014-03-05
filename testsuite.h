@@ -30,6 +30,15 @@ private:
 				  tcpsession::cause_of_death cause)
 			:_traffic(traffic), _port(port), _client_str_ip(client_str_ip), _cause(cause)
 		{
+			int n, n2;
+			n = _traffic.size();
+			std::cerr << n << std::endl;
+			save_traffic(_traffic, "/tmp/a.pcap", true);
+			_traffic.sort();
+			_traffic.unique();
+			n2 = _traffic.size();
+			std::cerr << n2 << std::endl;
+			save_traffic(_traffic, "/tmp/b.pcap", true);
 		}
 
 		std::string _client_str_ip;
@@ -61,8 +70,9 @@ private:
 private:
 	/**
 	 * split the traffic to inbound traffic and outbound traffic.
+	 * @return 0 on success. If the traffic lost packet, or other abnormal conditions occurred, non-zero will returned.
 	 */
-	void split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response);
+	int split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response);
 
 	/**
 	 * call all the test cases.
