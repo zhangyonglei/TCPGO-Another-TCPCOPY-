@@ -151,8 +151,12 @@ int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>
 
 	server_port = g_configuration.get_dst_port();
 
-	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
-		 ite != traffic.end();
+	std::list<ip_pkt> traffic_copy(traffic);
+	traffic_copy.sort();
+	traffic_copy.unique();
+
+	for (std::list<ip_pkt>::const_iterator ite = traffic_copy.begin();
+		 ite != traffic_copy.end();
 		 ++ite)
 	{
 		const ip_pkt* pkt = &(*ite); // for debug's convenience;
@@ -213,8 +217,8 @@ int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>
 
 	response_copied_bytes = 0;
 	request_copied_bytes = 0;
-	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
-		 ite != traffic.end();
+	for (std::list<ip_pkt>::const_iterator ite = traffic_copy.begin();
+		 ite != traffic_copy.end();
 		 ++ite)
 	{
 		int payload_len = ite->get_tcp_payload_len();

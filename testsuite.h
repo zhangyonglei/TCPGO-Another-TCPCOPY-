@@ -30,15 +30,6 @@ private:
 				  tcpsession::cause_of_death cause)
 			:_traffic(traffic), _port(port), _client_str_ip(client_str_ip), _cause(cause)
 		{
-			int n, n2;
-			n = _traffic.size();
-			std::cerr << n << std::endl;
-			save_traffic(_traffic, "/tmp/a.pcap", true);
-			_traffic.sort();
-			_traffic.unique();
-			n2 = _traffic.size();
-			std::cerr << n2 << std::endl;
-			save_traffic(_traffic, "/tmp/b.pcap", true);
 		}
 
 		std::string _client_str_ip;
