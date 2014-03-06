@@ -12,11 +12,13 @@
 #include "lua.hpp"
 #include "misc.h"
 #include "mypoller.h"
+#include "thetimer.h"
 
 class mylua;
 extern mylua g_mylua;
 
-class mylua : public evt_workhorse
+class mylua : public evt_workhorse,
+              public timer_event
 {
 public:
 	mylua();
@@ -30,7 +32,12 @@ public:
 	void register_APIs4lua(const luaL_Reg* lua_funcs);
 
 	int get_ready();
+	void restart();
 
+	/*
+	 * In the case horos is loaded as a so from the lua environment.
+	 * This function is called to disable console because a lua console is available already this way.
+	 */
 	void disable_console();
 
 public:
@@ -44,6 +51,7 @@ public:
 	static int sess_statistics(lua_State* L);
 	static int horos_run(lua_State* L);
 	static int horos_stop(lua_State* L);
+	static int reload_testsuite(lua_State* L);
 	static int turn_on_log(lua_State* L);
 	static int flush_log(lua_State* L);
 	static int save_traffic(lua_State* L);
@@ -61,21 +69,31 @@ private:
 	// debug console based on lua
 	void open_listening_port();
 	void accept_conn(int fd);
-	void close_conn_fd(int fd);
+	void close_conn_fd();
+	void close_listening_fd();
 	void readin_console_cmd(int fd);
 	void print_console_prompt(int fd, bool newline);
 	int do_lua_console_cmd(const char* str);
 
 private:
+	void init_lua_machine();
+
 	/** run lua scripts and get the returned values.
 	 * @param lua_str the lua string in lua jargon.
 	 * @param retval_formats i: int, b: bool, d: double, s: std::string
-	 * @return 0 on success, non-zero on failure.
+	 * @return 0 on success, non-zero on failure. This function possibly throw a
+	 * lua_exception if a error occurred when parsing or executing.
 	 */
 	int do_lua_string(const char* lua_str, const char* retval_formats, ...);
 
 	static int lua_panic(lua_State* L);
 	int bind_lua_panic(lua_State* L);
+
+private:
+	/**
+	 * Implement the timer_event interface.
+	 */
+	void one_shot_timer_event_run();
 
 private:
 	static lua_State* _lua_state;

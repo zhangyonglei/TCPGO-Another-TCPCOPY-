@@ -18,6 +18,26 @@
 lua_State* mylua::_lua_state;
 class mylua g_mylua;
 
+class mylua_exception :
+	public boost::exception,
+	public std::exception
+{
+public:
+		mylua_exception(const std::string& hint) : _what(hint)
+		{
+		}
+
+		// throw() guarantees that no exception will be thrown.
+		virtual const char* what() const throw()
+		{
+			return _what.c_str();
+		}
+
+		~mylua_exception()throw(){}
+private:
+		std::string _what;
+};
+
 /////////////////////////////////////////////////////////////////////////////////////
 // the following are functions exposed to lua state.
 int mylua::version(lua_State* L)
@@ -46,6 +66,16 @@ int mylua::horos_run(lua_State* L)
 int mylua::horos_stop(lua_State* L)
 {
 	horos_uninit();
+}
+
+int mylua::reload_testsuite(lua_State* L)
+{
+	// To serialize lua environment restart using timer mechanism.
+	g_timer.register_one_shot_timer_event(&g_mylua, 0);
+
+	lua_pushstring(L, "Testsuite has been reloaded.");
+
+	return 1;
 }
 
 int mylua::turn_on_log(lua_State* L)
@@ -111,6 +141,7 @@ static const struct luaL_Reg lua_funcs[] = {
 	{"sess_stat", mylua::sess_statistics},
 	{"run", mylua::horos_run},
 	{"stop", mylua::horos_stop},
+	{"reload_testsuite", mylua::reload_testsuite},
 	{"log_on", mylua::turn_on_log},
 	{"flush_log", mylua::flush_log},
 	{"save_traffic", mylua::save_traffic},
@@ -185,24 +216,31 @@ void mylua::disable_console()
 	_enable_console = false;
 }
 
-int mylua::get_ready()
+void mylua::init_lua_machine()
 {
 	lua_State* state;
 
+	assert(NULL == _lua_state);
+
+	state = luaL_newstate();
+	assert(NULL != state);
+
+	luaL_openlibs(state);
+	set_lua_state(state);
+	register_APIs4lua(lua_funcs);
+
+	lua_atpanic(_lua_state, &mylua::lua_panic);
+	// lua_atpanic(_lua_state, boost::bind(&mylua::bind_lua_panic, this, _1));
+}
+
+int mylua::get_ready()
+{
 	// in the case libhoros.so is loaded from lua console whose state has already
 	// passed in. There is no need to create another lua state.
 	if (NULL == _lua_state)
 	{
-		state = luaL_newstate();
-		assert(NULL != state);
-
-		luaL_openlibs(state);
-		set_lua_state(state);
-		register_APIs4lua(lua_funcs);
+		init_lua_machine();
 	}
-
-	lua_atpanic(_lua_state, &mylua::lua_panic);
-	// lua_atpanic(_lua_state, boost::bind(&mylua::bind_lua_panic, this, _1));
 
 	if (_enable_console)
 	{
@@ -210,6 +248,12 @@ int mylua::get_ready()
 	}
 
 	_lua_modules.clear();
+}
+
+void mylua::restart()
+{
+	set_lua_state(NULL);
+	init_lua_machine();
 }
 
 int mylua::load_lua_module(const std::string& module_path)
@@ -228,7 +272,20 @@ int mylua::load_lua_module(const std::string& module_path)
 	ss << boost::format("%s = dofile('%s')\n") % module_name % module_path
 	   << boost::format("return %s.main ~= nil\n") % module_name;
 
-	retcode = do_lua_string(ss.str().c_str(), "b", &well_formated);
+	well_formated = false;
+	try
+	{
+		retcode = do_lua_string(ss.str().c_str(), "b", &well_formated);
+	}
+	catch (mylua_exception& e)
+	{
+		g_logger.printf("%s", boost::diagnostic_information(e).c_str());
+		std::cerr << "Failed to load lua script " << module_path << std::endl;
+		assert(0 != retcode);
+
+		return retcode;
+	}
+
 	if (well_formated && 0 == retcode)
 	{
 		_lua_modules.push_back(module_name);
@@ -336,7 +393,7 @@ void mylua::accept_conn(int fd)
 	// A connection is already in use.
 	if (_console_connected_fd > 0)
 	{
-		close_conn_fd(_console_connected_fd);
+		close_conn_fd();
 	}
 
 	_console_connected_fd = accept(fd, NULL, NULL);
@@ -366,16 +423,29 @@ void mylua::readin_console_cmd(int fd)
 	}
 	else
 	{
-		close_conn_fd(fd);
+		assert(fd == _console_connected_fd);
+		close_conn_fd();
 	}
 }
 
-void mylua::close_conn_fd(int fd)
+void mylua::close_conn_fd()
 {
-	assert(fd > 0);
-	g_poller.deregister_evt(fd);
-	close(fd);
-	_console_connected_fd = -1;
+	if (_console_connected_fd > 0)
+	{
+		g_poller.deregister_evt(_console_connected_fd);
+		close(_console_connected_fd);
+		_console_connected_fd = -1;
+	}
+}
+
+void mylua::close_listening_fd()
+{
+	if (_console_listening_fd > 0)
+	{
+		g_poller.deregister_evt(_console_listening_fd);
+		close(_console_listening_fd);
+		_console_listening_fd = -1;
+	}
 }
 
 void mylua::print_console_prompt(int fd, bool newline)
@@ -492,6 +562,7 @@ int mylua::do_lua_string(const char* lua_str, const char* retval_formats, ...)
 			{
 				retval_str = luaL_checkstring(_lua_state, -i);
 				g_logger.printf("%s\n", retval_str);
+				BOOST_THROW_EXCEPTION(mylua_exception(retval_str));
 			}
 
 			switch (retval_type)
@@ -531,6 +602,7 @@ int mylua::do_lua_string(const char* lua_str, const char* retval_formats, ...)
 	va_end(ap);
 
 	lua_settop(_lua_state, 0);
+
 	return retcode;
 }
 
@@ -539,6 +611,7 @@ int mylua::lua_panic(lua_State* L)
 	// catch the lua panic here.
 	std::string errinfo = lua_tostring(L, -1);
 	g_logger.printf("lua_panic: %s", errinfo.c_str());
+
 	return 0;
 }
 
@@ -547,6 +620,13 @@ int mylua::bind_lua_panic(lua_State* L)
 {
 	// catch the lua panic here.
 	return 0;
+}
+
+void mylua::one_shot_timer_event_run()
+{
+	g_testsuite.stop();
+	restart();
+	g_testsuite.ready_go();
 }
 
 void mylua::pollout_handler(int fd)

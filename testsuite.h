@@ -42,7 +42,13 @@ public:
 	testsuite();
 	virtual ~testsuite();
 
-	void get_ready();
+	void ready_go();
+
+	/**
+	 * stop the testing process. The caller may need to invoke ready_go()
+	 * later to restart testing processing.
+	 */
+	void stop();
 
 	/**
 	 * @param port in host byte order

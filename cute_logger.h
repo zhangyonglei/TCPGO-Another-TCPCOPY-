@@ -73,6 +73,4 @@ int cute_logger::flush()
 	return ret;
 }
 
-
-
 #endif /* _CUTELOGGER_H_ */

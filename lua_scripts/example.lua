@@ -1,5 +1,5 @@
-local m = {}
-
+local m = {}k
+a
 function m.request(req)
 --	print(req)
 end
@@ -10,8 +10,9 @@ end
 
 function m.main(client_ip, req, resp)
 	print(client_ip)
+	print("")
 	m.request(req)	
 	m.response(resp)
 end
 
-return m;
+return m

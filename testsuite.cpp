@@ -35,8 +35,7 @@ testsuite::testsuite()
 
 testsuite::~testsuite()
 {
-	_done = true;
-	_tester->join();
+	stop();
 
 //	if (NULL != _pcap_handle)
 //	{
@@ -44,8 +43,9 @@ testsuite::~testsuite()
 //	}
 }
 
-void testsuite::get_ready()
+void testsuite::ready_go()
 {
+	_done = false;
 	_count_jobs = 0;
 	_current_traffic_on_test = NULL;
 
@@ -58,6 +58,12 @@ void testsuite::get_ready()
 	_tester.reset(
 			new boost::thread(boost::bind(&testsuite::run_worker, this))
 	);
+}
+
+void testsuite::stop()
+{
+	_done = true;
+	_tester->join();
 }
 
 void testsuite::report_sess_traffic(const std::string& client_src_ip,
@@ -129,7 +135,7 @@ void testsuite::run_worker()
 		else  // no jobs to be done at present.
 		{
 			boost::mutex::scoped_lock lock(_mutex);
-			_con_var.timed_wait(lock, boost::posix_time::milliseconds(5000));
+			_con_var.timed_wait(lock, boost::posix_time::milliseconds(1000));
 			//std::cout << "quit timed_wait" << std::endl;
 		}
 	}
