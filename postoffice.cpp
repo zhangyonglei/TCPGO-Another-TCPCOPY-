@@ -21,84 +21,18 @@ postoffice g_postoffice;
 
 postoffice::postoffice()
 {
-	int on, ret, flags;
-	const char* err_hint;
-
-	err_hint = "";
-
-	// used to send IPs package on IP level.
-	_send_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-	if (_send_fd == -1)
-	{
-		err_hint = "root permission is required ";
-		goto _err;
-	}
-
-	on = 1;
-	if (setsockopt(_send_fd, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on)) < 0) {
-		goto _err;
-	}
-
-	// on level2, sniff datalink package enclosing IP package as playload.
-	// failed to capture outgoing packets elicited by incoming pakcets from other machines.
-	// it actually works to capture both incoming and outgoing packets if the outgoing
-	// pakcets are eclited by packets sent from the same machine.
-	// _recv_fd = socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
-
-	// code from tcpcopy, failed to capture outgoing packets.
-	// _recv_fd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
-
-	// code from http://www.binarytides.com/packet-sniffer-code-in-c-using-linux-sockets-bsd-part-2/.
-	// works for both directions. But ethernet header is also received.
-	_recv_fd = socket(AF_PACKET , SOCK_RAW , htons(ETH_P_ALL));
-
-	// failed to capture outgoing packets. ethernet header is received.
-	// _recv_fd = socket(AF_PACKET , SOCK_RAW , htons(ETH_P_IP));
-	if (_recv_fd == -1)
-	{
-		err_hint = "root permission is required ";
-		goto _err;
-	}
-
-	flags = fcntl(_recv_fd, F_GETFL, 0);
-	if (flags < 0)
-	{
-		goto _err;
-	}
-
-	if (fcntl(_recv_fd, F_SETFL, flags|O_NONBLOCK) < 0)
-	{
-		goto _err;
-	}
-
 	_l2hdr_len = -1;
-
-	return;
-
-	_err:
-	// I'm supprised strerror_r doesn't work. buff is not filled with error infomation.
-	//strerror_r(errno, _buff, sizeof(_buff));
-	// The mentioned problem above is clear.
-	// The GNU-specific strerror_r() returns a pointer to a string containing the error message.
-	// This may be either a pointer to a string that the function stores in buf, or a pointer to
-	// some (immutable) static string (in which case buf is unused).
-	//g_logger.printf("%s\n", _buff);
-
-	perror(err_hint);
-	abort();
 }
 
 postoffice::~postoffice()
 {
-	close(_send_fd);
-	close(_recv_fd);
 }
 
 void postoffice::get_ready()
 {
 	_svr_port = htons(g_configuration.get_dst_port());
-	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
-	g_poller.register_evt(_recv_fd, mypoller::MYPOLLIN, this);
+	_postman.reset(new rawsock_postman(this));
+	_postman->get_ready();
 }
 
 void postoffice::register_callback(uint64_t key, postoffice_callback_interface* callback)
@@ -117,7 +51,7 @@ void postoffice::deregister_callback(uint64_t key)
 	_callbacks.erase(ite);
 }
 
-void postoffice::pollin_handler(int fd)
+void postoffice::recv_packets_from_wire()
 {
 	int ret;
 	uint64_t key;
@@ -126,12 +60,9 @@ void postoffice::pollin_handler(int fd)
 	postoffice_callback_interface* callback;
 	mylistmap::iterator ite;
 
-	if (fd != _recv_fd)
-		return;
-
 	while(true)
 	{
-		ret = ::recv(fd, _buff, sizeof(_buff), 0);
+		ret = _postman->recv(_buff, sizeof(_buff));
 		if (ret < 0 && errno != EINTR)
 			return;
 
@@ -177,7 +108,7 @@ void postoffice::pollin_handler(int fd)
 	}
 }
 
-void postoffice::pollout_handler(int fd)
+void postoffice::send_packets_to_wire()
 {
 	int ret;
 	const ip_pkt* pkt;
@@ -189,9 +120,6 @@ void postoffice::pollout_handler(int fd)
 	int  concurrency_num;
 	int  concurrency_limit_num;
 	bool data_has_been_sent;
-
-	if (fd != _send_fd)
-		return;
 
 	if (_callbacks.empty())
 	{
@@ -237,8 +165,8 @@ void postoffice::pollout_handler(int fd)
 			dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
 			starting_addr = pkt->get_starting_addr();
 			tot_len = pkt->get_tot_len();
-			ret = sendto(_send_fd, starting_addr, tot_len, MSG_DONTWAIT,
-					(struct sockaddr *) &dst_addr, sizeof(dst_addr));
+			ret = _postman->sendto(starting_addr, tot_len, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
+
 			if (ret < 0 && errno == EINTR)
 			{
 				perror("send ");
@@ -252,12 +180,7 @@ void postoffice::pollout_handler(int fd)
 	// temporarily unregister the POLLOUT event.
 	if (!data_has_been_sent)
 	{
-		g_timer.register_one_shot_timer_event(this, HZ / 5);
-		g_poller.deregister_evt(_send_fd);
+		_postman->punish_sender(HZ / 5);
 	}
 }
 
-void postoffice::one_shot_timer_event_run()
-{
-	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
-}

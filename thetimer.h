@@ -9,9 +9,7 @@
 #ifndef _THETIMER_H_
 #define _THETIMER_H_
 
-#include <map>
-#include <boost/thread/thread.hpp>
-#include <boost/atomic.hpp>
+#include "misc.h"
 
 #define HZ 100
 

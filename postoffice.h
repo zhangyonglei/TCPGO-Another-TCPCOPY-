@@ -9,13 +9,12 @@
 #ifndef _POSTMAN_H_
 #define _POSTMAN_H_
 
-#include <vector>
-#include <map>
 #include "utils.h"
-#include "mypoller.h"
 #include "ip_pkt.h"
 #include "thetimer.h"
 #include "listmap.h"
+#include "postman.h"
+#include "mypoller.h"
 
 class postoffice;
 extern postoffice g_postoffice;
@@ -43,7 +42,7 @@ protected:
  * This class is in charge of sending IP packets and receiving
  * datalink level packets.
  */
-class postoffice : public evt_workhorse, public timer_event
+class postoffice
 {
 public:
 	postoffice();
@@ -54,22 +53,19 @@ public:
 	void register_callback(uint64_t key, postoffice_callback_interface* callback);
 	void deregister_callback(uint64_t key);
 
-	virtual void pollin_handler(int fd);
-	virtual void pollout_handler(int fd);
-
-public:
-	void one_shot_timer_event_run();
+	void recv_packets_from_wire();
+	void send_packets_to_wire();
 
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
 	int  _svr_port; ///< captured outbound IP packets don't matching the this port will be ignored. in network byte order.
-	int  _send_fd;   ///< The raw socket file descriptor used to send IP packets. on level 3.
-	int  _recv_fd;   ///< The raw socket file descriptor created on datalink level to sniff traffic. on level 2.
 	char  _buff[8192];   ///< self-explanatory.
 	int _l2hdr_len;   ///< it's usually 14.
 
 	typedef listmap<uint64_t, postoffice_callback_interface*> mylistmap;
 	mylistmap _callbacks;
+
+	boost::shared_ptr<postman> _postman;  ///< only one post man in this post office.
 };
 
 #endif /* _POSTMAN_H_ */
