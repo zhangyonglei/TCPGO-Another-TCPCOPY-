@@ -31,7 +31,8 @@ postoffice::~postoffice()
 void postoffice::get_ready()
 {
 	_svr_port = htons(g_configuration.get_dst_port());
-	_postman.reset(new rawsock_postman(this));
+	//_postman.reset(new rawsock_postman(this));
+	_postman.reset(new pcap_postman(this));
 	_postman->get_ready();
 }
 

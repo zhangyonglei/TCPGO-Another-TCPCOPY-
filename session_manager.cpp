@@ -59,7 +59,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	while (true)
 	{
 		int truncated_pkt_count = 0;
-		pkt_data = (const char*) pcap_next(pcap, &pkt_hdr);
+		pkt_data = (const char*)pcap_next(pcap, &pkt_hdr);
 		if (pkt_data != NULL)
 		{
 			if (pkt_hdr.caplen < pkt_hdr.len)
