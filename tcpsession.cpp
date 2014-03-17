@@ -259,9 +259,16 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	pkts.clear();
 
 	// don't send too quickly.
-	if (jiffies - _last_recorded_snd_time <= _snd_speed_control )
+	if (jiffies - _last_recorded_snd_time <= _snd_speed_control)
 	{
-		return 0;
+		if (_sliding_window_left_boundary == _sliding_window_right_boundary)
+			return 0;
+
+		pkt = &(*_sliding_window_left_boundary);
+		if (0 != pkt->get_sent_counter())
+		{
+			return 0;
+		}
 	}
 
 
