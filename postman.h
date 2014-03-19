@@ -103,4 +103,46 @@ private:
 	int _send_fd;
 };
 
+class tcp_postman : public postman, public timer_event
+{
+public:
+	tcp_postman(postoffice* office);
+	~tcp_postman();
+
+	virtual int get_ready();
+
+	virtual int recv(char buff[], int len);
+
+	virtual int sendto(const char* data, int len, const struct sockaddr *dest_addr, int addrlen);
+
+	virtual void punish_sender(int tickcount);
+
+	virtual void pollin_handler(int fd);
+	virtual void pollout_handler(int fd);
+
+public:
+	void one_shot_timer_event_run();
+
+private:
+	void save_peer_response_to_buffer();
+
+	/**
+	 * If there exist a integral IP packets. The IP packet will be saved at the address
+	 * pointed by ip_pkt[]. Notice if ip_pkt is NULL, no copying will be performed.
+	 * len should be long enough because of no buffer flow check at present.
+	 * On return len will be changed to denote how many bytes have been copied.
+	 * Return true if there exist a integral IP packet. Otherwise return false.
+	 */
+	bool parse_buffer_and_get_ip_pkt(char ip_pkt[], int& len);
+
+private:
+	int _send_fd;
+	int _listening_fd;
+	int _conn_fd;
+	static const int _listening_port = 1992;
+	static const int _buffer_block_len = 4096*50;
+	char _buffer_block[_buffer_block_len];
+	int _buffer_used_len;
+};
+
 #endif /* _SNIFFER_H_ */

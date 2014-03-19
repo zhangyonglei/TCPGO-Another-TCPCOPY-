@@ -6,6 +6,7 @@
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
+#include <boost/algorithm/string.hpp>
 #include "misc.h"
 #include "configuration.h"
 #include "INIReaderException.h"
@@ -26,6 +27,8 @@ configuration::configuration()
 	set_concurrency_limit(1000);
 	set_onoff_random_port(true);
 	set_accidental_death_pcap_file_limit(100);
+	set_sniff_method(SNIFF_RAW);
+	set_next_hop("");
 
 	// [SESSION]
 	set_response_from_peer_time_out(3 * HZ);
@@ -121,23 +124,20 @@ void configuration::set_onoff_random_port(bool onoff_random_port)
 	_onoff_random_port = onoff_random_port;
 }
 
-void configuration::set_response_from_peer_time_out(
-		const std::string& response_from_peer_time_out)
+void configuration::set_response_from_peer_time_out(const std::string& response_from_peer_time_out)
 {
 	int val;
 	val = strtol(response_from_peer_time_out.c_str(), NULL, 10);
 	set_response_from_peer_time_out(val);
 }
 
-void configuration::set_response_from_peer_time_out(
-		int response_from_peer_time_out)
+void configuration::set_response_from_peer_time_out(int response_from_peer_time_out)
 {
 	assert(response_from_peer_time_out != 0);
 	_response_from_peer_time_out = response_from_peer_time_out;
 }
 
-void configuration::set_have_to_send_data_within_this_timeperiod(
-		const std::string& timeperiod)
+void configuration::set_have_to_send_data_within_this_timeperiod(const std::string& timeperiod)
 {
 	int val;
 	val = strtol(timeperiod.c_str(), NULL, 10);
@@ -228,6 +228,40 @@ void configuration::set_accidental_death_pcap_file_limit(int limit)
 	_accidental_death_pcap_file_limit = limit;
 }
 
+void configuration::set_sniff_method(const std::string& sniff_method)
+{
+	std::string method(sniff_method);
+	boost::to_upper(method);
+
+	if ("RAW" == method)
+	{
+		_sniff_method = SNIFF_RAW;
+	}
+	else if ("PCAP" == method)
+	{
+		_sniff_method = SNIFF_PCAP;
+	}
+	else if("TCP" == method)
+	{
+		_sniff_method = SNIFF_TCP;
+	}
+	else
+	{
+		_sniff_method = SNIFF_RAW;
+		g_logger.printf("%s is not a illegal sniff_method.\n");
+	}
+}
+
+void configuration::set_sniff_method(SNIFF_METHOD sniff_method)
+{
+	_sniff_method = sniff_method;
+}
+
+void configuration::set_next_hop(const std::string& next_hop)
+{
+	_next_hop = next_hop;
+}
+
 void configuration::readin()
 {
 	char buff[PATH_MAX];
@@ -307,8 +341,24 @@ void configuration::readin()
 	if (config.HasOption(section_name, option_name))
 	{
 		value = config.GetOption(section_name, option_name);
-		g_logger.printf("accidental_death_pcap_file_limit: %s", value.c_str());
+		g_logger.printf("accidental_death_pcap_file_limit: %s\n", value.c_str());
 		set_accidental_death_pcap_file_limit(value);
+	}
+
+	option_name = "sniff_method";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("sniff_method: %s\n", value.c_str());
+		set_sniff_method(value);
+	}
+
+	option_name = "next_hop";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("next_hop: %s\n", value.c_str());
+		set_next_hop(value);
 	}
 
 	// the session section

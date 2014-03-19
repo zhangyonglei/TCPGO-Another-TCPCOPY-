@@ -223,7 +223,11 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		}
 
 		iphdr = (struct iphdr*)ptr;
-		assert(iphdr->version == 4);
+		if(iphdr->version != 4)
+		{
+			i++;
+			continue;
+		}
 		iphdr_len = iphdr->ihl << 2;
 		sum = iphdr->check;
 		checksum = compute_ip_checksum(iphdr);

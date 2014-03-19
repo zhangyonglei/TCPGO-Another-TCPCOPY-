@@ -21,6 +21,9 @@ public:
 	configuration();
 	virtual ~configuration();
 
+public:
+	enum SNIFF_METHOD{SNIFF_RAW, SNIFF_PCAP, SNIFF_TCP};
+
 	/**
 	 * @return return true if all parameters are legitimate, otherwise false.
 	 */
@@ -62,6 +65,16 @@ public:
 	int get_accidental_death_pcap_file_limit()
 	{
 		return _accidental_death_pcap_file_limit;
+	}
+
+	SNIFF_METHOD get_sniff_method()
+	{
+		return _sniff_method;
+	}
+
+	std::string get_next_hop()
+	{
+		return _next_hop;
 	}
 
 	// [SESSION]
@@ -129,6 +142,11 @@ public:
 	void set_accidental_death_pcap_file_limit(const std::string& limit);
 	void set_accidental_death_pcap_file_limit(int limit);
 
+	void set_sniff_method(const std::string& sniff_method);
+	void set_sniff_method(SNIFF_METHOD sniff_method);
+
+	void set_next_hop(const std::string& next_hop);
+
 	// [SESSION]
 	void set_onoff_random_port(const std::string& onoff_random_port);
 	void set_onoff_random_port(bool onoff_random_port);
@@ -174,6 +192,8 @@ private:
 	int _concurrency_limit;     ///< the maximum number of concurrent TCP connections.
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
 	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
+	SNIFF_METHOD _sniff_method; ///< there are three kinds of methods to sniff the peers response packets.
+	std::string _next_hop;   ///< ONLY available when _sniff_method is SNIFF_TCP. used to changed together all the running horos instances.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.

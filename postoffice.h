@@ -59,7 +59,7 @@ public:
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
 	int  _svr_port; ///< captured outbound IP packets don't matching the this port will be ignored. in network byte order.
-	char  _buff[8192];   ///< self-explanatory.
+	char  _buff[4096*10];   ///< self-explanatory.
 	int _l2hdr_len;   ///< it's usually 14.
 
 	typedef listmap<uint64_t, postoffice_callback_interface*> mylistmap;

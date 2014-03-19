@@ -8,6 +8,9 @@ dst_port = 81
 concurrency_limit = 1000
 onoff_random_port = 1
 accidental_death_pcap_file_limit = 100
+sniff_method = raw
+; only available when sniff_method is set to tcp
+;next_hop = 
 
 [SESSION]
 ; advanced configuration to tune tcp session.
