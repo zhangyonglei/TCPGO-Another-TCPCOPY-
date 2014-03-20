@@ -32,8 +32,6 @@ public:
 
 	void ready_go();
 
-	void restart();
-
 	void push_back(boost::shared_ptr<MemBlock> block);
 
 	void run();
@@ -51,9 +49,6 @@ private:
 	boost::atomic<bool> _done;
 	boost::mutex _mutex;
 	boost::condition_variable  _con_var;
-
-	boost::scoped_ptr<boost::asio::io_service> _io_service;
-	boost::scoped_ptr<boost::asio::signal_set> _signals;
 
 	int _fifo_fd;
 };

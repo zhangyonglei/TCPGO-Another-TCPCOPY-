@@ -7,6 +7,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include "cascade.h"
 #include "misc.h"
 
@@ -14,8 +15,24 @@
 
 cascade g_cascade;
 
+static struct sigaction my_sigaction;
+
+static void handle_sigpipe(int)
+{
+	// do nothing. write() system call return EPIPE.
+}
+
 cascade::cascade()
 {
+	int ret;
+	memset(&my_sigaction, 0, sizeof(my_sigaction));
+	my_sigaction.sa_handler = handle_sigpipe;
+	ret = sigaction(SIGPIPE, &my_sigaction, NULL);
+	if (0 != ret)
+	{
+		perror("sigaction");
+		abort();
+	}
 }
 
 cascade::~cascade()
@@ -32,14 +49,6 @@ void cascade::stop()
 		close(_fifo_fd);
 		_fifo_fd = -1;
 	}
-}
-
-void cascade::restart()
-{
-	stop();
-	_signals->async_wait(boost::bind(&cascade::restart, this));
-	_done = false;
-	ready_go();
 }
 
 void cascade::enable_sigpipe()
@@ -63,10 +72,6 @@ void cascade::ready_go()
 		perror("mkfifo");
 		abort();
 	}
-
-	_io_service.reset(new boost::asio::io_service);
-	_signals.reset(new boost::asio::signal_set(*_io_service, SIGPIPE, SIGUSR2));
-	_signals->async_wait(boost::bind(&cascade::restart, this));
 
 	_count = 0;
 	_done = false;
