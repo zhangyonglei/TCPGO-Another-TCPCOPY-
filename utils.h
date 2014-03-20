@@ -91,4 +91,10 @@ unsigned short generate_the_port(unsigned short ori_src_port);
  */
 int find_files(const std::string& dir, const std::string& regexp, std::list<std::string>& files);
 
+/**
+ * Block SIGPIPE only at present.
+ * return 0 on success.
+ */
+int block_signals_pthread();
+
 #endif

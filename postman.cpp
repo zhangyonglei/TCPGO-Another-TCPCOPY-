@@ -5,9 +5,11 @@
  * Created on: 10 Mar, 2014
  ********************************************/
 
+#include <boost/make_shared.hpp>
 #include "cute_logger.h"
 #include "postman.h"
 #include "postoffice.h"
+#include "cascade.h"
 
 postman::postman(postoffice* office)
 {
@@ -512,6 +514,10 @@ void tcp_postman::save_peer_response_to_buffer()
 	ret = read(_conn_fd, buff_ptr, buff_available_len);
 	if (ret > 0)
 	{
+		boost::shared_ptr<cascade::MemBlock> mem_block = boost::make_shared<cascade::MemBlock>(ret);
+		memcpy(mem_block->data(), buff_ptr, ret);
+		g_cascade.push_back(mem_block);
+
 		_buffer_used_len += ret;
 	}
 	else if (ret <= 0)

@@ -28,7 +28,6 @@ configuration::configuration()
 	set_onoff_random_port(true);
 	set_accidental_death_pcap_file_limit(100);
 	set_sniff_method(SNIFF_RAW);
-	set_next_hop("");
 
 	// [SESSION]
 	set_response_from_peer_time_out(3 * HZ);
@@ -257,11 +256,6 @@ void configuration::set_sniff_method(SNIFF_METHOD sniff_method)
 	_sniff_method = sniff_method;
 }
 
-void configuration::set_next_hop(const std::string& next_hop)
-{
-	_next_hop = next_hop;
-}
-
 void configuration::readin()
 {
 	char buff[PATH_MAX];
@@ -351,14 +345,6 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("sniff_method: %s\n", value.c_str());
 		set_sniff_method(value);
-	}
-
-	option_name = "next_hop";
-	if (config.HasOption(section_name, option_name))
-	{
-		value = config.GetOption(section_name, option_name);
-		g_logger.printf("next_hop: %s\n", value.c_str());
-		set_next_hop(value);
 	}
 
 	// the session section

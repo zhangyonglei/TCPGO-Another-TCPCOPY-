@@ -246,3 +246,15 @@ int find_files(const std::string& dir, const std::string& regexp, std::list<std:
 
 	return retcode;
 }
+
+int block_signals_pthread()
+{
+    sigset_t set;
+    int ret;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    ret = pthread_sigmask(SIG_BLOCK, &set, NULL);
+
+    return ret;
+}

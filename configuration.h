@@ -72,11 +72,6 @@ public:
 		return _sniff_method;
 	}
 
-	std::string get_next_hop()
-	{
-		return _next_hop;
-	}
-
 	// [SESSION]
 	int get_response_from_peer_time_out()
 	{
@@ -193,7 +188,6 @@ private:
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
 	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
 	SNIFF_METHOD _sniff_method; ///< there are three kinds of methods to sniff the peers response packets.
-	std::string _next_hop;   ///< ONLY available when _sniff_method is SNIFF_TCP. used to changed together all the running horos instances.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.

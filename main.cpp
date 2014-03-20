@@ -31,6 +31,7 @@
 #include "mylua.h"
 #include "statistics_bureau.h"
 #include "testsuite.h"
+#include "cascade.h"
 #include "listmap.h"
 #include "version.h"
 
@@ -189,10 +190,18 @@ int run()
 		}
 	}
 
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    sigaddset(&set, SIGUSR2);
+    ret = sigprocmask(SIG_BLOCK, &set, NULL);
+    assert(ret == 0);
+
 	g_postoffice.get_ready();
 	g_statistics_bureau.get_ready();
 	g_mylua.get_ready();
 	g_testsuite.ready_go();
+	g_cascade.ready_go();
 	g_session_manager.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
