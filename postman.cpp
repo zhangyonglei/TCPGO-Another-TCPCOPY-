@@ -179,7 +179,7 @@ int pcap_postman::get_ready()
 	}
 
 	ss << "tcp and src port " << g_configuration.get_dst_port();
-    if (-1 == pcap_compile(_pcap_handle, &_filter, ss.str().c_str(), 0, PCAP_NETMASK_UNKNOWN))
+    if (-1 == pcap_compile(_pcap_handle, &_filter, (char*)ss.str().c_str(), 0, 0))
     {
     	g_logger.printf("%s\n", pcap_geterr(_pcap_handle));
         abort();

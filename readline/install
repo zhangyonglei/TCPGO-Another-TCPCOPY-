@@ -2,7 +2,7 @@
 
 mkdir -p /usr/include/readline/
 
-cp -a lib64 /
+#cp -a lib64 /
 cp -a usr /
 
 ldconfig
