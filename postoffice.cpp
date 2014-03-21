@@ -194,7 +194,7 @@ void postoffice::send_packets_to_wire()
 	// temporarily unregister the POLLOUT event.
 	if (!data_has_been_sent)
 	{
-		_postman->punish_sender(HZ / 5);
+		_postman->punish_sender(HZ / 10);
 	}
 }
 
