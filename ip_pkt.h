@@ -165,6 +165,21 @@ public:
 		return _sent_counter;
 	}
 
+	void mark_me_has_been_sent()
+	{
+		_send_me_pls = false;
+	}
+
+	void mark_me_should_be_sent()
+	{
+		_send_me_pls = true;
+	}
+
+	bool should_send_me()const
+	{
+		return _send_me_pls;
+	}
+
 private:
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.
@@ -194,6 +209,7 @@ private:
 	bool _syn_flag;              ///< self-explanatory.
 	bool _fin_flag;              ///< no explanation.
 
+	bool _send_me_pls;           ///< a tag used to indicate that the packet should be send.
 	int _sent_counter;           ///< record how many times this ip packet has been sent.
 
 	/// the following variables are for debug's convenience.

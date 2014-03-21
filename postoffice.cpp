@@ -125,7 +125,7 @@ void postoffice::recv_packets_from_wire()
 void postoffice::send_packets_to_wire()
 {
 	int ret;
-	const ip_pkt* pkt;
+	ip_pkt* pkt;
 	const char* starting_addr;
 	int tot_len;
 	mylistmap::iterator ite;
@@ -158,7 +158,7 @@ void postoffice::send_packets_to_wire()
 		callback = *ite;
 
 		int num;
-		vector<const ip_pkt*> pkts;
+		vector<ip_pkt*> pkts;
 		num = callback->pls_send_these_packets(pkts);
 		if (0 == num)
 		{
@@ -179,12 +179,21 @@ void postoffice::send_packets_to_wire()
 			dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
 			starting_addr = pkt->get_starting_addr();
 			tot_len = pkt->get_tot_len();
-			ret = _postman->sendto(starting_addr, tot_len, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
+
+			ret = 0;
+			if (pkt->should_send_me())
+			{
+				ret = _postman->sendto(starting_addr, tot_len, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
+			}
 
 			if (ret < 0 && errno == EINTR)
 			{
 				perror("send ");
 				return;
+			}
+			else
+			{
+				pkt->mark_me_has_been_sent();
 			}
 		}
 		++ite;
@@ -194,7 +203,7 @@ void postoffice::send_packets_to_wire()
 	// temporarily unregister the POLLOUT event.
 	if (!data_has_been_sent)
 	{
-		_postman->punish_sender(HZ / 10);
+		_postman->punish_sender(HZ / 20);
 	}
 }
 

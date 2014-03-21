@@ -27,7 +27,7 @@ public:
 	 * and any previous data in the vector before calling is expelled.
 	 * @return how many packets are expected to be sent.
 	 */
-	virtual int pls_send_these_packets(std::vector<const ip_pkt*>& pkts) = 0;
+	virtual int pls_send_these_packets(std::vector<ip_pkt*>& pkts) = 0;
 
 	/**
 	 * @param ip_pkt points to the coming packet.

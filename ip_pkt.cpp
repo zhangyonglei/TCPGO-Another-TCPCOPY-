@@ -12,6 +12,7 @@
 ip_pkt::ip_pkt()
 {
 	_sent_counter = 0;
+	_send_me_pls = true;
 }
 
 ip_pkt::ip_pkt(const char* pkt)
@@ -94,6 +95,7 @@ void ip_pkt::cp(const char* pkt)
 	memcpy((char*)_pkt.get(), pkt, ip_tot_len);
 	warm_up();
 	_sent_counter = 0;
+	_send_me_pls = true;
 }
 
 void ip_pkt::swap(ip_pkt& pkt)

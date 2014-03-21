@@ -11,6 +11,8 @@
 #include "cute_logger.h"
 #include "session_manager.h"
 
+#define SESSION_COUNT_CEILING 40000
+
 realtime_captureer g_realtime_captureer;
 
 realtime_captureer::realtime_captureer()
@@ -254,8 +256,8 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
-		// hard code the total session count.
-		if (g_session_manager.size() < 30000)
+		// hard code the total session count ceiling.
+		if (g_session_manager.size() < SESSION_COUNT_CEILING)
 		{
 			g_session_manager.inject_a_realtime_ippkt(ptr);
 		}

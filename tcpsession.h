@@ -44,7 +44,7 @@ public:
 
 public:
 	/// refer to the interface postoffice_callback_interface for details.
-	virtual int pls_send_these_packets(std::vector<const ip_pkt*>& pkts);
+	virtual int pls_send_these_packets(std::vector<ip_pkt*>& pkts);
 	virtual void got_a_packet(const ip_pkt* pkt);
 
 public:

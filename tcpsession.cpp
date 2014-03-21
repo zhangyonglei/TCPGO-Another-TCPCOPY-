@@ -112,6 +112,7 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 	if (_ippkts_samples.front().is_syn_set())
 	{
 		ite = _sliding_window_left_boundary;
+		ite->mark_me_should_be_sent();
 		++ite;
 		_sliding_window_right_boundary = ite;
 	}
@@ -250,12 +251,15 @@ void tcpsession::get_ready()
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
 }
 
-int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
+int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 {
 	ip_pkt* pkt;
 	int count;
 	uint64_t jiffies;
 	bool fin_has_been_sent;
+	std::list<ip_pkt>::iterator ite;
+
+	pkts.clear();
 
 	if(!still_alive())
 	{
@@ -287,8 +291,6 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 
 	jiffies = g_timer.get_jiffies();
 
-	pkts.clear();
-
 	// don't send too quickly.
 	if (jiffies - _last_recorded_snd_time <= _snd_speed_control)
 	{
@@ -296,12 +298,38 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			return 0;
 
 		pkt = &(*_sliding_window_left_boundary);
-		if (0 != pkt->get_sent_counter())
+
+		bool need_send = false;
+		ite = _sliding_window_right_boundary;
+		--ite;
+		do
+		{
+			if (ite->should_send_me())
+			{
+				need_send = true;
+				break;
+			}
+			--ite;
+		}while(ite != _sliding_window_left_boundary);
+
+		// packets in sliding window have all be sent. Have to wait for the send speed control timer
+		// to expire to get the chance of re-transmit.
+		if (!need_send)
 		{
 			return 0;
 		}
+		else
+		{
+			// fall through...............
+		}
 	}
-
+	else  // send speed control timer has expired.
+	{
+		for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
+		{
+			ite->mark_me_should_be_sent();
+		}
+	}
 
 	fin_has_been_sent = false;
 	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
@@ -363,7 +391,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			}
 		}
 
-		pkt->increment_sent_counter();
+		pkt->mark_me_should_be_sent();
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
@@ -818,7 +846,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	win_size_saved = _advertised_window_size;
 	_advertised_window_size = pkt->get_win_size();
 
-	// adjust sliding window
+	// should the sliding window be reduced.
 	int current_sliding_win_size = 0;
 	int ippkt_count_walked_through = 0;
 	for (ite = _sliding_window_left_boundary;
@@ -832,7 +860,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			{
 				break;
 			}
-			else  // reduce the window size a little.
+			else  // reduce the window size
 			{
 				// update the right boundary.
 				_sliding_window_right_boundary = ite;
@@ -845,7 +873,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
 	g_logger.printf("%d packet(s) is(are) in the sliding window.\n", distance);
 
-	// // try to increase the sliding window size
+	// should the sliding window size be increased.
 	if (current_sliding_win_size < _advertised_window_size)
 	{
 		// try to determine how far it can go to increase sliding window.
@@ -888,5 +916,11 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 		g_logger.printf("sliding window has been expanded to %d packets.\n", distance);
 		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
+	}
+
+	// make a mark that all packets in the sliding window should be send.
+	for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
+	{
+		ite->mark_me_should_be_sent();
 	}
 }
