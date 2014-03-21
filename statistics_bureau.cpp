@@ -95,7 +95,7 @@ std::string statistics_bureau::sess_statistics()
 	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out << " micro seconds.\n"
 	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
 	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
-	   << _sess_dormancy_count << " sessions ended prematurely because no incoming traffice within "
+	   << _sess_dormancy_count << " sessions ended prematurely because no traffice has been sent to peer within "
 	                                           << have_to_send_data_within_this_timeperiod << " micros seconds.\n"
 	   << _sess_killed_by_reset_count << " sessions were killed by RESET.\n"
 	   << "success rate " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "\n"

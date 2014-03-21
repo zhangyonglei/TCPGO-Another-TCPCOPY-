@@ -27,6 +27,11 @@ public:
 
 	void erase_a_session(uint64_t key);
 
+	int size()
+	{
+		return _sessions.size();
+	}
+
 private:
 	/**
 	 * weed out tcpsession with unhealthy IP samples.

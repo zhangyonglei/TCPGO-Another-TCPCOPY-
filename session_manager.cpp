@@ -170,8 +170,8 @@ int session_manager::clean_sick_session()
 		}
 
 	}
-	g_logger.printf("total %d sessions, %d of them are sick and are dropped.\n",
-			total_sess_count, sick_sess_count);
+	g_logger.printf("total %d sessions, %d of them are sick and are dropped. %d sessions are healthy.\n",
+			total_sess_count, sick_sess_count, total_sess_count - sick_sess_count);
 
 	return 0;
 }

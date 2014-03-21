@@ -253,7 +253,12 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		}
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
-		g_session_manager.inject_a_realtime_ippkt(ptr);
+
+		// hard code the total session count.
+		if (g_session_manager.size() < 30000)
+		{
+			g_session_manager.inject_a_realtime_ippkt(ptr);
+		}
 		i += ip_tot_len;
 		sentinel = i;
 	}

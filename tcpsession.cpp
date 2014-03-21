@@ -136,13 +136,13 @@ int32_t tcpsession::check_samples_integrity()
 		int tcphdr_len = ite->get_tcphdr_len();
 		bool fin_set = ite->is_fin_set();
 		bool ack_set = ite->is_ack_set();
-		bool sin_set = ite->is_syn_set();
+		bool syn_set = ite->is_syn_set();
 		bool rst_set = ite->is_rst_set();
 
 		tcp_payload_len = ite->get_tcp_payload_len();
 
 		// remove usefuless samples
-		if (0 == tcp_payload_len && !fin_set && !rst_set && ack_set)
+		if (0 == tcp_payload_len && !fin_set && !syn_set ) // && !rst_set)  // rst is not allowed any more.
 		{
 			_ippkts_samples.erase(ite++);
 		}
@@ -189,15 +189,13 @@ int32_t tcpsession::check_samples_integrity()
 		{
 			// The last IP packet has rst set. In this case, the seq may be the last seq plus one.
 			// But in most cases as I observed, it doesn't increase the last seq.
-			if (i + 1 == size_now && ite->is_rst_set() && expected_next_seq + 1 == seq)
-			{
-				_ippkts_samples.erase(++ite, _ippkts_samples.end());
-				return 0;
-			}
-			else
-			{
-				goto _err;
-			}
+//			if (i + 1 == size_now && ite->is_rst_set() && expected_next_seq + 1 == seq) // Deprecated !!!
+//			{
+//				_ippkts_samples.erase(++ite, _ippkts_samples.end());
+//				return 0;
+//			}
+
+			goto _err;
 		}
 		tcp_payload_len = ite->get_tcp_payload_len();
 		if (tcp_payload_len > 0)
@@ -205,14 +203,12 @@ int32_t tcpsession::check_samples_integrity()
 			expected_next_seq += tcp_payload_len;
 		}
 
-		if(ite->is_fin_set() || ite->is_rst_set())
+		if(ite->is_fin_set())
 		{
 			_ippkts_samples.erase(++ite, _ippkts_samples.end());
 			return 0;
 		}
 	}
-
-	return 0;
 
 _err:
 	return 1;
@@ -280,8 +276,6 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			_pure_rst_pkt.rebuild(g_configuration.get_dst_addr().c_str(),
 						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 			pkts.push_back(&_pure_rst_pkt);
-			static int this_count;
-			this_count++;
 
 			return 2;  // send a RST.
 		}
