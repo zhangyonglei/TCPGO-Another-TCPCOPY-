@@ -89,7 +89,10 @@ private:
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
 	std::list<ip_pkt>  _traffic_history;   ///< Records the traffic of this session.
-	char _ack_template[40];   ///< a template to create a ack without payload.
+
+	char _pure_ack_template[40];   ///< a template to create a ack without payload.
+	char _pure_rst_template[40];   ///< a template to create a rst without payload.
+	ip_pkt _pure_rst_pkt;          ///< a pure rst packet.
 
 	// reserved for the possible future version if i can still play with this stuff.
 //	std::list<ip_pkt>  _ippkts_received;   // The ip packages received from the server will be saved here.
@@ -100,8 +103,9 @@ private:
 			FIN_WAIT_2, CLOSING, TIME_WAIT};
 	state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
-	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order
+	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order. It's the seq_ack in the latest peer's response packet.
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
+	uint32_t _last_sent_byte_seq_beyond;          ///< in host byte order. The sequence of the last sent byte + 1
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	uint16_t _advertised_window_size;             ///< in host byte order
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)
@@ -125,6 +129,8 @@ private:
 
 	bool _dead;
 	bool _enable_active_close;     ///< default to false. That means tcpsession default to close passively.
+
+	bool _reset_the_peer;   ///< indicate if a RESET packet will be sent when session closes ungracefully.
 };
 
 #endif /* _TCPSESSION_H_ */

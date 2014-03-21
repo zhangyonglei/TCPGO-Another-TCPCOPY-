@@ -54,7 +54,7 @@ $(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a) $(lua_vm_a)
 	g++ -o $@ $(objects) $(LINKFLAGS) 
 
 $(projname_alias) : $(projname)
-	-ln $(projname) $(projname_alias)
+	-ln -s $(projname) $(projname_alias)
 
 $(iniparser_a) : 
 	make -C $(iniparser)

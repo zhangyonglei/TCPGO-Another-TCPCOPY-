@@ -31,9 +31,9 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_wait_for_fin_from_peer_time_out = g_configuration.get_wait_for_fin_from_peer_time_out();
 	_enable_active_close = g_configuration.get_enable_active_close();
 
-	struct iphdr *iphdr = (struct iphdr*)_ack_template;
-	struct tcphdr *tcphdr = (struct tcphdr*)(_ack_template + 20);
-	memset(_ack_template, 0, 40);
+	struct iphdr *iphdr = (struct iphdr*)_pure_ack_template;
+	struct tcphdr *tcphdr = (struct tcphdr*)(_pure_ack_template + 20);
+	memset(_pure_ack_template, 0, 40);
 	iphdr->ihl = 5;
 	iphdr->version = 4;
 	iphdr->tos = 0;
@@ -52,9 +52,14 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	tcphdr->ack_seq = 0;
 	tcphdr->ack = 1;
 	tcphdr->doff = 5;
-	tcphdr->window = 65535;
+	tcphdr->window = htons(65535);
 	tcphdr->check = 0;
 	tcphdr->urg_ptr = 0;
+
+	memcpy(_pure_rst_template, _pure_ack_template, sizeof(_pure_rst_template));
+	tcphdr = (struct tcphdr*)(_pure_rst_template + 20);
+	tcphdr->ack = 0;
+	tcphdr->rst = 1;
 }
 
 tcpsession::~tcpsession()
@@ -66,6 +71,11 @@ void tcpsession::kill_me(cause_of_death cause)
 	_dead = true;
 	g_logger.printf("session: %s.%hu ended.\n", _client_src_ip_str.c_str(), _client_src_port);
 	g_testsuite.report_sess_traffic(_client_src_ip_str, _client_src_port, _traffic_history, cause);
+
+	if (PEER_TIME_OUT == cause || DORMANCY == cause)
+	{
+		_reset_the_peer = true;
+	}
 }
 
 bool tcpsession::still_alive()
@@ -213,11 +223,13 @@ void tcpsession::get_ready()
 	std::list<ip_pkt>::iterator ite, tmp_ite;
 
 	_dead = false;
+	_reset_the_peer = false;
 	_current_state = tcpsession::CLOSED;
 	_expected_next_sequence_from_peer = 0;
 	_latest_acked_sequence_by_peer = 0;
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
+	_last_sent_byte_seq_beyond = 0;
 	_advertised_window_size = 0;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	if (!_ippkts_samples.empty())
@@ -251,7 +263,32 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 
 	if(!still_alive())
 	{
-		return -1;
+		if (_reset_the_peer)  // send two RSTs in a row.
+		{
+			char buff[40];
+			_reset_the_peer = false;
+			memcpy(buff, _pure_rst_template, sizeof(buff));
+			struct tcphdr* tcphdr = (struct tcphdr*)(buff + 20);
+			tcphdr->seq = htonl(_latest_acked_sequence_by_peer);
+			_pure_rst_pkt.cp(buff);
+			_pure_rst_pkt.rebuild(g_configuration.get_dst_addr().c_str(),
+						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			pkts.push_back(&_pure_rst_pkt);
+
+			tcphdr->seq = htonl(_last_sent_byte_seq_beyond);
+			_pure_rst_pkt.cp(buff);
+			_pure_rst_pkt.rebuild(g_configuration.get_dst_addr().c_str(),
+						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			pkts.push_back(&_pure_rst_pkt);
+			static int this_count;
+			this_count++;
+
+			return 2;  // send a RST.
+		}
+		else
+		{
+			return -1;
+		}
 	}
 
 	jiffies = g_timer.get_jiffies();
@@ -336,6 +373,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(pkt);
+		_last_sent_byte_seq_beyond = pkt->get_seq() + 1;
 	} // end the loop of the sliding window
 
 	count = pkts.size();
@@ -359,7 +397,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 			g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
 			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
 			kill_me(PEER_TIME_OUT);
-			return -1;
+			return 0;
 		}
 	}
 
@@ -399,7 +437,7 @@ int tcpsession::pls_send_these_packets(std::vector<const ip_pkt*>& pkts)
 	{
 		g_statistics_bureau.inc_sess_dormancy_count();
 		kill_me(DORMANCY);
-		return -1;
+		return 0;
 	}
 
 	return count;
@@ -478,13 +516,14 @@ void tcpsession::create_an_ack_without_payload(uint32_t seq)
 {
 	struct tcphdr* tcphdr;
 	char buff[40];
-	memcpy(buff, _ack_template, sizeof(buff));
+	memcpy(buff, _pure_ack_template, sizeof(buff));
 
 	if (!_ippkts_samples.empty())
 		return;
 
 	tcphdr = (struct tcphdr*)(buff + 20);
 	tcphdr->seq = htons(seq);
+	tcphdr->ack = 1;
 	_ippkts_samples.push_back(buff);
 	assert(!tcphdr->fin);
 }
