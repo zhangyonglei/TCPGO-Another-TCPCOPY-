@@ -49,7 +49,7 @@ private:
 	postoffice* _office;  ///< the post office that the postman works for.
 };
 
-class rawsock_postman : public postman, public timer_event
+class rawsock_postman : public postman
 {
 public:
 	rawsock_postman(postoffice* office);
@@ -67,14 +67,14 @@ public:
 	virtual void pollout_handler(int fd);
 
 public:
-	void one_shot_timer_event_run();
+	void one_shot_timer_event_handler();
 
 private:
 	int  _send_fd;   ///< The raw socket file descriptor used to send IP packets. on level 3.
 	int  _recv_fd;   ///< The raw socket file descriptor created on datalink level to sniff traffic. on level 2.
 };
 
-class pcap_postman : public postman, public timer_event
+class pcap_postman : public postman
 {
 public:
 	pcap_postman(postoffice* office);
@@ -92,7 +92,7 @@ public:
 	virtual void pollout_handler(int fd);
 
 public:
-	void one_shot_timer_event_run();
+	void one_shot_timer_event_handler();
 
 private:
 	struct bpf_program _filter;
@@ -103,7 +103,7 @@ private:
 	int _send_fd;
 };
 
-class tcp_postman : public postman, public timer_event
+class tcp_postman : public postman
 {
 public:
 	tcp_postman(postoffice* office);
@@ -121,7 +121,7 @@ public:
 	virtual void pollout_handler(int fd);
 
 public:
-	void one_shot_timer_event_run();
+	void one_shot_timer_event_handler();
 
 private:
 	void save_peer_response_to_buffer();

@@ -101,6 +101,13 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
 	std::list<ip_pkt>::iterator ite;
 	ip_packet_parser(ippkt);
+
+	if (tcphdr->rst)
+	{
+		_sess_state = ABORT;
+		g_postoffice.register_callback(_session_key, this);
+	}
+
 	if (tcp_payload_len == 0 && !tcphdr->fin && !tcphdr->syn)
 	{
 		return;
@@ -119,6 +126,16 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 	else
 	{
 		adjust_sliding_window();
+	}
+
+	if (_ippkts_samples.front().is_syn_set() && _ippkts_samples.back().is_fin_set())
+	{
+		_sess_state = SENDING_TRAFFIC;
+		g_postoffice.register_callback(_session_key, this);
+	}
+	else
+	{
+		_sess_state = ACCUMULATING_TRAFFIC;
 	}
 }
 
@@ -223,6 +240,8 @@ void tcpsession::get_ready()
 {
 	std::list<ip_pkt>::iterator ite, tmp_ite;
 
+	_sess_state = SENDING_TRAFFIC;
+
 	_dead = false;
 	_reset_the_peer = false;
 	_current_state = tcpsession::CLOSED;
@@ -285,11 +304,11 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 			pkts.push_back(&_pure_rst_pkt);
 
-			return 2;  // send a RST.
+			return 2;  // send two RST packets.
 		}
 		else
 		{
-			return -1;
+			return postoffice_callback_interface::REMOVE;
 		}
 	}
 

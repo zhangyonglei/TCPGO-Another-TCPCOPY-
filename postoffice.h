@@ -25,8 +25,12 @@ public:
 	/**
 	 * @param pkts on return, vector pkts are supposed to hold the packets which are expected to be sent
 	 * and any previous data in the vector before calling is expelled.
-	 * @return how many packets are expected to be sent.
+	 * @return if return value is greater than or equal to zero, it indicates how many packets should be sent.
+	 * or else, it will return IGNORE to indicate to ignore this postoffice_callback_interface
+	 * return REMOVE to indicate to remove this postoffice_callback_interface.
+	 * other return values are invalidate.
 	 */
+	enum {IGNORE = -100, REMOVE = -101};
 	virtual int pls_send_these_packets(std::vector<ip_pkt*>& pkts) = 0;
 
 	/**

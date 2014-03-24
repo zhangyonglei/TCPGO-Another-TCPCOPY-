@@ -18,7 +18,7 @@ class mylua;
 extern mylua g_mylua;
 
 class mylua : public evt_workhorse,
-              public timer_event
+              public timer_event_handler
 {
 public:
 	mylua();
@@ -93,7 +93,7 @@ private:
 	/**
 	 * Implement the timer_event interface.
 	 */
-	void one_shot_timer_event_run();
+	void one_shot_timer_event_handler();
 
 private:
 	static lua_State* _lua_state;

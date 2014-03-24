@@ -59,7 +59,7 @@ private:
 	void create_an_ack_without_payload(uint32_t seq);
 
 private:
-	/// eleven member functions for their respective tcp state.
+	/// eleven member functions for their respective TCP state.
 	void closed_state_handler(const ip_pkt* pkt);
 	void listen_state_handler(const ip_pkt* pkt);
 	void syn_rcvd_state_handler(const ip_pkt* pkt);
@@ -104,9 +104,9 @@ private:
 
 	/// eleven industry standard TCP state.
 	/// refer to http://en.wikipedia.org/wiki/File:Tcp_state_diagram_fixed.svg. (recv/send)
-	enum state_machine{CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, CLOSE_WAIT, LAST_ACK, FIN_WAIT_1,
+	enum tcp_state_machine{CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, CLOSE_WAIT, LAST_ACK, FIN_WAIT_1,
 			FIN_WAIT_2, CLOSING, TIME_WAIT};
-	state_machine _current_state;
+	tcp_state_machine _current_state;
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order. It's the seq_ack in the latest peer's response packet.
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
@@ -136,6 +136,14 @@ private:
 	bool _enable_active_close;     ///< default to false. That means tcpsession default to close passively.
 
 	bool _reset_the_peer;   ///< indicate if a RESET packet will be sent when session closes ungracefully.
+
+	/**
+	 * ACCUMULATING_TRAFFIC: effective when capture real time traffic.
+	 * SENDING_TRAFFIC: as the name suggests.
+	 * ABORT: abort this session.
+	 */
+	enum sess_state{ACCUMULATING_TRAFFIC, SENDING_TRAFFIC, ABORT};
+	sess_state _sess_state;
 };
 
 #endif /* _TCPSESSION_H_ */

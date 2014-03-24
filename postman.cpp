@@ -128,7 +128,7 @@ int rawsock_postman::sendto(const char* data, int len, const struct sockaddr *de
 	return ret;
 }
 
-void rawsock_postman::one_shot_timer_event_run()
+void rawsock_postman::one_shot_timer_event_handler()
 {
 	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
 }
@@ -136,7 +136,8 @@ void rawsock_postman::one_shot_timer_event_run()
 void rawsock_postman::punish_sender(int tickcount)
 {
 	g_poller.deregister_evt(_send_fd);
-	g_timer.register_one_shot_timer_event(this, tickcount);
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&rawsock_postman::one_shot_timer_event_handler, this), tickcount);
 }
 
 void rawsock_postman::pollin_handler(int fd)
@@ -287,7 +288,7 @@ int pcap_postman::sendto(const char* data, int len, const struct sockaddr *dest_
 	return ret;
 }
 
-void pcap_postman::one_shot_timer_event_run()
+void pcap_postman::one_shot_timer_event_handler()
 {
 	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
 }
@@ -295,7 +296,8 @@ void pcap_postman::one_shot_timer_event_run()
 void pcap_postman::punish_sender(int tickcount)
 {
 	g_poller.deregister_evt(_send_fd);
-	g_timer.register_one_shot_timer_event(this, tickcount);
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&pcap_postman::one_shot_timer_event_handler, this), tickcount);
 }
 
 void pcap_postman::pollin_handler(int fd)
@@ -431,7 +433,7 @@ int tcp_postman::sendto(const char* data, int len, const struct sockaddr *dest_a
 	return ret;
 }
 
-void tcp_postman::one_shot_timer_event_run()
+void tcp_postman::one_shot_timer_event_handler()
 {
 	g_poller.register_evt(_send_fd, mypoller::MYPOLLOUT, this);
 }
@@ -439,7 +441,8 @@ void tcp_postman::one_shot_timer_event_run()
 void tcp_postman::punish_sender(int tickcount)
 {
 	g_poller.deregister_evt(_send_fd);
-	g_timer.register_one_shot_timer_event(this, tickcount);
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&tcp_postman::one_shot_timer_event_handler, this), tickcount);
 }
 
 void tcp_postman::pollin_handler(int fd)

@@ -32,7 +32,8 @@ void statistics_bureau::get_ready()
 	memset(_conns_completed_stat, 0, sizeof(_conns_completed_stat));
 	_current_slot_index = 0;
 
-	g_timer.register_one_shot_timer_event(this, 0);
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&statistics_bureau::one_shot_timer_event_handler, this), 0);
 }
 
 std::string statistics_bureau::sess_statistics()
@@ -115,9 +116,11 @@ std::string statistics_bureau::sess_statistics()
 	return ss.str();
 }
 
-void statistics_bureau::one_shot_timer_event_run()
+void statistics_bureau::one_shot_timer_event_handler()
 {
 	_current_slot_index = ++_current_slot_index % _TIME_DURATION_IN_MIN;
 	_conns_completed_stat[_current_slot_index] = 0;
-	g_timer.register_one_shot_timer_event(this, HZ*60);  // triggered in every minute.
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&statistics_bureau::one_shot_timer_event_handler, this),
+			HZ*60);  // triggered in every minute.
 }

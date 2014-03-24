@@ -21,7 +21,7 @@ extern statistics_bureau g_statistics_bureau;
 /**
  * This class records various kinds of statistics.
  */
-class statistics_bureau : public timer_event
+class statistics_bureau
 {
 public:
 	statistics_bureau();
@@ -74,7 +74,7 @@ public:
 	}
 
 public:
-	void one_shot_timer_event_run();
+	void one_shot_timer_event_handler();
 
 private:
 	void conn_ends_normally()

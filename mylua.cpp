@@ -71,7 +71,8 @@ int mylua::horos_stop(lua_State* L)
 int mylua::reload_testsuite(lua_State* L)
 {
 	// To serialize lua environment restart using timer mechanism.
-	g_timer.register_one_shot_timer_event(&g_mylua, 0);
+	g_timer.register_one_shot_timer_event(
+			boost::bind(&mylua::one_shot_timer_event_handler, &g_mylua), 0);
 
 	lua_pushstring(L, "Testsuite has been reloaded.");
 
@@ -622,7 +623,7 @@ int mylua::bind_lua_panic(lua_State* L)
 	return 0;
 }
 
-void mylua::one_shot_timer_event_run()
+void mylua::one_shot_timer_event_handler()
 {
 	g_testsuite.stop();
 	restart();

@@ -76,18 +76,18 @@ void the_timer::timer_handler()
 	_deadline_timer->async_wait(boost::bind(&the_timer::timer_handler, this));
 }
 
-void the_timer::register_one_shot_timer_event(timer_event* evt, uint32_t relative_time)
+void the_timer::register_one_shot_timer_event(timer_event_handler evt_hdl, uint32_t relative_time)
 {
 	uint64_t now, fire_time;
 
 	now = _jiffies;
 	fire_time = now + relative_time;
-	_tmp_events.insert(std::pair<uint64_t, timer_event*>(fire_time, evt));
+	_tmp_events.insert(std::pair<uint64_t, timer_event_handler>(fire_time, evt_hdl));
 }
 
 void the_timer::loop_through_all_timer_event()
 {
-	std::multimap<uint64_t, timer_event*>::iterator ite;
+	std::multimap<uint64_t, timer_event_handler>::iterator ite;
 	_events.insert(_tmp_events.begin(), _tmp_events.end());
 	_tmp_events.clear();
 
@@ -96,7 +96,7 @@ void the_timer::loop_through_all_timer_event()
 		// fire it !
 		if (ite->first <= _jiffies)
 		{
-			ite->second->one_shot_timer_event_run();
+			ite->second();
 			_events.erase(ite++);
 		}
 		else

@@ -142,7 +142,6 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 	if (ugly_pair.second)
 	{
 		ugly_pair.first->second.get_ready();
-		g_postoffice.register_callback(key, &ite->second);
 	}
 }
 

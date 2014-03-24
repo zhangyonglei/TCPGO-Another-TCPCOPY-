@@ -154,24 +154,35 @@ void postoffice::send_packets_to_wire()
 		if (0 != concurrency_limit_num && concurrency_num >= concurrency_limit_num)
 			break;
 
-		++concurrency_num;
 		callback = *ite;
 
 		int num;
 		vector<ip_pkt*> pkts;
 		num = callback->pls_send_these_packets(pkts);
-		if (0 == num)
-		{
-			++ite;
-			continue;
-		}
-		else if (-1 == num)
+
+		if (postoffice_callback_interface::REMOVE == num)
 		{
 			g_session_manager.erase_a_session(_callbacks.get_key(ite));
 			_callbacks.erase(ite++);
 			continue;
 		}
+		else if (postoffice_callback_interface::IGNORE == num)
+		{
+			continue;
+		}
+		else if (0 == num)
+		{
+			++ite;
+			++concurrency_num;
+			continue;
+		}
+		else if (num < 0)
+		{
+			// not expected to reach here.
+			abort();
+		}
 
+		++concurrency_num;
 		data_has_been_sent = true;
 		for (int i = 0; i < num; i++)
 		{
