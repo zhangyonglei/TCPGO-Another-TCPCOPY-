@@ -116,6 +116,10 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 		++ite;
 		_sliding_window_right_boundary = ite;
 	}
+	else
+	{
+		adjust_sliding_window();
+	}
 }
 
 int32_t tcpsession::check_samples_integrity()
@@ -227,7 +231,7 @@ void tcpsession::get_ready()
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
 	_last_sent_byte_seq_beyond = 0;
-	_advertised_window_size = 0;
+	_advertised_window_size = 5000;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	if (!_ippkts_samples.empty())
 	{
@@ -772,13 +776,81 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 	return ite_pre;
 }
 
+void tcpsession::adjust_sliding_window()
+{
+	int distance;
+	std::list<ip_pkt>::iterator ite;
+
+	// should the sliding window be reduced.
+	int current_sliding_win_size = 0;
+	int ippkt_count_walked_through = 0;
+	for (ite = _sliding_window_left_boundary;
+			ite != _sliding_window_right_boundary;)
+	{
+		current_sliding_win_size += ite->get_tot_len();
+		if (current_sliding_win_size > _advertised_window_size)
+		{
+			// make sure at least one IP packet are available to be sent.
+			if(0 == ippkt_count_walked_through)
+			{
+				break;
+			}
+			else  // reduce the window size
+			{
+				// update the right boundary.
+				_sliding_window_right_boundary = ite;
+				break;
+			}
+		}
+		ippkt_count_walked_through++;
+		++ite;
+	}
+	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
+	g_logger.printf("%d packet(s) is(are) in the sliding window.\n", distance);
+
+	// should the sliding window size be increased.
+	if (current_sliding_win_size < _advertised_window_size)
+	{
+		// try to determine how far it can go to increase sliding window.
+		std::list<ip_pkt>::iterator right_gap, ite_left;
+		if (_sliding_window_right_boundary != _ippkts_samples.end()) // got the chance to expand the window
+		{
+			ite_left = _sliding_window_left_boundary;
+			right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
+
+			assert(right_gap != _ippkts_samples.end());
+			// increase it because of closed interval (excluding right boundary)
+			++right_gap;
+		}
+		else // cannot expand the window size by any means.
+		{
+			right_gap = _sliding_window_right_boundary;
+		}
+
+		while (current_sliding_win_size < _advertised_window_size
+				&& _sliding_window_right_boundary != right_gap)
+		{
+			++_sliding_window_right_boundary;
+			current_sliding_win_size += ite->get_tot_len();
+			if (current_sliding_win_size > _advertised_window_size)
+			{
+				break;
+			}
+		}
+
+		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
+
+		g_logger.printf("sliding window has been expanded to %d packets.\n", distance);
+		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
+	}
+}
+
 void tcpsession::refresh_status(const ip_pkt* pkt)
 {
 	uint32_t seq;
 	uint32_t ack_seq;
 	uint32_t ack_seq_tmp;
 	uint16_t win_size_saved;
-	int distance;
 
 	std::list<ip_pkt>::iterator ite;
 
@@ -846,77 +918,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	win_size_saved = _advertised_window_size;
 	_advertised_window_size = pkt->get_win_size();
 
-	// should the sliding window be reduced.
-	int current_sliding_win_size = 0;
-	int ippkt_count_walked_through = 0;
-	for (ite = _sliding_window_left_boundary;
-			ite != _sliding_window_right_boundary;)
-	{
-		current_sliding_win_size += ite->get_tot_len();
-		if (current_sliding_win_size > _advertised_window_size)
-		{
-			// make sure at least one IP packet are available to be sent.
-			if(0 == ippkt_count_walked_through)
-			{
-				break;
-			}
-			else  // reduce the window size
-			{
-				// update the right boundary.
-				_sliding_window_right_boundary = ite;
-				break;
-			}
-		}
-		ippkt_count_walked_through++;
-		++ite;
-	}
-	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
-	g_logger.printf("%d packet(s) is(are) in the sliding window.\n", distance);
-
-	// should the sliding window size be increased.
-	if (current_sliding_win_size < _advertised_window_size)
-	{
-		// try to determine how far it can go to increase sliding window.
-		std::list<ip_pkt>::iterator right_gap, ite_left;
-		if (_sliding_window_right_boundary != _ippkts_samples.end()) // got the chance to expand the window
-		{
-			if (_sliding_window_right_boundary != _sliding_window_right_boundary)
-			{
-				ite_left = _sliding_window_right_boundary;
-				--ite_left;
-				right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
-			}
-			else
-			{
-				ite_left = _sliding_window_left_boundary;
-				right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
-			}
-
-			assert(right_gap != _ippkts_samples.end());
-			// increase it because of closed interval (excluding right boundary)
-			++right_gap;
-		}
-		else // cannot expand the window size by any means.
-		{
-			right_gap = _sliding_window_right_boundary;
-		}
-
-		while (current_sliding_win_size < _advertised_window_size
-				&& _sliding_window_right_boundary != right_gap)
-		{
-			++_sliding_window_right_boundary;
-			current_sliding_win_size += ite->get_tot_len();
-			if (current_sliding_win_size > _advertised_window_size)
-			{
-				break;
-			}
-		}
-
-		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
-
-		g_logger.printf("sliding window has been expanded to %d packets.\n", distance);
-		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
-	}
+	adjust_sliding_window();
 
 	// make a mark that all packets in the sliding window should be send.
 	for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)

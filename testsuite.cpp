@@ -104,12 +104,6 @@ void testsuite::run_worker()
 			_current_traffic_on_test = &job->_traffic;
 
 			// let's do the job.
-			if (job->_cause == tcpsession::RESET)
-			{
-				_current_traffic_on_test = NULL;
-				continue;
-			}
-
 			// this session closes unexpectedly.
 			if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
 			{

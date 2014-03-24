@@ -74,11 +74,16 @@ private:
 
 private:
 	/**
-	 * @param begin open interval
-	 * @param end closed interval
+	 * @param begin closed interval
+	 * @param end open interval
 	 * @return a iterator that points to the leftmost ip packet that is in a continuous sequence.
 	 */
 	std::list<ip_pkt>::iterator check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end);
+
+	/**
+	 * @param advertised_window_size adjust the sliding window based on the advertised window size.
+	 */
+	void adjust_sliding_window();
 
 	void refresh_status(const ip_pkt* pkt);
 
@@ -108,8 +113,8 @@ private:
 	uint32_t _last_sent_byte_seq_beyond;          ///< in host byte order. The sequence of the last sent byte + 1
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	uint16_t _advertised_window_size;             ///< in host byte order
-	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< open interval (including)
-	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< closed interval (excluding)
+	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< closed interval (including)
+	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< open interval (excluding)
 
 	uint64_t _last_recorded_recv_time;   ///< used for session timeout
 	int      _response_from_peer_time_out;    ///< in unit of jiffy. refer to class the_timer

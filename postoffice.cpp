@@ -186,14 +186,14 @@ void postoffice::send_packets_to_wire()
 				ret = _postman->sendto(starting_addr, tot_len, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
 			}
 
-			if (ret < 0 && errno == EINTR)
+			if (ret > 0)
 			{
-				perror("send ");
-				return;
+				pkt->mark_me_has_been_sent();
+				pkt->increment_sent_counter();
 			}
 			else
 			{
-				pkt->mark_me_has_been_sent();
+				return;
 			}
 		}
 		++ite;
