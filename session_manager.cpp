@@ -137,12 +137,12 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 
 	tcpsession session(iphdr->saddr, tcphdr->source);
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
-	ite = ugly_pair.first;
-	ite->second.inject_a_realtime_ippkt((const char*) ip_pkt);
 	if (ugly_pair.second)
 	{
-		ugly_pair.first->second.get_ready();
+		ugly_pair.first->second.get_ready_for_rt_traffic();
 	}
+	ite = ugly_pair.first;
+	ite->second.inject_a_realtime_ippkt((const char*) ip_pkt);
 }
 
 int session_manager::clean_sick_session()
@@ -183,7 +183,7 @@ int session_manager::get_ready()
 			ite != _sessions.end(); ++ite)
 	{
 		count++;
-		ite->second.get_ready();
+		ite->second.get_ready_for_offline_traffic();
 	}
 	g_logger.printf("%d sessions are ready at current.\n", count);
 

@@ -24,15 +24,20 @@ public:
 	virtual ~tcpsession();
 
 	/**
-	 * add a ip packet to this session as a sample.
+	 * adds a ip packet to this session as a sample.
 	 * used when ip packets are read from pcap file.
 	 */
 	void append_ip_sample(const char* ippkt);
 
 	/**
-	 * used when ip packets are read on the fly.
+	 * invoked when ip packets are from real time traffic.
 	 */
 	void inject_a_realtime_ippkt(const char* ippkt);
+
+	/**
+	 * as the function name suggests. rt is real time for short.
+	 */
+	void injecting_rt_traffic_timeout_checker();
 
 	/**
 	 * This function will also remove ack packets without playload.
@@ -40,7 +45,15 @@ public:
 	 */
 	int check_samples_integrity();
 
-	void get_ready();
+	/**
+	 * This session is for real time traffic.
+	 */
+	void get_ready_for_rt_traffic();
+
+	/**
+	 * This session is for offline traffic.
+	 */
+	void get_ready_for_offline_traffic();
 
 public:
 	/// refer to the interface postoffice_callback_interface for details.
@@ -52,6 +65,8 @@ public:
 	enum cause_of_death{ACTIVE_CLOSE, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
 private:
+	void get_ready();
+
 	/// a. in the case of active close and the sent FIN has be acked by peer, _ippkts_samples is empty at this time
 	/// if a tcp segment received, ack cann't be piggybacked by sample, so create a pure ack without payload just
 	/// for the sake of acknowledge.
@@ -91,6 +106,8 @@ private:
 
 	bool still_alive();
 
+	void all_packets_in_sliding_window_should_be_sent();
+
 private:
 	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
 	std::list<ip_pkt>  _traffic_history;   ///< Records the traffic of this session.
@@ -112,7 +129,7 @@ private:
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
 	uint32_t _last_sent_byte_seq_beyond;          ///< in host byte order. The sequence of the last sent byte + 1
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
-	uint16_t _advertised_window_size;             ///< in host byte order
+	int _advertised_window_size;                  ///< in host byte order
 	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< closed interval (including)
 	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< open interval (excluding)
 
@@ -144,6 +161,12 @@ private:
 	 */
 	enum sess_state{ACCUMULATING_TRAFFIC, SENDING_TRAFFIC, ABORT};
 	sess_state _sess_state;
+	uint64_t _last_injecting_rt_traffic_time;
+	uint64_t _injecting_rt_traffic_timer_id;
+	bool _got_syn_pkt;
+	bool _got_fin_pkt;
+
+	bool _ready;  ///< indicate if this tcpsession instance has called get_ready() yet
 };
 
 #endif /* _TCPSESSION_H_ */

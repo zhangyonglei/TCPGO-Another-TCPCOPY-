@@ -168,6 +168,7 @@ void postoffice::send_packets_to_wire()
 		}
 		else if (postoffice_callback_interface::IGNORE == num)
 		{
+			++ite;
 			continue;
 		}
 		else if (0 == num)

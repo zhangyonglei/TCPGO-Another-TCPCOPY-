@@ -60,6 +60,8 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	tcphdr = (struct tcphdr*)(_pure_rst_template + 20);
 	tcphdr->ack = 0;
 	tcphdr->rst = 1;
+
+	_ready = false;
 }
 
 tcpsession::~tcpsession()
@@ -83,6 +85,15 @@ bool tcpsession::still_alive()
 	return !_dead;
 }
 
+void tcpsession::all_packets_in_sliding_window_should_be_sent()
+{
+	for (std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
+			ite != _sliding_window_right_boundary; ++ite)
+	{
+		ite->mark_me_should_be_sent();
+	}
+}
+
 void tcpsession::append_ip_sample(const char* ippkt)
 {
 	struct iphdr* iphdr; 
@@ -99,14 +110,31 @@ void tcpsession::append_ip_sample(const char* ippkt)
 
 void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 {
+	bool complete;
 	std::list<ip_pkt>::iterator ite;
 	ip_packet_parser(ippkt);
+
+	if (ACCUMULATING_TRAFFIC != _sess_state)
+	{
+		return;
+	}
 
 	if (tcphdr->rst)
 	{
 		_sess_state = ABORT;
 		g_postoffice.register_callback(_session_key, this);
 	}
+
+	if (tcphdr->syn)
+	{
+		_got_syn_pkt = true;
+	}
+	else if (tcphdr->fin)
+	{
+		_got_fin_pkt = true;
+	}
+
+	_last_injecting_rt_traffic_time = g_timer.get_jiffies();
 
 	if (tcp_payload_len == 0 && !tcphdr->fin && !tcphdr->syn)
 	{
@@ -115,27 +143,53 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 
 	_ippkts_samples.push_back(ippkt);
 	_ippkts_samples.sort();
-	_sliding_window_left_boundary = _ippkts_samples.begin();
-	if (_ippkts_samples.front().is_syn_set())
+
+	complete = false;
+	if (_got_syn_pkt && _got_fin_pkt)
 	{
-		ite = _sliding_window_left_boundary;
-		ite->mark_me_should_be_sent();
-		++ite;
-		_sliding_window_right_boundary = ite;
-	}
-	else
-	{
-		adjust_sliding_window();
+		complete = check_samples_integrity();
 	}
 
-	if (_ippkts_samples.front().is_syn_set() && _ippkts_samples.back().is_fin_set())
+	if (complete)
 	{
+		_sliding_window_left_boundary = _ippkts_samples.begin();
+		ite = _sliding_window_left_boundary;
+		++ite;
+		_sliding_window_right_boundary = ite;
+
+		assert(_sliding_window_left_boundary->is_syn_set());
+
 		_sess_state = SENDING_TRAFFIC;
+		g_postoffice.register_callback(_session_key, this);
+	}
+}
+
+void tcpsession::injecting_rt_traffic_timeout_checker()
+{
+	uint64_t now;
+	int timeout;
+	sess_state prev_sess_state;
+
+	if (_sess_state != ACCUMULATING_TRAFFIC)
+		return;
+
+	prev_sess_state = _sess_state; // for debug's convenience.
+
+	now = g_timer.get_jiffies();
+	timeout = g_configuration.get_injecting_rt_traffic_timeout();
+
+	// no incoming real time traffic in a period.
+	if (now - _last_injecting_rt_traffic_time > timeout)
+	{
+		assert(ACCUMULATING_TRAFFIC == _sess_state);
+		_sess_state = ABORT;
 		g_postoffice.register_callback(_session_key, this);
 	}
 	else
 	{
-		_sess_state = ACCUMULATING_TRAFFIC;
+		_injecting_rt_traffic_timer_id = g_timer.register_one_shot_timer_event(
+				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this),
+				timeout);
 	}
 }
 
@@ -164,7 +218,7 @@ int32_t tcpsession::check_samples_integrity()
 		tcp_payload_len = ite->get_tcp_payload_len();
 
 		// remove usefuless samples
-		if (0 == tcp_payload_len && !fin_set && !syn_set ) // && !rst_set)  // rst is not allowed any more.
+		if (0 == tcp_payload_len && !syn_set && !fin_set ) // && !rst_set)  // rst is not allowed any more.
 		{
 			_ippkts_samples.erase(ite++);
 		}
@@ -236,11 +290,26 @@ _err:
 	return 1;
 }
 
+void tcpsession::get_ready_for_rt_traffic()
+{
+	_sess_state = ACCUMULATING_TRAFFIC;
+	get_ready();
+}
+
+void tcpsession::get_ready_for_offline_traffic()
+{
+	_sess_state = SENDING_TRAFFIC;
+	get_ready();
+}
+
 void tcpsession::get_ready()
 {
 	std::list<ip_pkt>::iterator ite, tmp_ite;
+	uint64_t now;
 
-	_sess_state = SENDING_TRAFFIC;
+	assert(false == _ready);
+
+	now = g_timer.get_jiffies();
 
 	_dead = false;
 	_reset_the_peer = false;
@@ -250,7 +319,7 @@ void tcpsession::get_ready()
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
 	_last_sent_byte_seq_beyond = 0;
-	_advertised_window_size = 5000;
+	_advertised_window_size = 1000*1000*1000;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	if (!_ippkts_samples.empty())
 	{
@@ -264,7 +333,7 @@ void tcpsession::get_ready()
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
 	_last_recorded_recv_time = -1;
-	_last_recorded_snd_time = g_timer.get_jiffies();
+	_last_recorded_snd_time = now;
 
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end(); ++ite)
 	{
@@ -272,6 +341,20 @@ void tcpsession::get_ready()
 	}
 
 	g_logger.printf("session %s.%hu is ready.\n", _client_src_ip_str.c_str(), _client_src_port);
+
+	_last_injecting_rt_traffic_time = now;
+
+	if (ACCUMULATING_TRAFFIC == _sess_state)
+	{
+		_injecting_rt_traffic_timer_id = g_timer.register_one_shot_timer_event(
+				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this),
+				g_configuration.get_injecting_rt_traffic_timeout());
+	}
+
+	_got_syn_pkt = false;
+	_got_fin_pkt = false;
+
+	_ready = true;
 }
 
 int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
@@ -284,12 +367,19 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 
 	pkts.clear();
 
-	if(!still_alive())
+	if (ABORT == _sess_state)
+	{
+		g_timer.remove_the_timer(_injecting_rt_traffic_timer_id);
+		return postoffice_callback_interface::REMOVE;
+	}
+	assert(SENDING_TRAFFIC == _sess_state);
+
+	if (!still_alive())
 	{
 		if (_reset_the_peer)  // send two RSTs in a row.
 		{
 			char buff[40];
-			_reset_the_peer = false;
+
 			memcpy(buff, _pure_rst_template, sizeof(buff));
 			struct tcphdr* tcphdr = (struct tcphdr*)(buff + 20);
 			tcphdr->seq = htonl(_latest_acked_sequence_by_peer);
@@ -304,10 +394,13 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 			pkts.push_back(&_pure_rst_pkt);
 
+			_reset_the_peer = false;
+
 			return 2;  // send two RST packets.
 		}
 		else
 		{
+			g_timer.remove_the_timer(_injecting_rt_traffic_timer_id);
 			return postoffice_callback_interface::REMOVE;
 		}
 	}
@@ -939,9 +1032,5 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 
 	adjust_sliding_window();
 
-	// make a mark that all packets in the sliding window should be send.
-	for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
-	{
-		ite->mark_me_should_be_sent();
-	}
+	all_packets_in_sliding_window_should_be_sent();
 }

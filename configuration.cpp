@@ -32,6 +32,7 @@ configuration::configuration()
 	// [SESSION]
 	set_response_from_peer_time_out(3 * HZ);
 	set_have_to_send_data_within_this_timeperiod(3 * HZ);
+	set_injecting_rt_traffic_timeout(4000);
 	set_snd_speed_control(HZ / 4);
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
 	set_enable_active_close(false);
@@ -147,6 +148,19 @@ void configuration::set_have_to_send_data_within_this_timeperiod(int timeperiod)
 {
 	assert(timeperiod != 0);
 	_have_to_send_data_within_this_timeperiod = timeperiod;
+}
+
+void configuration::set_injecting_rt_traffic_timeout(const std::string& timeout)
+{
+	int val;
+	val = boost::lexical_cast<int>(timeout);
+	set_injecting_rt_traffic_timeout(val);
+}
+
+void configuration::set_injecting_rt_traffic_timeout(int timeout)
+{
+	assert(timeout != 0);
+	_injecting_rt_traffic_timeout = timeout;
 }
 
 void configuration::set_snd_speed_control(const std::string& speed_control)
@@ -369,6 +383,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("have_to_send_data_within_this_timeperiod: %s\n", value.c_str());
 		set_have_to_send_data_within_this_timeperiod(value);
+	}
+
+	option_name = "injecting_rt_traffic_timeout";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("injecting_rt_traffic_timeout: %s\n", value.c_str());
+		set_injecting_rt_traffic_timeout(value);
 	}
 
 	option_name = "snd_speed_control";

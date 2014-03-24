@@ -49,6 +49,7 @@ void the_timer::get_ready()
     	abort();
     }*/
 
+	_next_available_id = 1;
 	_done = false;
 	_thread.reset(
 			new boost::thread(boost::bind(&the_timer::thread_entry, this))
@@ -76,27 +77,44 @@ void the_timer::timer_handler()
 	_deadline_timer->async_wait(boost::bind(&the_timer::timer_handler, this));
 }
 
-void the_timer::register_one_shot_timer_event(timer_event_handler evt_hdl, uint32_t relative_time)
+uint64_t the_timer::register_one_shot_timer_event(timer_event_handler evt_hdl, uint32_t relative_time)
 {
 	uint64_t now, fire_time;
 
 	now = _jiffies;
 	fire_time = now + relative_time;
-	_tmp_events.insert(std::pair<uint64_t, timer_event_handler>(fire_time, evt_hdl));
+	_tmp_events.insert(std::pair<uint64_t, EventElement>(
+			_next_available_id, EventElement(fire_time, evt_hdl)
+			));
+
+	return _next_available_id++;
+}
+
+bool the_timer::remove_the_timer(uint64_t timer_id)
+{
+	int ret;
+	ret = _tmp_events.erase(timer_id);
+
+	if (0 == ret)
+	{
+		ret = _events.erase(timer_id);
+	}
+
+	return ret;
 }
 
 void the_timer::loop_through_all_timer_event()
 {
-	std::multimap<uint64_t, timer_event_handler>::iterator ite;
+	std::multimap<uint64_t, EventElement>::iterator ite;
 	_events.insert(_tmp_events.begin(), _tmp_events.end());
 	_tmp_events.clear();
 
 	for (ite = _events.begin(); ite != _events.end(); )
 	{
 		// fire it !
-		if (ite->first <= _jiffies)
+		if (ite->second.first <= _jiffies)
 		{
-			ite->second();
+			ite->second.second();
 			_events.erase(ite++);
 		}
 		else

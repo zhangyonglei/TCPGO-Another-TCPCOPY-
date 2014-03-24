@@ -32,16 +32,26 @@ public:
 		return _jiffies;
 	}
 
-	void register_one_shot_timer_event(timer_event_handler evt_hdl, uint32_t relative_time);
+	/**
+	 * This function returns the ID of the one-shot-timer.
+	 */
+	uint64_t register_one_shot_timer_event(timer_event_handler evt_hdl, uint32_t relative_time);
+
+	/**
+	 * return true if the timer was found and removed.
+	 * return false if the timer doesn't exist.
+	 */
+	bool remove_the_timer(uint64_t timer_id);
 
 	void loop_through_all_timer_event();
 
+public:
 	void thread_entry();
-
 	void timer_handler();
 
 private:
-	// obsolted. Use the boost style timer instead.
+	// obsoleted. Use the boost style timer instead.
+	// 'cos 2.6.10 kernel doesn't support epoll_pwait.
 	// friend void sig_alarm_handler(int sig);
 
 private:
@@ -51,8 +61,10 @@ private:
 	/// one during each timer interrupt.Thus, because there are HZ timer interrupts in a second,
 	/// there are HZ jiffies in a second.The system uptime is therefore jiffies/HZ seconds.What
 	volatile uint64_t  _jiffies;
-	std::multimap<uint64_t, timer_event_handler> _events;
-	std::multimap<uint64_t, timer_event_handler> _tmp_events; ///< to evade iterator invalidation.
+	uint64_t _next_available_id;
+	typedef std::pair<uint64_t, timer_event_handler> EventElement;
+	std::multimap<uint64_t, EventElement> _events;     ///< key is the ID of the timer.
+	std::multimap<uint64_t, EventElement> _tmp_events; ///< to evade iterator invalidation.
 
 	boost::asio::io_service _io_service;
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
