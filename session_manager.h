@@ -45,6 +45,9 @@ private:
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
+
+	static const int SESSION_COUNT_CEILING = 60928;
+	bool _traffic_jam;
 };
 
 #endif /* _SESSIONMANAGER_H_ */

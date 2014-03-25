@@ -7,6 +7,7 @@
  ********************************************/
 
 #include "statistics_bureau.h"
+#include "session_manager.h"
 
 statistics_bureau g_statistics_bureau;
 
@@ -89,7 +90,8 @@ std::string statistics_bureau::sess_statistics()
 		conns_per_second_in_15mins = conns_per_second_in_1min;
 	}
 
-	ss << _total_processed_sess_count << " sessions have been processed.\n"
+	ss << g_session_manager.size() << " sessions are now in memory.\n"
+	   << _total_processed_sess_count << " sessions have been processed.\n"
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
 	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response from peer within "

@@ -370,6 +370,8 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 	if (ABORT == _sess_state)
 	{
 		g_timer.remove_the_timer(_injecting_rt_traffic_timer_id);
+		g_logger.printf("session: %s.%hu aborts.\n", _client_src_ip_str.c_str(), _client_src_port);
+
 		return postoffice_callback_interface::REMOVE;
 	}
 	assert(SENDING_TRAFFIC == _sess_state);

@@ -77,7 +77,7 @@ void postoffice::recv_packets_from_wire()
 	while(true)
 	{
 		ret = _postman->recv(_buff, sizeof(_buff));
-		if (ret < 0 && errno != EINTR)
+		if (ret < 0)
 			return;
 
 		if (-1 == _l2hdr_len)

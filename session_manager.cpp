@@ -124,6 +124,20 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 	uint16_t src_port;  // host byte order
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
+	int sz = _sessions.size();
+
+	// hard code the session count ceiling
+	if (sz >= SESSION_COUNT_CEILING)
+	{
+		_traffic_jam = true;
+	}
+	else if (_traffic_jam)
+	{
+		if (sz <= SESSION_COUNT_CEILING/2)
+		{
+			_traffic_jam = false;
+		}
+	}
 
 	ip_packet_parser(ip_pkt);
 	src_port = ntohs(tcphdr->source);
@@ -137,10 +151,21 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 
 	tcpsession session(iphdr->saddr, tcphdr->source);
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
-	if (ugly_pair.second)
+	if (ugly_pair.second)  // a new tcpsession is created and added.
 	{
+		// traffic control is imposed. New tcpsession is now allowed.
+		if (_traffic_jam)
+		{
+			_sessions.erase(key);
+			return;
+		}
 		ugly_pair.first->second.get_ready_for_rt_traffic();
 	}
+	else
+	{
+		// traffic is bound for already existed tcpsession.
+	}
+
 	ite = ugly_pair.first;
 	ite->second.inject_a_realtime_ippkt((const char*) ip_pkt);
 }
@@ -179,6 +204,9 @@ int session_manager::get_ready()
 {
 	int count;
 	count = 0;
+
+	_traffic_jam = false;
+
 	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
 			ite != _sessions.end(); ++ite)
 	{
@@ -200,4 +228,3 @@ void session_manager::erase_a_session(uint64_t key)
 session_manager::~session_manager()
 {
 }
-
