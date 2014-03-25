@@ -147,7 +147,7 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 	complete = false;
 	if (_got_syn_pkt && _got_fin_pkt)
 	{
-		complete = check_samples_integrity();
+		complete = (0 == check_samples_integrity());
 	}
 
 	if (complete)
