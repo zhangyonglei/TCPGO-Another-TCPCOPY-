@@ -80,7 +80,7 @@ void postoffice::recv_packets_from_wire()
 			return;
 
 		// now inform the corresponding receiver the coming ip package.
-		key = pkt->get_sess_key();
+		key = pkt->get_sess_key_inbound();
 		ite = _callbacks.find(key);
 		if (ite != _callbacks.end())
 		{

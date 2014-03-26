@@ -48,19 +48,22 @@ void rawsock_postman::get_ready4subclass()
 		abort();
 	}
 
-	_svr_port = g_configuration.get_dst_port();
+	_svr_port = htons(g_configuration.get_dst_port());
+	_l2hdr_len = -1;
 }
 
 void rawsock_postman::recv_impl()
 {
-	int ret, len;
+	int ret;
 	char* ptr_ippkt;
 	uint16_t src_port;
 
-	ret = ::recv(_recv_fd, _buff, len, 0);
+	ret = ::recv(_recv_fd, _buff, sizeof(_buff), 0);
 
-	if (ret < 0)
+	if (ret <= 0)
+	{
 		return;
+	}
 
 	if (-1 == _l2hdr_len)
 	{

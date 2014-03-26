@@ -71,6 +71,8 @@ void postman::get_ready()
 	_recv_thrd = boost::thread(boost::bind(&postman::recv_thrd_entry, this));
 	_send_thrd = boost::thread(boost::bind(&postman::send_thrd_entry, this));
 
+	return;
+
 _err:
 	perror(err_hint);
 	abort();
@@ -84,7 +86,7 @@ bool postman::recv(boost::shared_ptr<ip_pkt>& pkt)
 
 	if (success)
 	{
-		_count_recv_queue++;
+		_count_recv_queue--;
 	}
 
 	return success;
@@ -141,6 +143,8 @@ void postman::send_impl()
 
 			sendto(_send_fd, starting_addr, tot_len, 0,
 					reinterpret_cast<struct sockaddr*>(&dst_addr), sizeof(dst_addr));
+
+			_count_snd_queue--;
 		}
 	}while(success);
 }
@@ -153,6 +157,7 @@ void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
 		success = _recv_queue.push(pkt);
 		if (success)
 		{
+			_count_recv_queue++;
 			break;
 		}
 		else

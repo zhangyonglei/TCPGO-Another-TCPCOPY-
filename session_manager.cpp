@@ -101,7 +101,7 @@ void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
 
-	key = pkt->get_sess_key();
+	key = pkt->get_sess_key_outbound();
 
 	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	// The following map::insert returns a pair, with its member pair::first set to an iterator pointing to
@@ -146,7 +146,8 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	{
 		return;
 	}
-	key = pkt->get_sess_key();
+
+	key = pkt->get_sess_key_outbound();
 
 	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));

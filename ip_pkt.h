@@ -49,8 +49,19 @@ public:
 	 * note: in network byte order.
 	 */
 	uint16_t reset_ip_checksum();
-	
-	uint64_t get_sess_key()
+
+	/**
+	 * invoked by outbound ip packet from host
+	 */
+	uint64_t get_sess_key_outbound()
+	{
+		return make_sess_key(_iphdr->saddr, _tcphdr->source);
+	}
+
+	/**
+	 * invoked by inbound ip packet from peer.
+	 */
+	uint64_t get_sess_key_inbound()
 	{
 		return make_sess_key(_iphdr->daddr, _tcphdr->dest);
 	}
@@ -195,6 +206,9 @@ private:
 private:
 	// char *_pkt;   ///< the starting address of the IP packet.
 	boost::shared_ptr<char> _pkt;
+
+	// true if the packet is bound to the peer or else false if the packet is received from peer
+	bool _outbound;
 
 	int  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header

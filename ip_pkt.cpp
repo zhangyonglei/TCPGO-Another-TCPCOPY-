@@ -8,11 +8,13 @@
 
 #include "ip_pkt.h"
 #include "utils.h"
+#include "configuration.h"
 
 ip_pkt::ip_pkt()
 {
 	_sent_counter = 0;
 	_send_me_pls = true;
+	_outbound = true;
 }
 
 ip_pkt::ip_pkt(const char* pkt)
@@ -138,6 +140,15 @@ void ip_pkt::warm_up()
 	_src_addr = inet_ntoa(inaddr);
 	inaddr.s_addr = _iphdr->daddr;
 	_dst_addr = inet_ntoa(inaddr);
+
+	if (g_configuration.get_dst_port() == get_dst_port())
+	{
+		_outbound = true;
+	}
+	else
+	{
+		_outbound = false;
+	}
 }
 
 void ip_pkt::modify_src_port(uint16_t src_port)
