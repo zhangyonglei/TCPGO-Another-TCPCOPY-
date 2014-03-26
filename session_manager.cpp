@@ -24,7 +24,7 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	char ebuf[1024];
 	pcap_t *pcap;
 	const char *pkt_data;
-	const char *ip_pkt;
+	const char *ippkt;
 	struct bpf_program fp;
 	struct pcap_pkthdr pkt_hdr;
 	struct timeval ts;
@@ -70,17 +70,18 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 			}
 			else
 			{
-				ip_pkt = strip_l2head(pcap, pkt_data);
+				ippkt = strip_l2head(pcap, pkt_data);
 				ts = pkt_hdr.ts;
-				if (ip_pkt != NULL)
+				if (ippkt != NULL)
 				{
 					uint16_t new_src_port;
 					uint16_t ori_src_port;
-					struct ip_pkt pkt(ip_pkt);
-					ori_src_port = pkt.get_src_port();
+
+					boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ippkt);
+					ori_src_port = pkt->get_src_port();
 					new_src_port = generate_the_port(ori_src_port);
-					pkt.modify_src_port(new_src_port);
-					dispatch_ip_pkt(pkt.get_starting_addr());
+					pkt->modify_src_port(new_src_port);
+					dispatch_ip_pkt(pkt);
 				}
 			}
 		}
@@ -94,30 +95,29 @@ int session_manager::read_from_capfile(const string& path, const string& filter)
 	clean_sick_session();
 }
 
-void session_manager::dispatch_ip_pkt(const char* ip_pkt)
+void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint64_t key;
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
 
-	ip_packet_parser(ip_pkt);
-	key = mk_sess_key(iphdr->saddr, tcphdr->source);
+	key = pkt->get_sess_key();
 
-	tcpsession session(iphdr->saddr, tcphdr->source);
+	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	// The following map::insert returns a pair, with its member pair::first set to an iterator pointing to
 	// either the newly inserted element or to the element with an equivalent key in the map. The pair::second
 	// element in the pair is set to true if a new element was inserted or false if an equivalent key already
 	// existed. (copied from c++ references to clarify the obfuscated map::insert return value.)
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
 	ite = ugly_pair.first;
-	ite->second.append_ip_sample((const char*) ip_pkt);
+	ite->second.append_ip_sample(pkt);
 	if (ugly_pair.second)
 	{
 		g_postoffice.register_callback(key, &ite->second);
 	}
 }
 
-void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
+void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 {
 	static uint64_t ip_count;
 	uint64_t key;
@@ -139,17 +139,16 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 		}
 	}
 
-	ip_packet_parser(ip_pkt);
-	src_port = ntohs(tcphdr->source);
+	src_port = ntohs(pkt->get_tcphdr()->source);
 	// the following logic ignore product server's outgoing traffic
 	// if the user by mistake did this: tcpdump -i any src 80 -s 0 -w - | netcat xxx.xxx.xxx.xxx 1993
 	if (src_port < 1024)
 	{
 		return;
 	}
-	key = mk_sess_key(iphdr->saddr, tcphdr->source);
+	key = pkt->get_sess_key();
 
-	tcpsession session(iphdr->saddr, tcphdr->source);
+	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
 	if (ugly_pair.second)  // a new tcpsession is created and added.
 	{
@@ -167,7 +166,7 @@ void session_manager::inject_a_realtime_ippkt(const char* ip_pkt)
 	}
 
 	ite = ugly_pair.first;
-	ite->second.inject_a_realtime_ippkt((const char*) ip_pkt);
+	ite->second.inject_a_realtime_ippkt(pkt);
 }
 
 int session_manager::clean_sick_session()

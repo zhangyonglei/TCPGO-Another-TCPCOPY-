@@ -11,7 +11,7 @@
 
 #include "lua.hpp"
 #include "misc.h"
-#include "mypoller.h"
+#include "reactor.h"
 #include "thetimer.h"
 
 class mylua;

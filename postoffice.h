@@ -1,20 +1,19 @@
 /*********************************************
- * sender.h
+ * postoffice.h
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
  * website: www.dogeye.net
  * Created on: 11 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
-#ifndef _POSTMAN_H_
-#define _POSTMAN_H_
+#ifndef _POSTOFFICE_H_
+#define _POSTOFFICE_H_
 
 #include "utils.h"
 #include "ip_pkt.h"
 #include "thetimer.h"
 #include "listmap.h"
 #include "postman.h"
-#include "mypoller.h"
 
 class postoffice;
 extern postoffice g_postoffice;
@@ -31,12 +30,12 @@ public:
 	 * other return values are invalidate.
 	 */
 	enum {IGNORE = -100, REMOVE = -101};
-	virtual int pls_send_these_packets(std::vector<ip_pkt*>& pkts) = 0;
+	virtual int pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& pkts) = 0;
 
 	/**
 	 * @param ip_pkt points to the coming packet.
 	 */
-	virtual void got_a_packet(const ip_pkt *pkt) = 0;
+	virtual void got_a_packet(boost::shared_ptr<ip_pkt> pkt) = 0;
 
 protected:
 	virtual ~postoffice_callback_interface(){}
@@ -63,7 +62,6 @@ public:
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
 	int  _svr_port; ///< captured outbound IP packets don't matching the this port will be ignored. in network byte order.
-	char  _buff[4096*10];   ///< self-explanatory.
 	int _l2hdr_len;   ///< it's usually 14.
 
 	typedef listmap<uint64_t, postoffice_callback_interface*> mylistmap;
@@ -72,4 +70,4 @@ private:
 	boost::shared_ptr<postman> _postman;  ///< only one post man in this post office.
 };
 
-#endif /* _POSTMAN_H_ */
+#endif /* _POSTOFFICE_H_ */

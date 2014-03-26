@@ -60,12 +60,12 @@ int mylua::sess_statistics(lua_State* L)
 
 int mylua::horos_run(lua_State* L)
 {
-	horos_init();
+	// horos_init(); // obsoleted
 }
 
 int mylua::horos_stop(lua_State* L)
 {
-	horos_uninit();
+	// horos_uninit();  // obsoleted
 }
 
 int mylua::reload_testsuite(lua_State* L)
@@ -153,14 +153,15 @@ static const struct luaL_Reg lua_funcs[] = {
 /**
  * This function will be invoked while .so is loaded from within lua environment using "require".
  */
-extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State* L)
-{
-	g_mylua.disable_console();
-	g_mylua.set_lua_state(L);
-	g_mylua.register_APIs4lua(lua_funcs);
-
-	return 1;
-}
+// obsoleted ...
+//extern "C" __attribute__((visibility("default"))) int luaopen_libhoros(lua_State* L)
+//{
+//	g_mylua.disable_console();
+//	g_mylua.set_lua_state(L);
+//	g_mylua.register_APIs4lua(lua_funcs);
+//
+//	return 1;
+//}
 
 mylua::mylua()
 {
@@ -366,7 +367,7 @@ void mylua::open_listening_port()
 		abort();
 	}
 
-	g_poller.register_evt(_console_listening_fd, mypoller::MYPOLLIN, this);
+	g_reactor.register_evt(_console_listening_fd, reactor::MYPOLLIN, this);
 }
 
 void mylua::pollin_handler(int fd)
@@ -404,7 +405,7 @@ void mylua::accept_conn(int fd)
 		return;
 	}
 
-	g_poller.register_evt(_console_connected_fd, mypoller::MYPOLLIN, this);
+	g_reactor.register_evt(_console_connected_fd, reactor::MYPOLLIN, this);
 
 	welcome = "Welcome to the horos console v"VERSION_NUM"\n";
 	write(_console_connected_fd, welcome.c_str(), welcome.length());
@@ -433,7 +434,7 @@ void mylua::close_conn_fd()
 {
 	if (_console_connected_fd > 0)
 	{
-		g_poller.deregister_evt(_console_connected_fd);
+		g_reactor.deregister_evt(_console_connected_fd);
 		close(_console_connected_fd);
 		_console_connected_fd = -1;
 	}
@@ -443,7 +444,7 @@ void mylua::close_listening_fd()
 {
 	if (_console_listening_fd > 0)
 	{
-		g_poller.deregister_evt(_console_listening_fd);
+		g_reactor.deregister_evt(_console_listening_fd);
 		close(_console_listening_fd);
 		_console_listening_fd = -1;
 	}

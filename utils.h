@@ -12,6 +12,11 @@
 #include "misc.h"
 
 /**
+ * Memory Block.
+ */
+typedef std::vector<char> MemBlock;
+
+/**
  * the following macro is inspired by the book "Linux Kernel Development 3rd Edition" Page 214.
  * It gets around the problem of number wraparound.
  */
@@ -75,7 +80,7 @@ unsigned short generate_the_port(unsigned short ori_src_port);
 		pack_clone;   })
 
 /* port is in network byte order*/
-#define mk_sess_key(ip, port) ({    \
+#define make_sess_key(ip, port) ({    \
 		uint64_t   k;                            \
 		uint32_t *ptr;                       \
 		ptr = (uint32_t*)&k;             \
@@ -90,11 +95,5 @@ unsigned short generate_the_port(unsigned short ori_src_port);
  * @return 0 on success, non-zero on failure.
  */
 int find_files(const std::string& dir, const std::string& regexp, std::list<std::string>& files);
-
-/**
- * Block SIGPIPE only at present.
- * return 0 on success.
- */
-int block_signals_pthread();
 
 #endif

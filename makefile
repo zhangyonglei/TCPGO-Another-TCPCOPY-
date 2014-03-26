@@ -8,12 +8,12 @@ deps := deps/
 projname := $(bins)horos
 projname_alias := $(bins)tcpgo
 libstem := horos
-test := $(bins)test
-lib_linkname := $(bins)lib$(libstem).so
-libname = $(lib_linkname).$(VERSION_NUM)
+#test := $(bins)test
+#lib_linkname := $(bins)lib$(libstem).so
+#libname = $(lib_linkname).$(VERSION_NUM)
 #soname = $(lib_linkname).$(firstword $(subst ., ,$(VERSION_NUM)))
 #don't use so version control
-soname = lib$(libstem).so
+#soname = lib$(libstem).so
 sources := $(wildcard *.cpp)
 objects := $(addprefix $(objs),$(subst .cpp,.o,$(sources)))
 dependencies := $(addprefix $(deps),$(subst .cpp,.d,$(sources)))
@@ -48,12 +48,13 @@ vpath %.h . $(include_dirs)
 
 .PHONY : clean install dummy
 
-all : $(projname) $(projname_alias) $(libname) $(test) 
+all : $(projname) $(projname_alias) $(libname)
 
 $(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a) $(lua_vm_a)
 	g++ -o $@ $(objects) $(LINKFLAGS) 
 
 $(projname_alias) : $(projname)
+	-$(RM) $(projname_alias)
 	-ln -s $(projname) $(projname_alias)
 
 $(iniparser_a) : 
@@ -62,13 +63,13 @@ $(iniparser_a) :
 $(lua_vm_a) :
 	make -C $(lua_vm_root) linux
 	
-$(libname) : $(objects)
-	g++ -o $@ $^ $(LINKFLAGS4LIB) 
-	-ln -s $(PWD)/$@ $(lib_linkname)
+#$(libname) : $(objects)
+#	g++ -o $@ $^ $(LINKFLAGS4LIB) 
+#	-ln -s $(PWD)/$@ $(lib_linkname)
 	
-$(test) : test/test.o
+#$(test) : test/test.o
 #	ld -rpath . -o test test/test.o
-	g++ -o $@  $^ $(LINKFLAGS4TEST) 
+#	g++ -o $@  $^ $(LINKFLAGS4TEST) 
 
 # for debug's purpose
 dummy:

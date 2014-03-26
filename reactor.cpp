@@ -1,5 +1,5 @@
 /*********************************************
- * poller.cpp
+ * reactor.cpp
  * Author: kamuszhou@tencent.com,kamuszhou@qq.com
  * website: www.dogeye.net
  * Created on: 13 Dec, 2013
@@ -8,14 +8,15 @@
 
 #include <sys/epoll.h>
 #include "misc.h"
-#include "mypoller.h"
+#include "reactor.h"
 #include "thetimer.h"
+#include "postoffice.h"
 
 #define MAX_EVENTS_COUNT 32
 
-mypoller g_poller;
+reactor g_reactor;
 
-mypoller::mypoller()
+reactor::reactor()
 {
 	_stop = false;
 	_epoll_fd = epoll_create(1);
@@ -26,12 +27,12 @@ mypoller::mypoller()
 	}
 }
 
-mypoller::~mypoller()
+reactor::~reactor()
 {
 	close(_epoll_fd);
 }
 
-void mypoller::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
+void reactor::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
 {
 	struct epoll_event evt;
 
@@ -61,7 +62,7 @@ void mypoller::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
 	_workhorses[fd] = workhorse;
 }
 
-void mypoller::deregister_evt(int fd)
+void reactor::deregister_evt(int fd)
 {
 	int ret;
 	ret = epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
@@ -75,7 +76,7 @@ void mypoller::deregister_evt(int fd)
 	assert(1 == ret);
 }
 
-void mypoller::bigbang()
+void reactor::bigbang()
 {
 	int nfds, n;
 	int fd;
@@ -120,10 +121,13 @@ void mypoller::bigbang()
 		}
 
 		g_timer.loop_through_all_timer_event();
+
+		g_postoffice.recv_packets_from_wire();
+		g_postoffice.send_packets_to_wire();
 	}
 }
 
-void mypoller::stop()
+void reactor::stop()
 {
 	_stop = true;
 }

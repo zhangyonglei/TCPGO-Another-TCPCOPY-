@@ -23,7 +23,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	_client_src_ip_num = ip;
 	_client_src_ip_str = inet_ntoa(inaddr);
 	_client_src_port = ntohs(port);
-	_session_key = mk_sess_key(ip, port);
+	_session_key = make_sess_key(ip, port);
 
 	_response_from_peer_time_out = g_configuration.get_response_from_peer_time_out();
 	_have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod();
@@ -87,56 +87,51 @@ bool tcpsession::still_alive()
 
 void tcpsession::all_packets_in_sliding_window_should_be_sent()
 {
-	for (std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
+	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
 			ite != _sliding_window_right_boundary; ++ite)
 	{
-		ite->mark_me_should_be_sent();
+		(*ite)->mark_me_should_be_sent();
 	}
 }
 
-void tcpsession::append_ip_sample(const char* ippkt)
+void tcpsession::append_ip_sample(boost::shared_ptr<ip_pkt> ippkt)
 {
 	struct iphdr* iphdr; 
-	ip_pkt pkt;
-	int32_t len;
 
-	assert(NULL!=ippkt);
-	iphdr = (struct iphdr*)ippkt;
-	len = ntohs(iphdr->tot_len);
+	assert(ippkt);
+	iphdr = (struct iphdr*)ippkt.get();
 
-	_ippkts_samples.push_back(pkt);
-	_ippkts_samples.back().cp(ippkt);
+	_ippkts_samples.push_back(ippkt);
 }
 
-void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
+void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 {
 	bool complete;
-	std::list<ip_pkt>::iterator ite;
-	ip_packet_parser(ippkt);
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	if (ACCUMULATING_TRAFFIC != _sess_state)
 	{
 		return;
 	}
 
-	if (tcphdr->rst)
+	if (ippkt->is_rst_set())
 	{
 		_sess_state = ABORT;
 		g_postoffice.register_callback(_session_key, this);
 	}
 
-	if (tcphdr->syn)
+	if (ippkt->is_syn_set())
 	{
 		_got_syn_pkt = true;
 	}
-	else if (tcphdr->fin)
+	else if (ippkt->is_fin_set())
 	{
 		_got_fin_pkt = true;
 	}
 
 	_last_injecting_rt_traffic_time = g_timer.get_jiffies();
 
-	if (tcp_payload_len == 0 && !tcphdr->fin && !tcphdr->syn)
+	if (ippkt->get_tcp_payload_len() == 0 && !ippkt->is_fin_set() && !ippkt->is_syn_set())
 	{
 		return;
 	}
@@ -157,7 +152,7 @@ void tcpsession::inject_a_realtime_ippkt(const char* ippkt)
 		++ite;
 		_sliding_window_right_boundary = ite;
 
-		assert(_sliding_window_left_boundary->is_syn_set());
+		assert((*_sliding_window_left_boundary)->is_syn_set());
 
 		_sess_state = SENDING_TRAFFIC;
 		g_postoffice.register_callback(_session_key, this);
@@ -202,20 +197,20 @@ int32_t tcpsession::check_samples_integrity()
 	int32_t tcp_payload_len;
 
 	i = 0;
-	std::list<ip_pkt>::iterator ite;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 	// reomve the packet without tcp playload. e.g. the tcp keep-alive segments which are
 	// used to elicit an ACK from the receiver.
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
-		int tot_len = ite->get_tot_len();
-		int iphdr_len = ite->get_iphdr_len();
-		int tcphdr_len = ite->get_tcphdr_len();
-		bool fin_set = ite->is_fin_set();
-		bool ack_set = ite->is_ack_set();
-		bool syn_set = ite->is_syn_set();
-		bool rst_set = ite->is_rst_set();
+		int tot_len = (*ite)->get_tot_len();
+		int iphdr_len = (*ite)->get_iphdr_len();
+		int tcphdr_len = (*ite)->get_tcphdr_len();
+		bool fin_set = (*ite)->is_fin_set();
+		bool ack_set = (*ite)->is_ack_set();
+		bool syn_set = (*ite)->is_syn_set();
+		bool rst_set = (*ite)->is_rst_set();
 
-		tcp_payload_len = ite->get_tcp_payload_len();
+		tcp_payload_len = (*ite)->get_tcp_payload_len();
 
 		// remove usefuless samples
 		if (0 == tcp_payload_len && !syn_set && !fin_set ) // && !rst_set)  // rst is not allowed any more.
@@ -225,8 +220,8 @@ int32_t tcpsession::check_samples_integrity()
 		// remove  corrupted sample, this case occurs rarely.
 		else if (tot_len != iphdr_len + tcphdr_len + tcp_payload_len)
 		{
-			std::cerr << "detected corrupted ip packet." << ite->get_src_addr() << " : " << ite->get_src_port()
-							<< " --> " <<ite->get_dst_addr() << " : " << ite->get_dst_port() << std::endl;
+			std::cerr << "detected corrupted ip packet." << (*ite)->get_src_addr() << " : " << (*ite)->get_src_port()
+							<< " --> " << (*ite)->get_dst_addr() << " : " << (*ite)->get_dst_port() << std::endl;
 			++ite;
 		}
 		else
@@ -251,16 +246,16 @@ int32_t tcpsession::check_samples_integrity()
 
 	ite = _ippkts_samples.begin();
 	// the first packet is not a syn, so these samples are considered as incomplete.
-	if (!ite->is_syn_set())
+	if (!(*ite)->is_syn_set())
 	{
 		goto _err;
 	}
-	expected_next_seq = ite->get_seq() + 1;
+	expected_next_seq = (*ite)->get_seq() + 1;
 	++ite;
 	++i;
 	for (; ite != _ippkts_samples.end(); ++ite, ++i)
 	{
-		seq = ite->get_seq();
+		seq = (*ite)->get_seq();
 		if(expected_next_seq != seq)
 		{
 			// The last IP packet has rst set. In this case, the seq may be the last seq plus one.
@@ -273,13 +268,13 @@ int32_t tcpsession::check_samples_integrity()
 
 			goto _err;
 		}
-		tcp_payload_len = ite->get_tcp_payload_len();
+		tcp_payload_len = (*ite)->get_tcp_payload_len();
 		if (tcp_payload_len > 0)
 		{
 			expected_next_seq += tcp_payload_len;
 		}
 
-		if(ite->is_fin_set())
+		if((*ite)->is_fin_set())
 		{
 			_ippkts_samples.erase(++ite, _ippkts_samples.end());
 			return 0;
@@ -304,7 +299,7 @@ void tcpsession::get_ready_for_offline_traffic()
 
 void tcpsession::get_ready()
 {
-	std::list<ip_pkt>::iterator ite, tmp_ite;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite, tmp_ite;
 	uint64_t now;
 
 	assert(false == _ready);
@@ -357,13 +352,13 @@ void tcpsession::get_ready()
 	_ready = true;
 }
 
-int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
+int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& pkts)
 {
-	ip_pkt* pkt;
 	int count;
+	ip_pkt* pkt;
 	uint64_t jiffies;
 	bool fin_has_been_sent;
-	std::list<ip_pkt>::iterator ite;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	pkts.clear();
 
@@ -380,21 +375,27 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 	{
 		if (_reset_the_peer)  // send two RSTs in a row.
 		{
-			char buff[40];
+			char buff0[40];
+			char buff1[40];
 
-			memcpy(buff, _pure_rst_template, sizeof(buff));
-			struct tcphdr* tcphdr = (struct tcphdr*)(buff + 20);
+			memcpy(buff0, _pure_rst_template, sizeof(buff0));
+			struct tcphdr* tcphdr = (struct tcphdr*)(buff0 + 20);
 			tcphdr->seq = htonl(_latest_acked_sequence_by_peer);
-			_pure_rst_pkt.cp(buff);
-			_pure_rst_pkt.rebuild(g_configuration.get_dst_addr().c_str(),
-						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
-			pkts.push_back(&_pure_rst_pkt);
 
-			tcphdr->seq = htonl(_last_sent_byte_seq_beyond);
-			_pure_rst_pkt.cp(buff);
-			_pure_rst_pkt.rebuild(g_configuration.get_dst_addr().c_str(),
-						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
-			pkts.push_back(&_pure_rst_pkt);
+			memcpy(buff1, _pure_rst_template, sizeof(buff1));
+			tcphdr = (struct tcphdr*)(buff1 + 20);
+			tcphdr->seq = htonl(_latest_acked_sequence_by_peer);
+
+			boost::shared_ptr<ip_pkt>  pure_rst_pkt0 = boost::make_shared<ip_pkt>(buff0);
+			boost::shared_ptr<ip_pkt>  pure_rst_pkt1 = boost::make_shared<ip_pkt>(buff1);
+
+			pure_rst_pkt0->rebuild(g_configuration.get_dst_addr().c_str(),
+									g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			pkts.push_back(pure_rst_pkt0);
+
+			pure_rst_pkt1->rebuild(g_configuration.get_dst_addr().c_str(),
+									g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			pkts.push_back(pure_rst_pkt1);
 
 			_reset_the_peer = false;
 
@@ -415,14 +416,14 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 		if (_sliding_window_left_boundary == _sliding_window_right_boundary)
 			return 0;
 
-		pkt = &(*_sliding_window_left_boundary);
+		pkt = _sliding_window_left_boundary->get();
 
 		bool need_send = false;
 		ite = _sliding_window_right_boundary;
 		--ite;
 		do
 		{
-			if (ite->should_send_me())
+			if ((*ite)->should_send_me())
 			{
 				need_send = true;
 				break;
@@ -445,12 +446,12 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 	{
 		for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
 		{
-			ite->mark_me_should_be_sent();
+			(*ite)->mark_me_should_be_sent();
 		}
 	}
 
 	fin_has_been_sent = false;
-	for(std::list<ip_pkt>::iterator ite = _sliding_window_left_boundary;
+	for(std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
 			ite != _sliding_window_right_boundary;
 			++ite)
 	{
@@ -458,7 +459,7 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 		bool is_syn_set, is_ack_set, is_fin_set, is_rst_set;
 		int tcp_payload_len;
 
-		pkt = &(*ite);
+		pkt = ite->get();
 
 		is_syn_set = pkt->is_syn_set();
 		is_ack_set = pkt->is_ack_set();
@@ -495,7 +496,7 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 
 			if (0 == sent_count)  // record the pure ack that will be send.
 			{
-				_traffic_history.push_back(*pkt);
+				_traffic_history.push_back(*ite);
 			}
 			else  // pure ack is one-shot only.
 			{
@@ -512,7 +513,7 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 		pkt->mark_me_should_be_sent();
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
-		pkts.push_back(pkt);
+		pkts.push_back(*ite);
 		_last_sent_byte_seq_beyond = pkt->get_seq() + 1;
 	} // end the loop of the sliding window
 
@@ -530,20 +531,22 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 	else
 	{
 		// timeout. No responses has received from peer for a long time.
-		if (_last_recorded_recv_time != -1 && jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
+		if (_last_recorded_recv_time != -1 &&
+				jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
 		{
 			const char* ip_str;
 			ip_str = _client_src_ip_str.c_str();
 			g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
 			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
 			kill_me(PEER_TIME_OUT);
+
 			return 0;
 		}
 	}
 
 	if (0 != count && fin_has_been_sent)
 	{
-		const ip_pkt* pkt = pkts[count-1];
+		const ip_pkt* pkt = pkts[count-1].get();
 		if (_current_state == tcpsession::ESTABLISHED) // active close
 		{
 			_current_state = tcpsession::FIN_WAIT_1;
@@ -583,7 +586,7 @@ int tcpsession::pls_send_these_packets(std::vector<ip_pkt*>& pkts)
 	return count;
 }
 
-void tcpsession::got_a_packet(const ip_pkt* pkt)
+void tcpsession::got_a_packet(boost::shared_ptr<ip_pkt> ippkt)
 {
 	uint64_t jiffies = g_timer.get_jiffies();
 	_last_recorded_recv_time = jiffies;
@@ -591,11 +594,11 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	if (!still_alive())
 		return;
 
-	if (pkt->is_rst_set())
+	if (ippkt->is_rst_set())
 	{
 		g_logger.printf("session: %s.%hu reset kills me.\n", _client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_killed_by_reset_count();
-		_traffic_history.push_back(*pkt);
+		_traffic_history.push_back(ippkt);
 		kill_me(RESET);
 		return;
 	}
@@ -603,47 +606,47 @@ void tcpsession::got_a_packet(const ip_pkt* pkt)
 	switch(_current_state)
 	{
 	case CLOSED:
-		closed_state_handler(pkt);
+		closed_state_handler(ippkt);
 		break;
 
 	case LISTEN: 
-		listen_state_handler(pkt);
+		listen_state_handler(ippkt);
 		break;
 
 	case SYN_RCVD: 
-		syn_rcvd_state_handler(pkt);
+		syn_rcvd_state_handler(ippkt);
 		break;
 
 	case SYN_SENT:
-		syn_sent_state_handler(pkt);
+		syn_sent_state_handler(ippkt);
 		break;
 
 	case ESTABLISHED: 
-		established_state_handler(pkt);
+		established_state_handler(ippkt);
 		break;
 
 	case CLOSE_WAIT:
-		close_wait_state_handler(pkt);
+		close_wait_state_handler(ippkt);
 		break;
 
 	case LAST_ACK:
-		last_ack_state_handler(pkt);
+		last_ack_state_handler(ippkt);
 		break;
 
 	case FIN_WAIT_1:
-		fin_wait_1_state_handler(pkt);
+		fin_wait_1_state_handler(ippkt);
 		break;
 
 	case FIN_WAIT_2:
-		fin_wait_2_state_handler(pkt);
+		fin_wait_2_state_handler(ippkt);
 		break;
 
 	case CLOSING:
-		closing_state_handler(pkt);
+		closing_state_handler(ippkt);
 		break;
 
 	case TIME_WAIT:
-		time_wait_state_handler(pkt);
+		time_wait_state_handler(ippkt);
 		break;
 
 	default:
@@ -664,28 +667,31 @@ void tcpsession::create_an_ack_without_payload(uint32_t seq)
 	tcphdr = (struct tcphdr*)(buff + 20);
 	tcphdr->seq = htons(seq);
 	tcphdr->ack = 1;
-	_ippkts_samples.push_back(buff);
+
+	boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(buff);
+
+	_ippkts_samples.push_back(pkt);
 	assert(!tcphdr->fin);
 }
 
-void tcpsession::closed_state_handler(const ip_pkt* pkt)
+void tcpsession::closed_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	// do nothing, it's assumed the peer will got a time out event finally.
 }
 
-void tcpsession::listen_state_handler(const ip_pkt* pkt)
+void tcpsession::listen_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	// not supposed to reach here.
 	abort();
 }
 
-void tcpsession::syn_rcvd_state_handler(const ip_pkt* pkt)
+void tcpsession::syn_rcvd_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	// this event rarely happens in real world.
 	// TODO. add code to handle this case.
 }
 
-void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
+void tcpsession::syn_sent_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	if (pkt->is_syn_set())
 	{
@@ -705,7 +711,7 @@ void tcpsession::syn_sent_state_handler(const ip_pkt* pkt)
 	refresh_status(pkt);
 }
 
-void tcpsession::established_state_handler(const ip_pkt* pkt)
+void tcpsession::established_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	if (pkt->is_fin_set())
 	{
@@ -716,7 +722,7 @@ void tcpsession::established_state_handler(const ip_pkt* pkt)
 	refresh_status(pkt);
 }
 
-void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
+void tcpsession::close_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	// this state will be transformed to LAST_ACK in the sending logic, refer to pls_send_these_packets().
 	refresh_status(pkt);
@@ -729,7 +735,7 @@ void tcpsession::close_wait_state_handler(const ip_pkt* pkt)
 	}
 }
 
-void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
+void tcpsession::last_ack_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint32_t ack_seq;
 
@@ -742,13 +748,13 @@ void tcpsession::last_ack_state_handler(const ip_pkt* pkt)
 		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_passive_close_count();
-		_traffic_history.push_back(*pkt);
+		_traffic_history.push_back(pkt);
 		kill_me(PASSIVE_CLOSE);
 		return;
 	}
 }
 
-void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
+void tcpsession::fin_wait_1_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	bool my_fin_has_been_acked;
 	uint32_t ack_seq;
@@ -792,7 +798,7 @@ void tcpsession::fin_wait_1_state_handler(const ip_pkt* pkt)
 	}
 }
 
-void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
+void tcpsession::fin_wait_2_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint64_t now;
 	now = g_timer.get_jiffies();
@@ -803,7 +809,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 		g_logger.printf("session: %s.%hu No patience for your FIN. I commit a suicide.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_active_close_timeout_count();
-		_traffic_history.push_back(*pkt);
+		_traffic_history.push_back(pkt);
 		kill_me(NO_FIN_FROM_PEER);
 		return;
 	}
@@ -825,7 +831,7 @@ void tcpsession::fin_wait_2_state_handler(const ip_pkt* pkt)
 	}
 }
 
-void tcpsession::closing_state_handler(const ip_pkt* pkt)
+void tcpsession::closing_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint32_t ack_seq;
 
@@ -844,7 +850,7 @@ void tcpsession::closing_state_handler(const ip_pkt* pkt)
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
-void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
+void tcpsession::time_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	refresh_status(pkt);
 
@@ -853,11 +859,13 @@ void tcpsession::time_wait_state_handler(const ip_pkt* pkt)
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
 
-std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end)
+std::list<boost::shared_ptr<ip_pkt> >::iterator tcpsession::check_ippkts_continuity(
+		std::list<boost::shared_ptr<ip_pkt> >::iterator begin,
+		std::list<boost::shared_ptr<ip_pkt> >::iterator end)
 {
 	uint32_t seq, expected_next_seq;
 	int tcp_payload_len;
-	std::list<ip_pkt>::iterator ite, ite_pre;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite, ite_pre;
 
 	ite = begin;
 	ite_pre = ite;
@@ -866,9 +874,9 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 		return ite_pre;
 	}
 
-	seq = ite->get_seq();
-	expected_next_seq = seq + ite->get_tcp_payload_len();
-	if (ite->is_syn_set())
+	seq = (*ite)->get_seq();
+	expected_next_seq = seq + (*ite)->get_tcp_payload_len();
+	if ((*ite)->is_syn_set())
 	{
 		expected_next_seq++;
 	}
@@ -876,12 +884,12 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 
 	for (; ite != end; ++ite)
 	{
-		seq = ite->get_seq();
+		seq = (*ite)->get_seq();
 		if(expected_next_seq != seq)
 		{
 			break;
 		}
-		tcp_payload_len = ite->get_tcp_payload_len();
+		tcp_payload_len = (*ite)->get_tcp_payload_len();
 		assert(tcp_payload_len >= 0);
 		expected_next_seq += tcp_payload_len;
 		ite_pre = ite;
@@ -893,7 +901,7 @@ std::list<ip_pkt>::iterator tcpsession::check_ippkts_continuity(std::list<ip_pkt
 void tcpsession::adjust_sliding_window()
 {
 	int distance;
-	std::list<ip_pkt>::iterator ite;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	// should the sliding window be reduced.
 	int current_sliding_win_size = 0;
@@ -901,7 +909,7 @@ void tcpsession::adjust_sliding_window()
 	for (ite = _sliding_window_left_boundary;
 			ite != _sliding_window_right_boundary;)
 	{
-		current_sliding_win_size += ite->get_tot_len();
+		current_sliding_win_size += (*ite)->get_tot_len();
 		if (current_sliding_win_size > _advertised_window_size)
 		{
 			// make sure at least one IP packet are available to be sent.
@@ -926,7 +934,7 @@ void tcpsession::adjust_sliding_window()
 	if (current_sliding_win_size < _advertised_window_size)
 	{
 		// try to determine how far it can go to increase sliding window.
-		std::list<ip_pkt>::iterator right_gap, ite_left;
+		std::list<boost::shared_ptr<ip_pkt> >::iterator right_gap, ite_left;
 		if (_sliding_window_right_boundary != _ippkts_samples.end()) // got the chance to expand the window
 		{
 			ite_left = _sliding_window_left_boundary;
@@ -945,7 +953,7 @@ void tcpsession::adjust_sliding_window()
 				&& _sliding_window_right_boundary != right_gap)
 		{
 			++_sliding_window_right_boundary;
-			current_sliding_win_size += ite->get_tot_len();
+			current_sliding_win_size += (*ite)->get_tot_len();
 			if (current_sliding_win_size > _advertised_window_size)
 			{
 				break;
@@ -959,14 +967,14 @@ void tcpsession::adjust_sliding_window()
 	}
 }
 
-void tcpsession::refresh_status(const ip_pkt* pkt)
+void tcpsession::refresh_status(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint32_t seq;
 	uint32_t ack_seq;
 	uint32_t ack_seq_tmp;
 	uint16_t win_size_saved;
 
-	std::list<ip_pkt>::iterator ite;
+	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	seq = pkt->get_seq();
 	ack_seq = pkt->get_ack_seq();
@@ -1016,7 +1024,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 	for (ite = _sliding_window_left_boundary;
 			ite != _sliding_window_right_boundary;)
 	{
-		if (seq_before(ite->get_seq(), _latest_acked_sequence_by_peer))
+		if (seq_before((*ite)->get_seq(), _latest_acked_sequence_by_peer))
 		{
 			_traffic_history.push_back(*ite);  // save the outgoing packets that have been sent
 			_ippkts_samples.erase(ite++);
@@ -1027,7 +1035,7 @@ void tcpsession::refresh_status(const ip_pkt* pkt)
 			break;
 		}
 	}
-	_traffic_history.push_back(*pkt);  // save the incoming traffic.
+	_traffic_history.push_back(pkt);  // save the incoming traffic.
 
 	win_size_saved = _advertised_window_size;
 	_advertised_window_size = pkt->get_win_size();

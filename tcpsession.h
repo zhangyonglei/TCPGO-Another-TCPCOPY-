@@ -27,12 +27,12 @@ public:
 	 * adds a ip packet to this session as a sample.
 	 * used when ip packets are read from pcap file.
 	 */
-	void append_ip_sample(const char* ippkt);
+	void append_ip_sample(boost::shared_ptr<ip_pkt> ippkt);
 
 	/**
 	 * invoked when ip packets are from real time traffic.
 	 */
-	void inject_a_realtime_ippkt(const char* ippkt);
+	void inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt);
 
 	/**
 	 * as the function name suggests. rt is real time for short.
@@ -57,8 +57,8 @@ public:
 
 public:
 	/// refer to the interface postoffice_callback_interface for details.
-	virtual int pls_send_these_packets(std::vector<ip_pkt*>& pkts);
-	virtual void got_a_packet(const ip_pkt* pkt);
+	virtual int pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& pkts);
+	virtual void got_a_packet(boost::shared_ptr<ip_pkt> ippkt);
 
 public:
     /// declares six causes of session death.
@@ -75,17 +75,17 @@ private:
 
 private:
 	/// eleven member functions for their respective TCP state.
-	void closed_state_handler(const ip_pkt* pkt);
-	void listen_state_handler(const ip_pkt* pkt);
-	void syn_rcvd_state_handler(const ip_pkt* pkt);
-	void syn_sent_state_handler(const ip_pkt* pkt);
-	void established_state_handler(const ip_pkt* pkt);
-	void close_wait_state_handler(const ip_pkt* pkt);
-	void last_ack_state_handler(const ip_pkt* pkt);
-	void fin_wait_1_state_handler(const ip_pkt* pkt);
-	void fin_wait_2_state_handler(const ip_pkt* pkt);
-	void closing_state_handler(const ip_pkt* pkt);
-	void time_wait_state_handler(const ip_pkt* pkt);
+	void closed_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void listen_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void syn_rcvd_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void syn_sent_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void established_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void close_wait_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void last_ack_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void fin_wait_1_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void fin_wait_2_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void closing_state_handler(boost::shared_ptr<ip_pkt> pkt);
+	void time_wait_state_handler(boost::shared_ptr<ip_pkt> pkt);
 
 private:
 	/**
@@ -93,14 +93,17 @@ private:
 	 * @param end open interval
 	 * @return a iterator that points to the leftmost ip packet that is in a continuous sequence.
 	 */
-	std::list<ip_pkt>::iterator check_ippkts_continuity(std::list<ip_pkt>::iterator begin, std::list<ip_pkt>::iterator end);
+	std::list<boost::shared_ptr<ip_pkt> >::iterator check_ippkts_continuity(
+			std::list<boost::shared_ptr<ip_pkt> >::iterator begin,
+			std::list<boost::shared_ptr<ip_pkt> >::iterator end
+			);
 
 	/**
 	 * @param advertised_window_size adjust the sliding window based on the advertised window size.
 	 */
 	void adjust_sliding_window();
 
-	void refresh_status(const ip_pkt* pkt);
+	void refresh_status(boost::shared_ptr<ip_pkt> pkt);
 
 	void kill_me(cause_of_death cause);
 
@@ -109,12 +112,14 @@ private:
 	void all_packets_in_sliding_window_should_be_sent();
 
 private:
-	std::list<ip_pkt>  _ippkts_samples;    ///< The ip packages which will be used to emulate the pseudo-client.
-	std::list<ip_pkt>  _traffic_history;   ///< Records the traffic of this session.
+	///< The ip packages which will be used to emulate the pseudo-client.
+	std::list<boost::shared_ptr<ip_pkt> >  _ippkts_samples;
+
+	///< Records the traffic of this session.
+	std::list<boost::shared_ptr<ip_pkt> > _traffic_history;
 
 	char _pure_ack_template[40];   ///< a template to create a ack without payload.
 	char _pure_rst_template[40];   ///< a template to create a rst without payload.
-	ip_pkt _pure_rst_pkt;          ///< a pure rst packet.
 
 	// reserved for the possible future version if i can still play with this stuff.
 //	std::list<ip_pkt>  _ippkts_received;   // The ip packages received from the server will be saved here.
@@ -130,8 +135,8 @@ private:
 	uint32_t _last_sent_byte_seq_beyond;          ///< in host byte order. The sequence of the last sent byte + 1
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	int _advertised_window_size;                  ///< in host byte order
-	std::list<ip_pkt>::iterator _sliding_window_left_boundary;  ///< closed interval (including)
-	std::list<ip_pkt>::iterator _sliding_window_right_boundary; ///< open interval (excluding)
+	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_left_boundary;  ///< closed interval (including)
+	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_right_boundary; ///< open interval (excluding)
 
 	uint64_t _last_recorded_recv_time;   ///< used for session timeout
 	int      _response_from_peer_time_out;    ///< in unit of jiffy. refer to class the_timer

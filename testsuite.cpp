@@ -55,20 +55,18 @@ void testsuite::ready_go()
 //		assert(NULL != _pcap_handle);
 //	}
 
-	_tester.reset(
-			new boost::thread(boost::bind(&testsuite::run_worker, this))
-	);
+	_tester = boost::thread(boost::bind(&testsuite::run_worker, this));
 }
 
 void testsuite::stop()
 {
 	_done = true;
-	_tester->join();
+	_tester.join();
 }
 
 void testsuite::report_sess_traffic(const std::string& client_src_ip,
 						 uint16_t port,
-						 const std::list<ip_pkt>& traffic,
+						 const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 						 tcpsession::cause_of_death cause)
 {
 	boost::shared_ptr<job_block> job(new job_block(client_src_ip, port, traffic, cause));
@@ -115,7 +113,7 @@ void testsuite::run_worker()
 				continue;
 			}
 
-			const std::list<ip_pkt>& traffic = job->_traffic;
+			const std::list<boost::shared_ptr<ip_pkt> >& traffic = job->_traffic;
 			std::vector<char> request;
 			std::vector<char> response;
 			int integrity = split_traffic(traffic, request, response);
@@ -135,7 +133,8 @@ void testsuite::run_worker()
 	}
 }
 
-int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response)
+int testsuite::split_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffic,
+		std::vector<char>& request, std::vector<char>& response)
 {
 	int retcode;
 	int request_traffic_size, response_traffic_size;
@@ -151,22 +150,22 @@ int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>
 
 	server_port = g_configuration.get_dst_port();
 
-	std::list<ip_pkt> traffic_copy(traffic);
+	std::list<boost::shared_ptr<ip_pkt> > traffic_copy(traffic);
 	traffic_copy.sort();
 	traffic_copy.unique();
 
-	for (std::list<ip_pkt>::const_iterator ite = traffic_copy.begin();
+	for (std::list<boost::shared_ptr<ip_pkt> >::const_iterator ite = traffic_copy.begin();
 		 ite != traffic_copy.end();
 		 ++ite)
 	{
-		const ip_pkt* pkt = &(*ite); // for debug's convenience;
+		const ip_pkt* pkt = (*ite).get(); // for debug's convenience;
 		bool is_syn_set = pkt->is_syn_set();
 		bool is_fin_set = pkt->is_fin_set();
 		int tcp_payload_len = pkt->get_tcp_payload_len();
 		uint32_t seq = pkt->get_seq();
 
 
-		if (ite->get_src_port() == server_port )
+		if (pkt->get_src_port() == server_port )
 		{
 			if (!is_syn_set && 0 != tcp_payload_len)
 			{
@@ -217,19 +216,19 @@ int testsuite::split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>
 
 	response_copied_bytes = 0;
 	request_copied_bytes = 0;
-	for (std::list<ip_pkt>::const_iterator ite = traffic_copy.begin();
+	for (std::list<boost::shared_ptr<ip_pkt> >::const_iterator ite = traffic_copy.begin();
 		 ite != traffic_copy.end();
 		 ++ite)
 	{
-		int payload_len = ite->get_tcp_payload_len();
-		if (ite->get_src_port() == server_port )
+		int payload_len = (*ite)->get_tcp_payload_len();
+		if ((*ite)->get_src_port() == server_port )
 		{
-			memcpy(&response[0] + response_copied_bytes, ite->get_tcp_payload(), payload_len);
+			memcpy(&response[0] + response_copied_bytes, (*ite)->get_tcp_payload(), payload_len);
 			response_copied_bytes += payload_len;
 		}
 		else
 		{
-			memcpy(&request[0] + request_copied_bytes, ite->get_tcp_payload(), payload_len);
+			memcpy(&request[0] + request_copied_bytes, (*ite)->get_tcp_payload(), payload_len);
 			request_copied_bytes += payload_len;
 		}
 	}
@@ -238,7 +237,8 @@ _exit:
 	return retcode;
 }
 
-int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file, bool force)
+int testsuite::save_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffic,
+		const std::string& pcap_file, bool force)
 {
 //	pcap_dumper_t *pdumper;
 //
@@ -291,17 +291,17 @@ int testsuite::save_traffic(const std::list<ip_pkt>& traffic, const std::string&
 
 	os.write((const char*)&pcaphdr, sizeof(pcaphdr));
 
-	for (std::list<ip_pkt>::const_iterator ite = traffic.begin();
+	for (std::list<boost::shared_ptr<ip_pkt> >::const_iterator ite = traffic.begin();
 		 ite != traffic.end();
 		 ++ite)
 	{
-		int pkt_tot_len = ite->get_tot_len();
+		int pkt_tot_len = (*ite)->get_tot_len();
 		memset(&pkthdr, 0, sizeof(pkthdr));
 		// pkthdr.ts = 0;  // thie info is lost, i don't care. set it as zero.
 		pkthdr.incl_len = pkt_tot_len;
 		pkthdr.orig_len = pkt_tot_len;
 		os.write((const char*)&pkthdr, sizeof(pkthdr));
-		os.write(ite->get_starting_addr(), pkt_tot_len);
+		os.write((*ite)->get_starting_addr(), pkt_tot_len);
 
 		//pcap_dump((u_char*)pdumper, &pkthdr, (const u_char*)ite->get_starting_addr());
 	}

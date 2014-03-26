@@ -10,6 +10,7 @@
 #define _IPPKG_H_
 
 #include "misc.h"
+#include "utils.h"
 
 class ip_pkt {
 public:
@@ -49,6 +50,11 @@ public:
 	 */
 	uint16_t reset_ip_checksum();
 	
+	uint64_t get_sess_key()
+	{
+		return make_sess_key(_iphdr->daddr, _tcphdr->dest);
+	}
+
 	const struct iphdr* get_iphdr()const
 	{
 		return _iphdr;

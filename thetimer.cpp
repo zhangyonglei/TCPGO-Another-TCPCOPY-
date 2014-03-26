@@ -27,7 +27,7 @@ the_timer::the_timer()
 the_timer::~the_timer()
 {
 	_done = true;
-	_thread->join();
+	_thread.join();
 }
 
 void the_timer::get_ready()
@@ -51,9 +51,7 @@ void the_timer::get_ready()
 
 	_next_available_id = 1;
 	_done = false;
-	_thread.reset(
-			new boost::thread(boost::bind(&the_timer::thread_entry, this))
-	);
+	_thread = boost::thread(boost::bind(&the_timer::thread_entry, this));
 }
 
 void the_timer::thread_entry()

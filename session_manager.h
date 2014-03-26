@@ -21,7 +21,7 @@ public:
 	virtual ~session_manager();
 
 	int read_from_capfile(const std::string& path, const std::string& filter);
-	void inject_a_realtime_ippkt(const char* ip_pkt);
+	void inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt);
 	
 	int get_ready();
 
@@ -41,12 +41,12 @@ private:
 	/**
 	 * IP packet will be dispatched to corresponding TCP session.
 	 */
-	void dispatch_ip_pkt(const char* ip_pkt);
+	void dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt);
 
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
 
-	static const int SESSION_COUNT_CEILING = 60928;
+	static const int SESSION_COUNT_CEILING = 30928;  // magic number.
 	bool _traffic_jam;
 };
 

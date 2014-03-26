@@ -70,7 +70,7 @@ private:
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
 
 	boost::atomic<bool> _done;
-	boost::shared_ptr<boost::thread> _thread;
+	boost::thread _thread;
 };
 
 #endif /* _THETIMER_H_ */

@@ -68,7 +68,7 @@ int realtime_captureer::get_ready()
 		_conns[i]._buffer_used_len = 0;
 	}
 
-	g_poller.register_evt(_traffic_listening_fd, mypoller::MYPOLLIN, this);
+	g_reactor.register_evt(_traffic_listening_fd, reactor::MYPOLLIN, this);
 
 	return 0;
 }
@@ -124,7 +124,7 @@ void realtime_captureer::accept_conn()
 	assert(conn->_buffer_block != NULL);
 	memset(conn->_buffer_block, 0, BUFFER_LEN_FOR_TRAFFIC);
 	conn->_buffer_used_len = 0;
-	g_poller.register_evt(fd, mypoller::MYPOLLIN, this);
+	g_reactor.register_evt(fd, reactor::MYPOLLIN, this);
 }
 
 void realtime_captureer::readin_traffic(int fd)
@@ -254,7 +254,8 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
-		g_session_manager.inject_a_realtime_ippkt(ptr);
+		boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ptr);
+		g_session_manager.inject_a_realtime_ippkt(pkt);
 		i += ip_tot_len;
 		sentinel = i;
 	}

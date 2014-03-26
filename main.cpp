@@ -25,7 +25,7 @@
 #include "session_manager.h"
 #include "postoffice.h"
 #include "thetimer.h"
-#include "mypoller.h"
+#include "reactor.h"
 #include "realtime_captureer.h"
 #include "configuration.h"
 #include "mylua.h"
@@ -206,7 +206,7 @@ int run()
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
 	// the word starts from a big bang. Refer to function declarations for yummy explanations.
-	g_poller.bigbang();
+	g_reactor.bigbang();
 }
 
 void hook_here_for_tmp_test_code()

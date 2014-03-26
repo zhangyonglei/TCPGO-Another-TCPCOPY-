@@ -9,6 +9,7 @@
 #define _CASCADE_H_
 
 #include "misc.h"
+#include "utils.h"
 #include <boost/thread/thread.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/atomic.hpp>
@@ -23,7 +24,6 @@ extern cascade g_cascade;
 class cascade
 {
 public:
-	typedef std::vector<char> MemBlock;
 	typedef boost::lockfree::spsc_queue<boost::shared_ptr<MemBlock>, boost::lockfree::capacity<10240> > LockFreeQueue;
 
 public:

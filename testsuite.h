@@ -8,11 +8,11 @@
 #ifndef _TESTSUITE_H_
 #define _TESTSUITE_H_
 
-#include "misc.h"
-#include "tcpsession.h"
 #include <boost/thread/thread.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <boost/atomic.hpp>
+#include "misc.h"
+#include "tcpsession.h"
 
 class testsuite;
 extern testsuite g_testsuite;
@@ -26,7 +26,7 @@ private:
 	{
 		job_block(const std::string client_str_ip,
 				  uint16_t port,
-				  const std::list<ip_pkt>& traffic,
+				  const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 				  tcpsession::cause_of_death cause)
 			:_traffic(traffic), _port(port), _client_str_ip(client_str_ip), _cause(cause)
 		{
@@ -34,7 +34,7 @@ private:
 
 		std::string _client_str_ip;
 		uint16_t  _port;
-		std::list<ip_pkt> _traffic;
+		std::list<boost::shared_ptr<ip_pkt> > _traffic;
 		tcpsession::cause_of_death _cause;
 	};
 
@@ -55,7 +55,7 @@ public:
 	 */
 	void report_sess_traffic(const std::string& client_src_ip,
 							 uint16_t port,
-							 const std::list<ip_pkt>& traffic,
+							 const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 							 tcpsession::cause_of_death cause);
 
 	void run_worker();
@@ -69,7 +69,8 @@ private:
 	 * split the traffic to inbound traffic and outbound traffic.
 	 * @return 0 on success. If the traffic lost packet, or other abnormal conditions occurred, non-zero will returned.
 	 */
-	int split_traffic(const std::list<ip_pkt>& traffic, std::vector<char>& request, std::vector<char>& response);
+	int split_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffic,
+			std::vector<char>& request, std::vector<char>& response);
 
 	/**
 	 * call all the test cases.
@@ -81,7 +82,7 @@ private:
 	 * save the traffic to the pcap file.
 	 * @param force If this parameter is set to true, then the file number ceiling control will be suppressed.
 	 */
-	static int save_traffic(const std::list<ip_pkt>& traffic, const std::string& pcap_file, bool force);
+	static int save_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffic, const std::string& pcap_file, bool force);
 
 private:
 	int save_traffic(const std::string& pcap_file);
@@ -89,7 +90,7 @@ private:
 private:
 	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1024> > LockFreeQueue;
 	LockFreeQueue _jobs;
-	boost::shared_ptr<boost::thread> _tester;
+	boost::thread _tester;
 
 	boost::atomic_int _count_jobs;
 	boost::atomic<bool> _done;
@@ -98,7 +99,7 @@ private:
 
 	// // Don't kown why pcap_open_dead doesn't work. So i switched to write a pcap file manually.
 //	pcap_t* _pcap_handle;  ///< used to create pcap files.
-	std::list<ip_pkt>* _current_traffic_on_test; // un-graceful.
+	std::list<boost::shared_ptr<ip_pkt> >* _current_traffic_on_test; // un-graceful.
 };
 
 #endif /* _TESTSUITE_H_ */
