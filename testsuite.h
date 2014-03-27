@@ -28,7 +28,7 @@ private:
 				  uint16_t port,
 				  const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 				  tcpsession::cause_of_death cause)
-			:_traffic(traffic), _port(port), _client_str_ip(client_str_ip), _cause(cause)
+			: _client_str_ip(client_str_ip), _port(port), _traffic(traffic), _cause(cause)
 		{
 		}
 

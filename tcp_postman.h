@@ -19,6 +19,24 @@ public:
 private:
 	virtual void get_ready4subclass();
 	virtual void recv_impl();
+
+	/**
+	 * blocks until a error occurred or the connection is closed.
+	 */
+	void save_peer_response_to_buffer();
+
+	/**
+	 * parser the buffer and get all the IP packet there and pluck them out from the buffer.
+	 */
+	void parse_buffer_and_get_all_ip_pkts();
+
+private:
+	int _listening_fd;
+	int _conn_fd;
+	static const int _listening_port = 1992;
+	static const int _buffer_block_len = 4096*50;
+	char _buffer_block[_buffer_block_len];
+	int _buffer_used_len;
 };
 
 #endif /* _TCPPOSTMAN_H_ */

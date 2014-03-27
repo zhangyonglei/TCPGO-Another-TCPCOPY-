@@ -207,6 +207,8 @@ int run()
 	g_timer.get_ready();
 	// the word starts from a big bang. Refer to function declarations for yummy explanations.
 	g_reactor.bigbang();
+
+	return 0;
 }
 
 void hook_here_for_tmp_test_code()

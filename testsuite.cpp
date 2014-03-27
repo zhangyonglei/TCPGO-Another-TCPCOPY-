@@ -160,7 +160,7 @@ int testsuite::split_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffi
 	{
 		const ip_pkt* pkt = (*ite).get(); // for debug's convenience;
 		bool is_syn_set = pkt->is_syn_set();
-		bool is_fin_set = pkt->is_fin_set();
+	//	bool is_fin_set = pkt->is_fin_set();
 		int tcp_payload_len = pkt->get_tcp_payload_len();
 		uint32_t seq = pkt->get_seq();
 

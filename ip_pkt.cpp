@@ -173,7 +173,8 @@ uint16_t ip_pkt::reset_tcp_checksum()
 
 uint16_t ip_pkt::reset_ip_checksum()
 {
-	uint16_t old_checksum, new_checksum;
+	uint16_t old_checksum;
+	uint16_t new_checksum;
 	char *ptr;
 
 	ptr = (char*)_iphdr + 10; // 10 is the offset of checksum in ip header
@@ -181,6 +182,8 @@ uint16_t ip_pkt::reset_ip_checksum()
 	memset(ptr, 0, 2);
 	new_checksum = compute_ip_checksum(_iphdr);
 	memcpy(ptr, &new_checksum, 2);
+
+	return old_checksum;
 }
 
 void ip_pkt::rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer)

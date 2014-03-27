@@ -61,11 +61,13 @@ int mylua::sess_statistics(lua_State* L)
 int mylua::horos_run(lua_State* L)
 {
 	// horos_init(); // obsoleted
+	return 0;
 }
 
 int mylua::horos_stop(lua_State* L)
 {
 	// horos_uninit();  // obsoleted
+	return 0;
 }
 
 int mylua::reload_testsuite(lua_State* L)
@@ -81,7 +83,6 @@ int mylua::reload_testsuite(lua_State* L)
 
 int mylua::turn_on_log(lua_State* L)
 {
-	int argc;
 	bool log_on;
 	std::string ret_val;
 

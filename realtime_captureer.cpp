@@ -254,6 +254,7 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
+		// pluck out the incoming ip packet.
 		boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ptr);
 		g_session_manager.inject_a_realtime_ippkt(pkt);
 		i += ip_tot_len;
@@ -262,8 +263,10 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 
 	if (0 != sentinel)
 	{
+		// discards the outdated traffic.
 		int remaining_data_len;
 		remaining_data_len = buff_len - sentinel;
+		assert(remaining_data_len >= 0);
 		if (remaining_data_len > 0)
 		{
 			memmove(buff_ptr, buff_ptr + sentinel, remaining_data_len);
