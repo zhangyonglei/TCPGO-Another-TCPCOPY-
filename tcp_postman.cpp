@@ -97,6 +97,7 @@ void tcp_postman::save_peer_response_to_buffer()
 		ret = read(_conn_fd, buff_ptr, buff_available_len);
 		if (ret > 0)
 		{
+			_buffer_used_len += ret;
 			parse_buffer_and_get_all_ip_pkts();
 		}
 		else if (ret <= 0)

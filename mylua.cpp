@@ -83,6 +83,7 @@ int mylua::reload_testsuite(lua_State* L)
 
 int mylua::turn_on_log(lua_State* L)
 {
+	int argc;
 	bool log_on;
 	std::string ret_val;
 

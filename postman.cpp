@@ -154,6 +154,12 @@ void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	bool success;
 	while (true && !_done_recv_thrd)
 	{
+		int pkt_tot_len = pkt->get_tot_len();
+		const char* pkt_addr = pkt->get_starting_addr();
+		boost::shared_ptr<MemBlock> mem_block = boost::make_shared<MemBlock>(pkt_tot_len);
+		memcpy(mem_block->data(), pkt_addr, pkt_tot_len);
+		g_cascade.push_back(mem_block);
+
 		success = _recv_queue.push(pkt);
 		if (success)
 		{
