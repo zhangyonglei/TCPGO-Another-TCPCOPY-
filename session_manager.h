@@ -20,7 +20,7 @@ public:
 	session_manager();
 	virtual ~session_manager();
 
-	int read_from_capfile(const std::string& path, const std::string& filter);
+	int read_from_pcapfile(const std::string& path, const std::string& filter);
 	void inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt);
 	
 	int get_ready();
@@ -46,7 +46,7 @@ private:
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
 
-	static const int SESSION_COUNT_CEILING = 30928;  // magic number.
+	int _session_count_limit;
 	bool _traffic_jam;
 };
 

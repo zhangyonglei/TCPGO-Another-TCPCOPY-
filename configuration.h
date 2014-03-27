@@ -73,6 +73,11 @@ public:
 	}
 
 	// [SESSION]
+	int get_session_count_limit()
+	{
+		return _session_count_limit;
+	}
+
 	int get_response_from_peer_time_out()
 	{
 		return _response_from_peer_time_out;
@@ -148,6 +153,9 @@ public:
 	void set_next_hop(const std::string& next_hop);
 
 	// [SESSION]
+	void set_session_count_limit(const std::string& limit);
+	void set_session_count_limit(int limit);
+
 	void set_onoff_random_port(const std::string& onoff_random_port);
 	void set_onoff_random_port(bool onoff_random_port);
 
@@ -201,6 +209,7 @@ private:
 	/// The following parameters are for tuning tcpsession.
 	/// More details can be found in class tcpsession.
 	/// They are all in unit of centisecond.
+	int  _session_count_limit;
 	int  _response_from_peer_time_out;
 	int  _have_to_send_data_within_this_timeperiod;
 	int  _injecting_rt_traffic_timeout;

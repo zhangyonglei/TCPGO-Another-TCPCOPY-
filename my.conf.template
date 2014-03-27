@@ -12,6 +12,7 @@ sniff_method = tcp
 
 [SESSION]
 ; advanced configuration to tune tcp session.
+session_count_limit = 50000
 response_from_peer_time_out = 6000
 have_to_send_data_within_this_timeperiod = 2500
 injecting_rt_traffic_timeout = 6000

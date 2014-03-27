@@ -30,6 +30,7 @@ configuration::configuration()
 	set_sniff_method(SNIFF_RAW);
 
 	// [SESSION]
+	set_session_count_limit(39280);
 	set_response_from_peer_time_out(3 * HZ);
 	set_have_to_send_data_within_this_timeperiod(3 * HZ);
 	set_injecting_rt_traffic_timeout(4000);
@@ -117,6 +118,23 @@ void configuration::set_onoff_random_port(const std::string& onoff_random_port)
 	{
 		_onoff_random_port = true;
 	}
+}
+
+void configuration::set_session_count_limit(const std::string& limit)
+{
+	int val;
+	val = boost::lexical_cast<int>(limit);
+	set_session_count_limit(val);
+}
+
+void configuration::set_session_count_limit(int limit)
+{
+	if (limit < 500)
+	{
+		std::cerr << "SESSION.session_count_limit is too small. " << limit << std::endl;
+		return;
+	}
+	_session_count_limit = limit;
 }
 
 void configuration::set_onoff_random_port(bool onoff_random_port)
@@ -367,6 +385,14 @@ void configuration::readin()
 	if (config.HasSection(section_name))
 	{
 		g_logger.printf("SESSION section exists.\n");
+	}
+
+	option_name = "session_count_limit";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("session_count_limit: %s\n", value.c_str());
+		set_session_count_limit(value);
 	}
 
 	option_name = "response_from_peer_time_out";

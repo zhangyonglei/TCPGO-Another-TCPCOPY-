@@ -19,7 +19,7 @@ session_manager::session_manager()
 {
 }
 
-int session_manager::read_from_capfile(const string& path, const string& filter)
+int session_manager::read_from_pcapfile(const string& path, const string& filter)
 {
 	char ebuf[1024];
 	pcap_t *pcap;
@@ -127,13 +127,13 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	int sz = _sessions.size();
 
 	// hard code the session count ceiling
-	if (sz >= SESSION_COUNT_CEILING)
+	if (sz >= _session_count_limit)
 	{
 		_traffic_jam = true;
 	}
 	else if (_traffic_jam)
 	{
-		if (sz <= SESSION_COUNT_CEILING/2)
+		if (sz <= _session_count_limit/2)
 		{
 			_traffic_jam = false;
 		}
@@ -206,6 +206,7 @@ int session_manager::get_ready()
 	count = 0;
 
 	_traffic_jam = false;
+	_session_count_limit = g_configuration.get_session_count_limit();
 
 	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
 			ite != _sessions.end(); ++ite)

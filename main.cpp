@@ -182,7 +182,7 @@ int run()
 	pcap_file_path = g_configuration.get_pcap_file_path();
 	if (!pcap_file_path.empty())
 	{
-		ret = g_session_manager.read_from_capfile(pcap_file_path, "tcp");
+		ret = g_session_manager.read_from_pcapfile(pcap_file_path, "tcp");
 		if (0 != ret)
 		{
 			g_logger.printf("failed to open pcap file %s.\n", pcap_file_path.c_str());
