@@ -14,7 +14,7 @@
 #include "reactor.h"
 
 #define CONNECTED_FD_SIZE 32
-#define BUFFER_LEN_FOR_TRAFFIC  4096*10
+#define BUFFER_LEN_FOR_TRAFFIC  4096*40
 
 class realtime_captureer;
 extern realtime_captureer g_realtime_captureer;

@@ -19,6 +19,13 @@ public:
 private:
 	virtual void get_ready4subclass();
 	virtual void recv_impl();
+
+private:
+	friend void pcaphandler(unsigned char* user, const pcap_pkthdr* hdr, const unsigned char* bytes);
+	struct bpf_program _filter;
+	pcap_t* _pcap_handle;
+	char _errbuf[PCAP_ERRBUF_SIZE];
+	int _truncated_pkt_count;
 };
 
 #endif /* _PCAP_POSTMAN_H_ */

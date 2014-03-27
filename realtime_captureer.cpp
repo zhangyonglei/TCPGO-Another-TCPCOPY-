@@ -133,7 +133,6 @@ void realtime_captureer::readin_traffic(int fd)
 	char* buff_ptr;
 	int buff_available_len;
 	conn_info* _conn;
-	char buff[1024];
 
 	i = map_fd_to_index(fd);
 	_conn = &_conns[i];
@@ -156,6 +155,7 @@ void realtime_captureer::readin_traffic(int fd)
 		}
 		else
 		{
+			char buff[1024];
 			char *ptr = strerror_r(errno, buff, sizeof(buff));
 			write(fd, ptr, strlen(ptr));
 		}
@@ -258,7 +258,8 @@ void realtime_captureer::parse_buff_and_get_ip_pkts(int index)
 		g_session_manager.inject_a_realtime_ippkt(pkt);
 		i += ip_tot_len;
 		sentinel = i;
-	}
+	} // end of for loop.
+
 	if (0 != sentinel)
 	{
 		int remaining_data_len;

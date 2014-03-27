@@ -5,21 +5,94 @@
  * Created on: 25 Mar, 2014
  ********************************************/
 
+#include <boost/lambda/lambda.hpp>
 #include "pcap_postman.h"
+#include "cute_logger.h"
+#include "configuration.h"
 
-pcap_postman::pcap_postman(postoffice* po)
-	: postman(po)
+void pcaphandler(unsigned char* user, const pcap_pkthdr* hdr, const unsigned char* bytes)
 {
-}
+	pcap_postman* postman = reinterpret_cast<pcap_postman*>(user);
 
-pcap_postman::~pcap_postman()
-{
-}
+	if (hdr->caplen < hdr->len)
+	{
+		postman->_truncated_pkt_count++;
+		return;
+	}
 
-void pcap_postman::get_ready4subclass()
-{
+	const char* ippkt = strip_l2head(postman->_pcap_handle, reinterpret_cast<const char*>(bytes));
+	if (NULL != ippkt)
+	{
+		boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ippkt);
+		postman->push_recved_ippkt(pkt);
+	}
+	else
+	{
+		std::cerr << "Failed to detect the Link Layer header." << std::endl;
+	}
 }
 
 void pcap_postman::recv_impl()
 {
+	int n = pcap_dispatch(_pcap_handle, 200, pcaphandler, reinterpret_cast<unsigned char*>(this));
+}
+
+pcap_postman::pcap_postman(postoffice* po) : postman(po)
+{
+	_truncated_pkt_count = 0;
+	_pcap_handle = NULL;
+}
+
+pcap_postman::~pcap_postman()
+{
+	pcap_breakloop(_pcap_handle);
+
+	if (NULL != _pcap_handle)
+	{
+		pcap_close(_pcap_handle);
+	}
+}
+
+void pcap_postman::get_ready4subclass()
+{
+	std::ostringstream ss;
+
+	assert(0 == _truncated_pkt_count);
+	assert(0 == _pcap_handle);
+
+	_pcap_handle = pcap_open_live(NULL, 65535/*snaplen*/, 0, 0, _errbuf);
+	if (NULL == _pcap_handle)
+	{
+		g_logger.printf(_errbuf);
+		abort();
+	}
+
+	ss << "tcp and src port " << g_configuration.get_dst_port();
+	// pcap_compile in some old version of pcap libraries accept the third parameter as char*
+	if (-1 == pcap_compile(_pcap_handle, &_filter, (char*)ss.str().c_str(), 0, 0))
+	{
+		g_logger.printf("%s\n", pcap_geterr(_pcap_handle));
+		abort();
+	}
+
+	if (-1 == pcap_setfilter(_pcap_handle, &_filter))
+	{
+		g_logger.printf("Failed to set pcap filter: %s\n", ss.str().c_str());
+		pcap_freecode(&_filter);
+		abort();
+	}
+
+	pcap_freecode(&_filter);
+
+//	_recv_fd = pcap_get_selectable_fd(_pcap_handle);
+//	if (_recv_fd == -1)
+//	{
+//		g_logger.printf("pcap_get_selectable_fd failed.\n");
+//		abort();
+//	}
+//	if (-1 == pcap_setnonblock(_pcap_handle, 1/*nonblock is on*/, _errbuf))
+//	{
+//		g_logger.printf("%s\n", _errbuf);
+//		abort();
+//	}
 }
