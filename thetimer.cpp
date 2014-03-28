@@ -8,6 +8,7 @@
 
 #include "misc.h"
 #include "thetimer.h"
+#include "proactor.h"
 
 the_timer g_timer;
 
@@ -27,7 +28,6 @@ the_timer::the_timer()
 the_timer::~the_timer()
 {
 	_done = true;
-	_thread.join();
 }
 
 void the_timer::get_ready()
@@ -51,16 +51,10 @@ void the_timer::get_ready()
 
 	_next_available_id = 1;
 	_done = false;
-	_thread = boost::thread(boost::bind(&the_timer::thread_entry, this));
-}
 
-void the_timer::thread_entry()
-{
 	boost::posix_time::time_duration td = boost::posix_time::milliseconds(10);
-	_deadline_timer.reset(new boost::asio::deadline_timer(_io_service, td));
+	_deadline_timer = g_proactor.produce_a_timer(td);
 	_deadline_timer->async_wait(boost::bind(&the_timer::timer_handler, this));
-
-	_io_service.run();
 }
 
 void the_timer::timer_handler()

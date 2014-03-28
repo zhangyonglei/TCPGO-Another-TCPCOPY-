@@ -52,7 +52,9 @@
 #include <exception>
 
 // boost
+#include <boost/ref.hpp>
 #include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>

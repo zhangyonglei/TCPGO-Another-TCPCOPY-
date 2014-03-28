@@ -10,7 +10,6 @@
 #define _THETIMER_H_
 
 #include "misc.h"
-#include "boost/function.hpp"
 
 #define HZ 100
 
@@ -46,7 +45,6 @@ public:
 	void loop_through_all_timer_event();
 
 public:
-	void thread_entry();
 	void timer_handler();
 
 private:
@@ -66,11 +64,9 @@ private:
 	std::multimap<uint64_t, EventElement> _events;     ///< key is the ID of the timer.
 	std::multimap<uint64_t, EventElement> _tmp_events; ///< to evade iterator invalidation.
 
-	boost::asio::io_service _io_service;
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
 
 	boost::atomic<bool> _done;
-	boost::thread _thread;
 };
 
 #endif /* _THETIMER_H_ */

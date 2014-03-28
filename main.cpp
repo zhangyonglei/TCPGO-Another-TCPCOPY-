@@ -26,6 +26,7 @@
 #include "postoffice.h"
 #include "thetimer.h"
 #include "reactor.h"
+#include "proactor.h"
 #include "realtime_captureer.h"
 #include "configuration.h"
 #include "mylua.h"
@@ -205,7 +206,8 @@ int run()
 	g_session_manager.get_ready();
 	g_realtime_captureer.get_ready();
 	g_timer.get_ready();
-	// the word starts from a big bang. Refer to function declarations for yummy explanations.
+	g_proactor.get_ready();
+	// the word starts from a big bang.
 	g_reactor.bigbang();
 
 	return 0;
