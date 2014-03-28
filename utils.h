@@ -27,13 +27,13 @@ typedef std::vector<char> MemBlock;
 
 /**
  * calculate the IPv4 header checksum.
- * note it's the caller's responsibility to set IP Header Checksum((char*)iphdr[10,11]) to zero.
+ * note the caller no longer has to set IP Header Checksum((char*)iphdr[10,11]) to zero.
  */
 uint16_t compute_ip_checksum(const struct iphdr *iphdr);
 
 /**
  * calculate the checksum of tcp over IPv4.
- * note it's the caller's responsibility to set TCP Header Checksum((char*)tcphdr[16, 17] to zero.
+ * note the caller no longer has to set TCP Header Checksum((char*)tcphdr[16, 17] to zero.
  */
 uint16_t compute_tcp_checksum(const struct iphdr *iphdr, const struct tcphdr *tcphdr);
 

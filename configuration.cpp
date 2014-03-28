@@ -39,8 +39,10 @@ configuration::configuration()
 	set_enable_active_close(false);
 
 	// [TESTSUITE]
-	set_lua_scripts_home("/tmp");
-	set_so_home("/tmp");
+	// if the test suite related path is not specified in configure file,
+	// don't set it !
+	// set_lua_scripts_home("/tmp");
+	// set_so_home("/tmp");
 
 	// [LOG]
 	set_log_on(true);

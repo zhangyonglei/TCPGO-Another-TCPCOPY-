@@ -31,7 +31,7 @@ private:
 	int _vprintf(const char* format, va_list argptr);
 
 private:
-	FILE*      _stream;
+	FILE*  _stream;
 };
 
 int cute_logger::printf(const char* format, ...)

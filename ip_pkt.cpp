@@ -100,15 +100,6 @@ void ip_pkt::cp(const char* pkt)
 	_send_me_pls = true;
 }
 
-void ip_pkt::swap(ip_pkt& pkt)
-{
-	ip_pkt tmp;
-
-	tmp = *this;
-	*this = pkt;
-	pkt = tmp;
-}
-
 void ip_pkt::warm_up()
 {
 	if(NULL == _pkt)

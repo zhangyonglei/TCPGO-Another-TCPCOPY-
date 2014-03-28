@@ -727,7 +727,7 @@ void tcpsession::close_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 	// this state will be transformed to LAST_ACK in the sending logic, refer to pls_send_these_packets().
 	refresh_status(pkt);
 
-	if (0 != pkt->get_tcp_payload() && _ippkts_samples.empty() )
+	if (0 != pkt->get_tcp_payload_len() && _ippkts_samples.empty() )
 	{
 		create_an_ack_without_payload(_latest_acked_sequence_by_peer);
 		_sliding_window_left_boundary = _ippkts_samples.begin();

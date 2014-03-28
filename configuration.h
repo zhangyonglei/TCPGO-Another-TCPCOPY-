@@ -9,7 +9,7 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
-#include <string>
+#include "misc.h"
 #include "INIParser.h"
 
 class configuration;
@@ -120,12 +120,12 @@ public:
 	}
 
 	// [TESTSUITE]
-	const std::string& get_lua_scripts_home()
+	const boost::optional<std::string>& get_lua_scripts_home()
 	{
 		return _lua_scripts_home;
 	}
 
-	const std::string get_so_home()
+	const boost::optional<std::string>& get_so_home()
 	{
 		return _so_home;
 	}
@@ -222,8 +222,8 @@ private:
 	bool _duplicate_log_to_stdout;
 
 	// [TESTSUITE]
-	std::string _lua_scripts_home;
-	std::string _so_home;
+	boost::optional<std::string> _lua_scripts_home;
+	boost::optional<std::string> _so_home;
 };
 
 #endif /* _CONFIGURATION_H_ */

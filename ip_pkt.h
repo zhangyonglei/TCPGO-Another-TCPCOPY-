@@ -12,7 +12,8 @@
 #include "misc.h"
 #include "utils.h"
 
-class ip_pkt {
+class ip_pkt
+{
 public:
 	ip_pkt();
 	ip_pkt(const char* pkt);
@@ -22,9 +23,7 @@ public:
 	 * the function's behavior is undefined if called with a invalid ip packet address.
 	 * @ip_pkt point to the starting address of valid IP packet.
 	 */
-	void cp(const char* pkt);
-
-	void swap(ip_pkt& pkt);
+	virtual void cp(const char* pkt);
 
 	bool operator<(const ip_pkt& challenger)const;
 	bool operator>(const ip_pkt& challenger)const;
@@ -102,7 +101,7 @@ public:
 		return _tcp_payload_len;
 	}
 
-	const char* get_tcp_payload()const
+	virtual const char* get_tcp_payload()const
 	{
 		return _tcp_payload;
 	}
@@ -197,13 +196,13 @@ public:
 		return _send_me_pls;
 	}
 
-private:
+protected:
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.
 	 */
 	void warm_up();
 
-private:
+protected:
 	// char *_pkt;   ///< the starting address of the IP packet.
 	boost::shared_ptr<char> _pkt;
 

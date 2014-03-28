@@ -49,6 +49,11 @@ void testsuite::ready_go()
 	_count_jobs = 0;
 	_current_traffic_on_test = NULL;
 
+	if (!g_configuration.get_lua_scripts_home())
+	{
+		return;
+	}
+
 //	if (NULL == _pcap_handle)
 //	{
 //		_pcap_handle == pcap_open_dead(DLT_RAW, 65535 /* snaplen */);
@@ -88,7 +93,7 @@ void testsuite::run_worker()
 	boost::shared_ptr<job_block> job;
 
 	load_lua_scripts();
-	load_shared_objects();
+//	load_shared_objects();
 
 	while (!_done)
 	{
@@ -331,7 +336,7 @@ void testsuite::load_lua_scripts()
 {
 	std::list<std::string> scripts;
 
-	std::string home = g_configuration.get_lua_scripts_home();
+	std::string home = *g_configuration.get_lua_scripts_home();
 	find_files(home, ".*\\.lua$", scripts);
 
 	for (std::list<std::string>::iterator ite = scripts.begin();
@@ -346,7 +351,7 @@ void testsuite::load_shared_objects()
 {
 	std::list<std::string> shared_objs;
 
-	std::string home = g_configuration.get_so_home();
+	std::string home = *g_configuration.get_so_home();
 	find_files(home, ".*\\.so$", shared_objs);
 
 	for (std::list<std::string>::iterator ite = shared_objs.begin();

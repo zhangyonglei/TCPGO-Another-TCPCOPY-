@@ -26,6 +26,8 @@ private:
 	pcap_t* _pcap_handle;
 	char _errbuf[PCAP_ERRBUF_SIZE];
 	int _truncated_pkt_count;
+	int  _snaplen;
+	bool _hdr_only;    ///< if capture IP and TCP header only when sniff the traffic from peer.
 };
 
 #endif /* _PCAP_POSTMAN_H_ */
