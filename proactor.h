@@ -15,6 +15,9 @@
 class proactor;
 extern proactor g_proactor;
 
+typedef boost::function<void (boost::shared_ptr<boost::asio::ip::tcp::socket>,
+		const boost::system::error_code& error)> acceptor_handler;
+
 class proactor
 {
 public:
@@ -24,7 +27,17 @@ public:
 
 	virtual ~proactor();
 
+	/**
+	 * produce a timer.
+	 */
 	boost::shared_ptr<boost::asio::deadline_timer>  produce_a_timer(boost::posix_time::time_duration td);
+
+	/**
+	 * open a tcp listening port on all the interface.
+	 * @param port the port which is listened on.
+	 * @param handler called when the accept() system call finished.
+	 */
+	void listen(uint16_t port, acceptor_handler handler);
 
 private:
 	boost::asio::io_service _io_service;
@@ -32,6 +45,9 @@ private:
 
 	static const int _threads_count = 2;
 	boost::thread_group _threads;
+
+	typedef boost::asio::ip::tcp::acceptor the_acceptor;
+	std::map<uint16_t, boost::shared_ptr<boost::asio::ip::tcp::acceptor> > _listeners;
 };
 
 #endif /* _PROACTOR_H_ */

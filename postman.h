@@ -68,7 +68,7 @@ private:
 private:
 	postoffice* _office;  ///< the post office that the postman works for.
 
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<1024*10> > LockFreeQueue;
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<1024*15> > LockFreeQueue;
 
 	LockFreeQueue _recv_queue;
 	LockFreeQueue _snd_queue;
