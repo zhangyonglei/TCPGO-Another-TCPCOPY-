@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 10 Mar, 2014
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #include <boost/make_shared.hpp>

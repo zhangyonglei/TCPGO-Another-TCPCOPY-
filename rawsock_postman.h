@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 25 Mar, 2014
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #ifndef _RAWSOCK_POSTMANN_H_

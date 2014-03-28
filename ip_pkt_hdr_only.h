@@ -3,6 +3,7 @@
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 28 Mar, 2014
+ * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
 #ifndef _IP_PKT_HDR_ONLY_H_
