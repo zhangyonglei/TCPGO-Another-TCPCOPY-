@@ -37,6 +37,7 @@ private:
 	static const int _buffer_block_len = 4096*50;
 	char _buffer_block[_buffer_block_len];
 	int _buffer_used_len;
+	bool _hdr_only;    ///< if capture IP and TCP header only when sniff the traffic from peer.
 };
 
 #endif /* _TCPPOSTMAN_H_ */

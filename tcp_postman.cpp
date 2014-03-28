@@ -7,6 +7,7 @@
 
 #include "tcp_postman.h"
 #include "configuration.h"
+#include "ip_pkt_hdr_only.h"
 
 tcp_postman::tcp_postman(postoffice* po)
 : postman(po)
@@ -37,6 +38,16 @@ void tcp_postman::get_ready4subclass()
 	assert(-1 == _listening_fd);
 	assert(-1 == _conn_fd);
 	assert(0 == _buffer_used_len);
+
+	if (g_configuration.get_lua_scripts_home())
+	{
+		// capture the whole packet content if test suite is on.
+		_hdr_only = false;
+	}
+	else
+	{
+		_hdr_only = true;
+	}
 
 	_listening_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listening_fd == -1)
@@ -166,34 +177,56 @@ void tcp_postman::parse_buffer_and_get_all_ip_pkts()
 			i++;
 			continue;
 		}
+
 		ip_tot_len = ntohs(iphdr->tot_len);
-		if (buff_len - i < ip_tot_len)
+		if (!_hdr_only && buff_len - i < ip_tot_len)
 		{
 			break;
 		}
-		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
-		sum = tcphdr->check;
-		checksum = compute_tcp_checksum(iphdr, tcphdr);
-		tcphdr->check = sum;
-		if (checksum != sum)
+
+		if (_hdr_only && buff_len -i < 100)
 		{
-			// TODO. It's weird the checksum always failed here.
-			// I just let it pass as an expedient at present.
-			//			i++;
-			//			continue;
+			break;
 		}
+
+		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
+		if (!_hdr_only)
+		{
+			//sum = tcphdr->check;
+			//checksum = compute_tcp_checksum(iphdr, tcphdr);
+			//tcphdr->check = sum;
+			//if (checksum != sum)
+			//{
+				// TODO. It's weird the checksum always failed here.
+				// I just let it pass as an expedient at present.
+				//			i++;
+				//			continue;
+			//}
+		}
+
 		if (tcphdr->source != dst_port_in_netbyte_order)
 		{
 			i++;
 			continue;
 		}
 
-		// now, a IP packet is detected
-		boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ptr);
-		push_recved_ippkt(pkt);
+		if (!_hdr_only)
+		{
+			// now, a IP packet is detected
+			boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ptr);
+			push_recved_ippkt(pkt);
+			i += ip_tot_len;
+			sentinel = i;
+		}
+		else
+		{
+			boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt_hdr_only>(ptr);
+			push_recved_ippkt(pkt);
+			// step forward in the most safest way, though with a little efficiency penalty.
+			i += 40;
+			sentinel = i;
+		}
 
-		i += ip_tot_len;
-		sentinel = i;
 	} // end of for loop
 
 	if (0 != sentinel)
