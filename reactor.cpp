@@ -11,6 +11,8 @@
 #include "reactor.h"
 #include "thetimer.h"
 #include "postoffice.h"
+#include "realtime_capturer.h"
+#include "configuration.h"
 
 #define MAX_EVENTS_COUNT 32
 
@@ -83,6 +85,8 @@ void reactor::bigbang()
 	evt_workhorse *workhorse;
 	struct epoll_event  events[MAX_EVENTS_COUNT];
 
+	int concurrency = g_configuration.get_concurrency_limit();
+
 	//sigset_t sigmask;
 	//sigemptyset(&sigmask);
 	//sigaddset(&sigmask, SIGALRM);
@@ -120,10 +124,11 @@ void reactor::bigbang()
 			}
 		}
 
-		g_timer.loop_through_all_timer_event();
-
-		g_postoffice.recv_packets_from_wire();
+		g_realtime_capturer.inject_realtime_ippkts(concurrency / 10);
 		g_postoffice.send_packets_to_wire();
+		g_postoffice.recv_packets_from_wire();
+
+		g_timer.loop_through_all_timer_event();
 	}
 }
 

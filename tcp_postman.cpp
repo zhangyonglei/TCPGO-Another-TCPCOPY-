@@ -223,7 +223,7 @@ void tcp_postman::parse_buffer_and_get_all_ip_pkts()
 		{
 			boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt_hdr_only>(ptr);
 			push_recved_ippkt(pkt);
-			// step forward in the most safest way, though with a little efficiency penalty.
+			// step forward in the most safest way, though it brings a little efficiency penalty.
 			i += 40;
 			sentinel = i;
 		}

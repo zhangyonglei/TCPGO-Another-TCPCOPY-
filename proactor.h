@@ -39,6 +39,17 @@ public:
 	 */
 	void listen(uint16_t port, acceptor_handler handler);
 
+	boost::asio::io_service& get_io_service()
+	{
+		return _io_service;
+	}
+
+private:
+	void handle_accept_proxy(boost::shared_ptr<boost::asio::ip::tcp::acceptor> a,
+			boost::shared_ptr<boost::asio::ip::tcp::socket> s,
+			acceptor_handler h,
+			const boost::system::error_code& error);
+
 private:
 	boost::asio::io_service _io_service;
 	boost::asio::io_service::work _work;

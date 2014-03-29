@@ -27,7 +27,7 @@
 #include "thetimer.h"
 #include "reactor.h"
 #include "proactor.h"
-#include "realtime_captureer.h"
+#include "realtime_capturer.h"
 #include "configuration.h"
 #include "mylua.h"
 #include "statistics_bureau.h"
@@ -204,7 +204,7 @@ int run()
 	g_testsuite.ready_go();
 	g_cascade.ready_go();
 	g_session_manager.get_ready();
-	g_realtime_captureer.get_ready();
+	g_realtime_capturer.get_ready();
 	g_timer.get_ready();
 	g_proactor.get_ready();
 	// the word starts from a big bang.

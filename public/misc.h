@@ -65,6 +65,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/atomic.hpp>
+#include <boost/array.hpp>
 
 // other libraries
 #include <pcap.h>

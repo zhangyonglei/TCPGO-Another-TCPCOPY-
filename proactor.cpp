@@ -65,7 +65,7 @@ void proactor::listen(uint16_t port, acceptor_handler handler)
 	{
 		std::ostringstream ss;
 		ss << port << " has already been occupied.\n";
-		throw proactor_exception(ss.str());
+		BOOST_THROW_EXCEPTION(proactor_exception(ss.str()));
 	}
 
 	// construct an acceptor opened on the given endpoint.
@@ -76,7 +76,23 @@ void proactor::listen(uint16_t port, acceptor_handler handler)
 
 	// start the async accept.
 	boost::shared_ptr<tcp::socket> s = boost::make_shared<tcp::socket>(boost::ref(_io_service));
-	a->async_accept(*s, boost::bind(handler, s, boost::asio::placeholders::error));
+	a->async_accept(*s, boost::bind(&proactor::handle_accept_proxy,
+			this, a, s, handler, boost::asio::placeholders::error));
 
 	_listeners[port] = a;
+}
+
+void proactor::handle_accept_proxy(boost::shared_ptr<boost::asio::ip::tcp::acceptor> a,
+			boost::shared_ptr<boost::asio::ip::tcp::socket> s,
+			acceptor_handler h,
+			const boost::system::error_code& error)
+{
+	using boost::asio::ip::tcp;
+
+	boost::shared_ptr<tcp::socket> socket = boost::make_shared<tcp::socket>(boost::ref(_io_service));
+	a->async_accept(*socket, boost::bind(&proactor::handle_accept_proxy,
+			this, a, socket, h, boost::asio::placeholders::error));
+
+	// call the user specified callback
+	h(s, error);
 }

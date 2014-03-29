@@ -79,7 +79,10 @@ unsigned short generate_the_port(unsigned short ori_src_port);
 		memcpy(pack_clone, ip_pack, tot_len);    \
 		pack_clone;   })
 
-/* port is in network byte order*/
+/*
+ * combine the ipv4 address and the port as a session key.
+ * The caller should take responsibility of byte order consistency issue carefully.
+ */
 #define make_sess_key(ip, port) ({    \
 		uint64_t   k;                            \
 		uint32_t *ptr;                       \
