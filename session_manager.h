@@ -27,6 +27,26 @@ public:
 
 	void erase_a_session(uint64_t key);
 
+	int get_healthy_sess_count()
+	{
+		return _healthy_sess_count;
+	}
+
+	void increase_healthy_sess_count()
+	{
+		_healthy_sess_count++;
+	}
+
+	void decrease_healthy_sess_count()
+	{
+		_healthy_sess_count--;
+	}
+
+	bool is_in_traffic_jam_control()
+	{
+		return _traffic_jam;
+	}
+
 	int size()
 	{
 		return _sessions.size();
@@ -46,7 +66,9 @@ private:
 private:
 	std::map<uint64_t, tcpsession>  _sessions;
 
-	int _session_count_limit;
+	int  _expected_qps;
+	int  _session_count_limit;
+	int  _healthy_sess_count;  ///< session has all packets needed without lossing packets.
 	bool _traffic_jam;
 };
 

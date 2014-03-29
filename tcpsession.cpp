@@ -78,6 +78,7 @@ void tcpsession::kill_me(cause_of_death cause)
 	{
 		_reset_the_peer = true;
 	}
+	g_session_manager.decrease_healthy_sess_count();
 }
 
 bool tcpsession::still_alive()
@@ -156,6 +157,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 		_sess_state = SENDING_TRAFFIC;
 		g_postoffice.register_callback(_session_key, this);
+		g_session_manager.increase_healthy_sess_count();
 	}
 }
 
@@ -294,6 +296,7 @@ void tcpsession::get_ready_for_rt_traffic()
 void tcpsession::get_ready_for_offline_traffic()
 {
 	_sess_state = SENDING_TRAFFIC;
+	g_session_manager.increase_healthy_sess_count();
 	get_ready();
 }
 

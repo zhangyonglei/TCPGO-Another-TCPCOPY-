@@ -177,7 +177,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(MemPool& mp)
 		ip_pkt* pkt = new ip_pkt(ptr);
 		while (!_ippkt_queue.push(pkt))
 		{
-			std::cout << "_count: " << _count << std::endl;
+			std::cout << "realtime_capturer's queue is full. _count: " << _count << std::endl;
 			boost::this_thread::sleep(boost::posix_time::milliseconds(200));
 		}
 		_count++;

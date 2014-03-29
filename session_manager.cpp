@@ -124,16 +124,16 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	uint16_t src_port;  // host byte order
 	std::map<uint64_t, tcpsession>::iterator ite;
 	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
-	int sz = _sessions.size();
+	int total_count = _sessions.size();
 
 	// hard code the session count ceiling
-	if (sz >= _session_count_limit)
+	if (_healthy_sess_count >= _expected_qps * 6)
 	{
 		_traffic_jam = true;
 	}
 	else if (_traffic_jam)
 	{
-		if (sz <= _session_count_limit/2)
+		if (_healthy_sess_count <= _expected_qps * 3)
 		{
 			_traffic_jam = false;
 		}
@@ -205,8 +205,10 @@ int session_manager::get_ready()
 	int count;
 	count = 0;
 
+	_healthy_sess_count = 0;
 	_traffic_jam = false;
 	_session_count_limit = g_configuration.get_session_count_limit();
+	_expected_qps = g_configuration.get_expected_qps();
 
 	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
 			ite != _sessions.end(); ++ite)

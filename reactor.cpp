@@ -12,6 +12,7 @@
 #include "thetimer.h"
 #include "postoffice.h"
 #include "realtime_capturer.h"
+#include "session_manager.h"
 #include "configuration.h"
 
 #define MAX_EVENTS_COUNT 32
@@ -124,7 +125,14 @@ void reactor::bigbang()
 			}
 		}
 
-		g_realtime_capturer.inject_realtime_ippkts(concurrency / 10);
+		if (!g_session_manager.is_in_traffic_jam_control())
+		{
+			g_realtime_capturer.inject_realtime_ippkts(concurrency / 15);
+		}
+		else
+		{
+			g_realtime_capturer.inject_realtime_ippkts(1);
+		}
 		g_postoffice.send_packets_to_wire();
 		g_postoffice.recv_packets_from_wire();
 

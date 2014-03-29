@@ -37,6 +37,7 @@ configuration::configuration()
 	set_snd_speed_control(HZ / 4);
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
 	set_enable_active_close(false);
+	set_expected_qps(1000);
 
 	// [TESTSUITE]
 	// if the test suite related path is not specified in configure file,
@@ -217,6 +218,19 @@ void configuration::set_enable_active_close(const std::string& enable)
 void configuration::set_enable_active_close(bool enable)
 {
 	_enable_active_close = enable;
+}
+
+void configuration::set_expected_qps(const std::string& qps)
+{
+	int val;
+	val = boost::lexical_cast<int>(qps);
+	set_expected_qps(qps);
+}
+
+void configuration::set_expected_qps(int qps)
+{
+	assert(qps > 0);
+	_expected_qps = qps;
 }
 
 void configuration::set_log_on(const std::string& log_on)

@@ -108,6 +108,11 @@ public:
 		return _enable_active_close;
 	}
 
+	int get_expected_qps()
+	{
+		return _expected_qps;
+	}
+
 	// [LOG]
 	bool get_log_on()
 	{
@@ -177,6 +182,9 @@ public:
 	void set_enable_active_close(const std::string& enable);
 	void set_enable_active_close(bool enable);
 
+	void set_expected_qps(const std::string& qps);
+	void set_expected_qps(int qps);
+
 	// [LOG]
 	void set_duplicate_log_to_stdout(const std::string& dup);
 	void set_duplicate_log_to_stdout(bool dup);
@@ -216,6 +224,7 @@ private:
 	int  _snd_speed_control;
 	int  _wait_for_fin_from_peer_time_out;
 	bool _enable_active_close;
+	int _expected_qps;
 
 	// [LOG]
 	bool _log_on;

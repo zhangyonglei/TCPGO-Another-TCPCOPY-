@@ -90,8 +90,17 @@ std::string statistics_bureau::sess_statistics()
 		conns_per_second_in_15mins = conns_per_second_in_1min;
 	}
 
-	ss << g_session_manager.size() << " sessions are now in memory.\n"
-	   << _total_processed_sess_count << " sessions have been processed.\n"
+	int total_count = g_session_manager.size();
+	int healthy_sess_count = g_session_manager.get_healthy_sess_count();
+	ss << total_count << " sessions are now in memory.\n"
+	   << healthy_sess_count << " sessions are healthy.\n";
+
+	if (g_session_manager.is_in_traffic_jam_control())
+	{
+		ss << "In provisional traffic jam control.\n";
+	}
+
+	ss << _total_processed_sess_count << " sessions have been processed.\n"
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
 	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response from peer within "
