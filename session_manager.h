@@ -9,6 +9,7 @@
 #ifndef _SESSIONMANAGER_H_
 #define _SESSIONMANAGER_H_
 
+#include <boost/unordered_map.hpp>
 #include "misc.h"
 #include "tcpsession.h"
 
@@ -64,7 +65,11 @@ private:
 	void dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt);
 
 private:
-	std::map<uint64_t, tcpsession>  _sessions;
+	typedef std::map<uint64_t, tcpsession> SessMap;
+	SessMap  _sessions;
+
+	//typedef boost::unordered_map<uint64_t, tcpsession> SessMap;
+	//boost::unordered_map<uint64_t, tcpsession> _sessions;
 
 	int  _expected_qps;
 	int  _session_count_limit;

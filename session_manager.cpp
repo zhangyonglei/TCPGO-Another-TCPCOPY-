@@ -98,8 +98,8 @@ int session_manager::read_from_pcapfile(const string& path, const string& filter
 void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint64_t key;
-	std::map<uint64_t, tcpsession>::iterator ite;
-	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
+	SessMap::iterator ite;
+	std::pair<SessMap::iterator, bool> ugly_pair;
 
 	key = pkt->get_sess_key_outbound();
 
@@ -122,8 +122,8 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	static uint64_t ip_count;
 	uint64_t key;
 	uint16_t src_port;  // host byte order
-	std::map<uint64_t, tcpsession>::iterator ite;
-	std::pair<std::map<uint64_t, tcpsession>::iterator, bool> ugly_pair;
+	SessMap::iterator ite;
+	std::pair<SessMap::iterator, bool> ugly_pair;
 	int total_count = _sessions.size();
 
 	// hard code the session count ceiling
@@ -173,7 +173,7 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 int session_manager::clean_sick_session()
 {
 	int healthy, total_sess_count, sick_sess_count;
-	std::map<uint64_t, tcpsession>::iterator ite;
+	SessMap::iterator ite;
 
 	total_sess_count = 0;
 	sick_sess_count = 0;
@@ -210,7 +210,7 @@ int session_manager::get_ready()
 	_session_count_limit = g_configuration.get_session_count_limit();
 	_expected_qps = g_configuration.get_expected_qps();
 
-	for (std::map<uint64_t, tcpsession>::iterator ite = _sessions.begin();
+	for (SessMap::iterator ite = _sessions.begin();
 			ite != _sessions.end(); ++ite)
 	{
 		count++;

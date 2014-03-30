@@ -18,6 +18,7 @@
 #define _LISTMAP_H_
 
 #include <map>
+#include <boost/unordered_map.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
@@ -165,7 +166,8 @@ class listmap
 {
 public:
 	typedef Quadrille<V> MappedElementType;
-	typedef std::map<K, MappedElementType> InternalMap;
+//	typedef std::map<K, MappedElementType> InternalMap;
+	typedef boost::unordered_map<K, MappedElementType> InternalMap;
 	typedef listmap_iter<V> iterator;
 	typedef listmap_iter<V const> const_iterator;
 	typedef int size_type;

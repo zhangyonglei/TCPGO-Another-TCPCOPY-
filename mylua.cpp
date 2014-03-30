@@ -49,10 +49,11 @@ int mylua::version(lua_State* L)
 
 int mylua::sess_statistics(lua_State* L)
 {
+	int count;
 	std::string s;
 
+	count = lua_tointeger(L, 1);
 	s = g_statistics_bureau.sess_statistics();
-
 	lua_pushstring(L, s.c_str());
 
 	return 1;
@@ -142,6 +143,7 @@ int mylua::save_traffic(lua_State* L)
 static const struct luaL_Reg lua_funcs[] = {
 	{"version",   mylua::version},
 	{"sess_stat", mylua::sess_statistics},
+	{"stat", mylua::sess_statistics},
 	{"run", mylua::horos_run},
 	{"stop", mylua::horos_stop},
 	{"reload_testsuite", mylua::reload_testsuite},
@@ -205,9 +207,9 @@ void mylua::register_APIs4lua(const luaL_Reg* lua_funcs)
     // table holding all the functions exported to lua is on stack top
     lua_pushnil(_lua_state);  // first key is nil
 
-    while (lua_next(_lua_state, -2) != 0)
+    while (lua_next(_lua_state, -2) != 0) // table is at index -1 at this moment.
     {
-    	// 'key' is at index -2 and 'value' is at index -1
+    	// after the call of lua_next, 'key' is at index -2 and 'value' is at index -1
     	assert(LUA_TSTRING == lua_type(_lua_state, -2)); // function name is a string
     	key = lua_tolstring(_lua_state, -2, NULL);
     	lua_setglobal(_lua_state, key);  // pops a value from the stack and sets it as the new value of global name.
