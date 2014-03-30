@@ -48,6 +48,12 @@ postoffice& postoffice::instance(int idx)
 	return *_postoffices[idx].get();
 }
 
+void postoffice::get_ready(boost::shared_ptr<postman> pm)
+{
+	_asio_thrd_num = g_configuration.get_asio_thrd_num();
+	employ_a_postman(pm);
+}
+
 void postoffice::employ_a_postman(boost::shared_ptr<postman> pm)
 {
 	_postman = pm;
@@ -112,7 +118,7 @@ void postoffice::send_packets_to_wire()
 
 	concurrency_num = 0;
 	data_has_been_sent = false;
-	concurrency_limit_num = g_configuration.get_concurrency_limit();
+	concurrency_limit_num = (g_configuration.get_concurrency_limit() + _asio_thrd_num)/_asio_thrd_num;
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{

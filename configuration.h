@@ -161,6 +161,7 @@ public:
 	void set_sniff_method(SNIFF_METHOD sniff_method);
 
 	void set_asio_thrd_num(int num);
+	void set_asio_thrd_num(const std::string& num);
 
 	// [SESSION]
 	void set_session_count_limit(const std::string& limit);

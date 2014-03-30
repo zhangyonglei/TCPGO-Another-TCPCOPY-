@@ -37,6 +37,7 @@ int realtime_capturer::get_ready()
 	{
 		_ippkt_queues[i].reset(new Queue);
 		_queue_sizes[i].reset(new boost::atomic_int);
+		_queue_sizes[i]->operator=(0);
 	}
 
 	_jam_control = false;

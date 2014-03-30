@@ -12,8 +12,9 @@ ip_pkt_hdr_only::ip_pkt_hdr_only()
 {
 }
 
-ip_pkt_hdr_only::ip_pkt_hdr_only(const char* pkt) : ip_pkt(pkt)
+ip_pkt_hdr_only::ip_pkt_hdr_only(const char* pkt)
 {
+	cp(pkt);
 }
 
 ip_pkt_hdr_only::~ip_pkt_hdr_only()

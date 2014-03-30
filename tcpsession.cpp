@@ -409,7 +409,6 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		}
 		else
 		{
-			_injecting_rt_traffic_timer->cancel();
 			return postoffice_callback_interface::REMOVE;
 		}
 	}
@@ -947,7 +946,7 @@ void tcpsession::adjust_sliding_window()
 			right_gap = check_ippkts_continuity(ite_left, _ippkts_samples.end());
 
 			assert(right_gap != _ippkts_samples.end());
-			// increase it because of closed interval (excluding right boundary)
+			// increase it because of open interval (excluding right boundary)
 			++right_gap;
 		}
 		else // cannot expand the window size by any means.

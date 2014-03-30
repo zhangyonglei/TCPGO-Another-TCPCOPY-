@@ -300,6 +300,13 @@ void configuration::set_sniff_method(const std::string& sniff_method)
 	}
 }
 
+void configuration::set_asio_thrd_num(const std::string& num)
+{
+	int val;
+	val = boost::lexical_cast<int>(num);
+	set_asio_thrd_num(val);
+}
+
 void configuration::set_asio_thrd_num(int num)
 {
 	if (num <= 0)
@@ -411,6 +418,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("sniff_method: %s\n", value.c_str());
 		set_sniff_method(value);
+	}
+
+	option_name = "asio_thrd_num";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("asio_thrd_num: %s\n", value.c_str());
+		set_asio_thrd_num(value);
 	}
 
 	// the session section

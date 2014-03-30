@@ -61,7 +61,7 @@ private:
 	void send_thrd_entry();
 
 private:
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<1024*28> > LockFreeQueue;
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<20000> > LockFreeQueue;
 
 	std::vector<boost::shared_ptr<LockFreeQueue> > _recv_queues;
 	std::vector<boost::shared_ptr<LockFreeQueue> > _snd_queues;

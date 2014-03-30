@@ -74,7 +74,9 @@ void postman::get_ready()
 		_recv_queues[i].reset(new LockFreeQueue());
 		_snd_queues[i].reset(new LockFreeQueue());
 		_count_recv_queues[i].reset(new boost::atomic_int);
+		_count_recv_queues[i]->operator=(0);
 		_count_snd_queues[i].reset(new boost::atomic_int);
+		_count_snd_queues[i]->operator=(0);
 	}
 
 	get_ready4subclass();
@@ -98,6 +100,7 @@ bool postman::recv(int asio_idx, boost::shared_ptr<ip_pkt>& pkt)
 	if (success)
 	{
 		_count_recv_queues[asio_idx]->operator--();
+		// std::cout << "postman::recv _count_recv_queues[asio_idx]  " << *_count_recv_queues[asio_idx] << std::endl;
 	}
 
 	return success;
@@ -160,6 +163,8 @@ void postman::send_impl()
 				sendto(_send_fd, starting_addr, tot_len, 0,
 						reinterpret_cast<struct sockaddr*>(&dst_addr), sizeof(dst_addr));
 
+				// std::cout << "send_impl  " << *_count_snd_queues[i] << std::endl;
+
 				_count_snd_queues[i]->operator--();
 
 				need_a_break = false;
@@ -194,5 +199,9 @@ void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
 			// boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 		}
 		_count_recv_queues[asio_idx]->operator++();
+
+		// std::cout << "push_recved_ippkt  " << *_count_recv_queues[asio_idx] << std::endl;
+
+		return;
 	}
 }
