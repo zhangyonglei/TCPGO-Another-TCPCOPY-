@@ -62,7 +62,7 @@ void pcap_postman::recv_impl()
 	int n = pcap_dispatch(_pcap_handle, 256, pcaphandler, reinterpret_cast<unsigned char*>(this));
 }
 
-pcap_postman::pcap_postman(postoffice* po) : postman(po)
+pcap_postman::pcap_postman()
 {
 	_truncated_pkt_count = 0;
 	_pcap_handle = NULL;

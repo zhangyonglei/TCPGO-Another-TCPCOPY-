@@ -83,19 +83,21 @@ private:
 	}
 
 private:
-	int _total_processed_sess_count;
-	int _sess_active_close_count;
-	int _sess_passive_close_count;
-	int _sess_cancelled_by_no_response_count;
-	int _sess_active_close_timeout_count;
-	int _sess_killed_by_reset_count;
-	int _sess_dormancy_count;
+	boost::atomic_int _total_processed_sess_count;
+	boost::atomic_int _sess_active_close_count;
+	boost::atomic_int _sess_passive_close_count;
+	boost::atomic_int _sess_cancelled_by_no_response_count;
+	boost::atomic_int _sess_active_close_timeout_count;
+	boost::atomic_int _sess_killed_by_reset_count;
+	boost::atomic_int _sess_dormancy_count;
 
 	// the following variables are intended for make statistics of normally
 	// ended connections in the past (_TIME_DURATION_IN_MIN-1) minutes.
 	static const int _TIME_DURATION_IN_MIN = 16;
 	int _conns_completed_stat[_TIME_DURATION_IN_MIN];
 	int _current_slot_index;
+
+	int _asio_thrd_num;
 };
 
 #endif /* _STATISTICSBUREAU_H_ */

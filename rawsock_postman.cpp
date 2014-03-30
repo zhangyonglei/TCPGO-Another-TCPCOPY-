@@ -10,7 +10,7 @@
 #include "rawsock_postman.h"
 #include "configuration.h"
 
-rawsock_postman::rawsock_postman(postoffice* po) : postman(po)
+rawsock_postman::rawsock_postman()
 {
 }
 

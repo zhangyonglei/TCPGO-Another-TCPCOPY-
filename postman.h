@@ -23,7 +23,7 @@ class postoffice;
 class postman
 {
 public:
-	postman(postoffice* office);
+	postman();
 	virtual ~postman();
 
 	/**
@@ -36,18 +36,13 @@ public:
 	 * pkt is a OUT parameter.
 	 * return true on success, otherwise false.
 	 */
-	virtual bool recv(boost::shared_ptr<ip_pkt>& pkt);
+	virtual bool recv(int asio_idx, boost::shared_ptr<ip_pkt>& pkt);
 
 	/**
 	 * send the packet.
 	 * return true on success, otherwise false.
 	 */
-	virtual bool send(boost::shared_ptr<ip_pkt> pkt);
-
-	postoffice* get_postoffice()
-	{
-		return _office;
-	}
+	virtual bool send(int asio_idx, boost::shared_ptr<ip_pkt> pkt);
 
 protected:
 	// Derived classes must implement the following two virtual functions.
@@ -66,15 +61,13 @@ private:
 	void send_thrd_entry();
 
 private:
-	postoffice* _office;  ///< the post office that the postman works for.
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<1024*28> > LockFreeQueue;
 
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<1024*15> > LockFreeQueue;
+	std::vector<boost::shared_ptr<LockFreeQueue> > _recv_queues;
+	std::vector<boost::shared_ptr<LockFreeQueue> > _snd_queues;
 
-	LockFreeQueue _recv_queue;
-	LockFreeQueue _snd_queue;
-
-	boost::atomic_int _count_recv_queue;
-	boost::atomic_int _count_snd_queue;
+	std::vector<boost::shared_ptr<boost::atomic_int> > _count_recv_queues;
+	std::vector<boost::shared_ptr<boost::atomic_int> > _count_snd_queues;
 
 	boost::thread _recv_thrd;
 	boost::thread _send_thrd;
@@ -83,6 +76,8 @@ private:
 	boost::atomic<bool> _done_snd_thrd;
 
 	int _send_fd;
+
+	int _asio_thrd_num;
 
 //	boost::mutex _mutex4recv;
 //	boost::mutex _mutex4snd;

@@ -28,9 +28,14 @@ public:
 	virtual ~proactor();
 
 	/**
-	 * produce a timer.
+	 * construct a timer without setting an expiry time.
 	 */
-	boost::shared_ptr<boost::asio::deadline_timer>  produce_a_timer(boost::posix_time::time_duration td);
+	boost::shared_ptr<boost::asio::deadline_timer> produce_a_timer();
+
+	/**
+	 * construct a timer with a expiry time relative to now.
+	 */
+	boost::shared_ptr<boost::asio::deadline_timer> produce_a_timer(boost::posix_time::time_duration td);
 
 	/**
 	 * open a tcp listening port on all the interface.

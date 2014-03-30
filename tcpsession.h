@@ -20,7 +20,7 @@ public:
 	/**
 	 *@param port in network byte order.
 	 */
-	tcpsession(uint32_t ip, uint16_t port);
+	tcpsession(int asio_idx, uint32_t ip, uint16_t port);
 	virtual ~tcpsession();
 
 	/**
@@ -37,7 +37,7 @@ public:
 	/**
 	 * as the function name suggests. rt is real time for short.
 	 */
-	void injecting_rt_traffic_timeout_checker();
+	void injecting_rt_traffic_timeout_checker(const boost::system::error_code& error);
 
 	/**
 	 * This function will also remove ack packets without playload.
@@ -167,11 +167,13 @@ private:
 	enum sess_state{ACCUMULATING_TRAFFIC, SENDING_TRAFFIC, ABORT};
 	sess_state _sess_state;
 	uint64_t _last_injecting_rt_traffic_time;
-	uint64_t _injecting_rt_traffic_timer_id;
+	boost::shared_ptr<boost::asio::deadline_timer> _injecting_rt_traffic_timer;
 	bool _got_syn_pkt;
 	bool _got_fin_pkt;
 
 	bool _ready;  ///< indicate if this tcpsession instance has called get_ready() yet
+
+	int _asio_idx;
 };
 
 #endif /* _TCPSESSION_H_ */

@@ -14,7 +14,7 @@
 class pcap_postman : public postman
 {
 public:
-	pcap_postman(postoffice* po);
+	pcap_postman();
 	virtual ~pcap_postman();
 
 private:

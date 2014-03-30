@@ -15,9 +15,6 @@
 #include "listmap.h"
 #include "postman.h"
 
-class postoffice;
-extern postoffice g_postoffice;
-
 class postoffice_callback_interface
 {
 public:
@@ -47,17 +44,22 @@ protected:
  */
 class postoffice
 {
+private:
+	postoffice(int asio_idx);
+
 public:
-	postoffice();
 	virtual ~postoffice();
 
-	void get_ready();
+public:
+	static postoffice& instance(int idx);
 
 	void register_callback(uint64_t key, postoffice_callback_interface* callback);
 	void deregister_callback(uint64_t key);
 
 	void recv_packets_from_wire();
 	void send_packets_to_wire();
+
+	void employ_a_postman(boost::shared_ptr<postman> pm);
 
 private:
 	struct in_addr _svr_addr;  ///< server's IP address. AKA: the dest IP address where the packets will be sent.
@@ -68,6 +70,11 @@ private:
 	mylistmap _callbacks;
 
 	boost::shared_ptr<postman> _postman;  ///< only one post man in this post office.
+
+	int _asio_idx;
+
+	static boost::mutex _mutex;
+	static std::vector<boost::shared_ptr<postoffice> > _postoffices;
 };
 
 #endif /* _POSTOFFICE_H_ */

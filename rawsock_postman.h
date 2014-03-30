@@ -14,7 +14,7 @@
 class rawsock_postman : public postman
 {
 public:
-	rawsock_postman(postoffice* po);
+	rawsock_postman();
 	virtual ~rawsock_postman();
 
 private:

@@ -1,5 +1,5 @@
 /*********************************************
- * realtime_captureer.cpp
+ * realtime_capturer.cpp
  * Author: kamuszhou@tencent.com 16236914@qq.com
  * website: v.qq.com  www.dogeye.net
  * Created on: 27 Dec, 2013
@@ -9,6 +9,7 @@
 #include "misc.h"
 #include "realtime_capturer.h"
 #include "cute_logger.h"
+#include "ip_pkt.h"
 #include "session_manager.h"
 #include "proactor.h"
 
@@ -25,23 +26,35 @@ realtime_capturer::~realtime_capturer()
 
 int realtime_capturer::get_ready()
 {
-	_count = 0;
 	g_proactor.listen(_traffic_listening_port, boost::bind(&realtime_capturer::handle_accept, this, _1, _2));
 	_strand.reset(new boost::asio::strand(g_proactor.get_io_service()));
+
+	_asio_thrd_num = g_configuration.get_asio_thrd_num();
+	_ippkt_queues.resize(_asio_thrd_num);
+	_queue_sizes.resize(_asio_thrd_num);
+
+	for (int i = 0; i < _asio_thrd_num; i++)
+	{
+		_ippkt_queues[i].reset(new Queue);
+		_queue_sizes[i].reset(new boost::atomic_int);
+	}
+
+	_jam_control = false;
+
 
 	return 0;
 }
 
-void realtime_capturer::inject_realtime_ippkts(int most)
+void realtime_capturer::pluck_out_and_inject_realtime_ippkts(int asio_idx, int most)
 {
 	ip_pkt* pkt;
 	boost::shared_ptr<ip_pkt> smart_pkt;
 	int num = 0;
-	while (_ippkt_queue.pop(pkt))
+	while (_ippkt_queues[asio_idx]->pop(pkt))
 	{
 		smart_pkt.reset(pkt);
-		g_session_manager.inject_a_realtime_ippkt(smart_pkt);
-		_count--;
+		session_manager::instance(asio_idx).inject_a_realtime_ippkt(smart_pkt);
+		_queue_sizes[asio_idx]->operator--();
 		num++;
 		if (num >= most)
 		{
@@ -56,16 +69,16 @@ void realtime_capturer::handle_accept(boost::shared_ptr<boost::asio::ip::tcp::so
 	using namespace boost::asio;
 
 	uint64_t key = generate_sess_key(s);
-	MemPool& mp = _conns[key];
+	ConnInfo& conn = _conns[key];
 
-	mp._memblock.reserve(BUFFER_LEN_FOR_TRAFFIC);
-	mp._memblock.resize(BUFFER_LEN_FOR_TRAFFIC);
-	mp._used_len = 0;
+	conn._memblock.resize(_buffer_len_for_traffic);
+	conn._used_len = 0;
+	conn._timer = g_proactor.produce_a_timer();
 
-	s->async_read_some(buffer(mp._memblock),
-				boost::bind(&realtime_capturer::handle_read, this, s,
+	s->async_read_some(buffer(conn._memblock),
+			_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
 						boost::asio::placeholders::error,
-						boost::asio::placeholders::bytes_transferred));
+						boost::asio::placeholders::bytes_transferred)));
 }
 
 void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::socket> s,
@@ -82,21 +95,57 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	if (boost::asio::error::eof == error)
 	{
 		// normal termination
+		_conns.erase(key);
 		return;
 	}
 	else if (error)
 	{
+		_conns.erase(key);
 	//	throw boost::system::system_error(error);  // some other error.
 		return;
 	}
 
-	MemPool& mp = _conns[key];
-	MemBlock& mb = mp._memblock;
-	mp._used_len += bytes_transferred;
+	ConnInfo& conn = _conns[key];
+	MemBlock& mb = conn._memblock;
+	conn._used_len += bytes_transferred;
+	assert(conn._used_len <= _buffer_len_for_traffic);
 
-	parse_buff_and_get_ip_pkts(mp);
+	// do the job
+	parse_buff_and_get_ip_pkts(conn);
 
-	s->async_read_some(buffer(mb.data() + mp._used_len, mb.size() - mp._used_len),
+	if (!_jam_control)
+	{
+		s->async_read_some(buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
+				_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
+								boost::asio::placeholders::error,
+								boost::asio::placeholders::bytes_transferred)));
+	}
+	else
+	{
+		conn._timer->cancel();
+		conn._timer->expires_from_now(boost::posix_time::seconds(1));
+		conn._timer->async_wait(_strand->wrap(
+				boost::bind(&realtime_capturer::delayed_read, this, s, boost::asio::placeholders::error)
+				));
+	}
+}
+
+void realtime_capturer::delayed_read(boost::shared_ptr<boost::asio::ip::tcp::socket> s,
+									const boost::system::error_code& error)
+{
+	using namespace boost::asio;
+
+	if (!error)
+	{
+	    // Timer expired.
+	}
+
+	// whatever happend, even a timer error occured, issue a async read.
+	uint64_t key = generate_sess_key(s);
+	ConnInfo& conn = _conns[key];
+	MemBlock& mb = conn._memblock;
+
+	s->async_read_some(buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
 			_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
 							boost::asio::placeholders::error,
 							boost::asio::placeholders::bytes_transferred)));
@@ -114,7 +163,7 @@ uint64_t realtime_capturer::generate_sess_key(boost::shared_ptr<boost::asio::ip:
 	return key;
 }
 
-void realtime_capturer::parse_buff_and_get_ip_pkts(MemPool& mp)
+void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 {
 	char* buff_ptr;
 	struct iphdr* iphdr;
@@ -124,8 +173,22 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(MemPool& mp)
 	uint16_t src_port;
 	uint16_t sum, checksum;
 
-	buff_ptr = mp._memblock.data();
-	buff_len = mp._used_len;
+	if (_jam_control)
+	{
+		for (int i = 0; i < _queue_sizes.size(); i++)
+		{
+			if ( *_queue_sizes[i] < _ippkt_queue_capacity / 30)
+			{
+				_jam_control = false;
+				break;
+			}
+		}
+
+		return;
+	}
+
+	buff_ptr = conn._memblock.data();
+	buff_len = conn._used_len;
 	sentinel = 0;
 
 	for (i = 0; i <= buff_len - 40;)
@@ -175,15 +238,16 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(MemPool& mp)
 
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);
-		while (!_ippkt_queue.push(pkt))
+		int asio_idx = pkt->get_asio_idx_outbound();
+
+		while (!_ippkt_queues[asio_idx]->push(pkt))
 		{
-			std::cout << "realtime_capturer's queue is full. _count: " << _count << std::endl;
-			if (_count > _ippkt_queue_capacity/15)
-			{
-				boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-			}
+			std::cout << "one of realtime_capturer's queue is full. _count: " << _queue_sizes[asio_idx] << std::endl;
+			_jam_control = true;
+
+			return;
 		}
-		_count++;
+		_queue_sizes[asio_idx]->operator++();
 		i += ip_tot_len;
 		sentinel = i;
 	} // end of for loop.
@@ -198,6 +262,6 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(MemPool& mp)
 		{
 			memmove(buff_ptr, buff_ptr + sentinel, remaining_data_len);
 		}
-		mp._used_len = remaining_data_len;
+		conn._used_len = remaining_data_len;
 	}
 }

@@ -16,36 +16,41 @@
 #include "pcap_postman.h"
 #include "tcp_postman.h"
 
-postoffice g_postoffice;
+boost::mutex postoffice::_mutex;
+std::vector<boost::shared_ptr<postoffice> > postoffice::_postoffices;
 
-postoffice::postoffice()
+postoffice::postoffice(int asio_idx)
 {
 	_l2hdr_len = -1;
+	_svr_port = htons(g_configuration.get_dst_port());
+	_asio_idx = asio_idx;
 }
 
 postoffice::~postoffice()
 {
 }
 
-void postoffice::get_ready()
+postoffice& postoffice::instance(int idx)
 {
-	_svr_port = htons(g_configuration.get_dst_port());
-
-	switch (g_configuration.get_sniff_method())
+	if (0 == _postoffices.size())
 	{
-	case configuration::SNIFF_RAW:
-		_postman.reset(new rawsock_postman(this));
-		break;
-
-	case configuration::SNIFF_PCAP:
-		_postman.reset(new pcap_postman(this));
-		break;
-
-	case configuration::SNIFF_TCP:
-		_postman.reset(new tcp_postman(this));
-		break;
+		boost::lock_guard<boost::mutex> lock(_mutex);
+		if (0 == _postoffices.size())
+		{
+			_postoffices.resize(g_configuration.get_asio_thrd_num());
+			for (int i = 0; i < _postoffices.size(); i++)
+			{
+				_postoffices[i].reset(new postoffice(i));
+			}
+		}
 	}
-	_postman->get_ready();
+
+	return *_postoffices[idx].get();
+}
+
+void postoffice::employ_a_postman(boost::shared_ptr<postman> pm)
+{
+	_postman = pm;
 }
 
 void postoffice::register_callback(uint64_t key, postoffice_callback_interface* callback)
@@ -75,7 +80,7 @@ void postoffice::recv_packets_from_wire()
 
 	while(true)
 	{
-		gotya = _postman->recv(pkt);
+		gotya = _postman->recv(_asio_idx, pkt);
 		if (!gotya)
 			return;
 
@@ -122,7 +127,7 @@ void postoffice::send_packets_to_wire()
 
 		if (postoffice_callback_interface::REMOVE == num)
 		{
-			g_session_manager.erase_a_session(_callbacks.get_key(ite));
+			session_manager::instance(_asio_idx).erase_a_session(_callbacks.get_key(ite));
 			_callbacks.erase(ite++);
 			continue;
 		}
@@ -152,7 +157,7 @@ void postoffice::send_packets_to_wire()
 			success = false;
 			if (pkt->should_send_me())
 			{
-				success = _postman->send(pkt);
+				success = _postman->send(_asio_idx, pkt);
 			}
 
 			if (success)

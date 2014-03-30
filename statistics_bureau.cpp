@@ -8,6 +8,7 @@
 
 #include "statistics_bureau.h"
 #include "session_manager.h"
+#include "realtime_capturer.h"
 
 statistics_bureau g_statistics_bureau;
 
@@ -27,6 +28,8 @@ void statistics_bureau::get_ready()
 	_sess_active_close_timeout_count = 0;
 	_sess_killed_by_reset_count = 0;
 	_sess_dormancy_count = 0;
+
+	_asio_thrd_num = g_configuration.get_asio_thrd_num();
 
 	// if _TIME_DURATION_IN_MIN changed, the corresponding logic has to been modified, too.
 	assert(_TIME_DURATION_IN_MIN == 16);
@@ -90,12 +93,18 @@ std::string statistics_bureau::sess_statistics()
 		conns_per_second_in_15mins = conns_per_second_in_1min;
 	}
 
-	int total_count = g_session_manager.size();
-	int healthy_sess_count = g_session_manager.get_healthy_sess_count();
+	int total_count = 0;
+	int healthy_sess_count = 0;
+	for (int i = 0; i < _asio_thrd_num; i++)
+	{
+		total_count += session_manager::instance(i).size();
+		healthy_sess_count += session_manager::instance(i).get_healthy_sess_count();
+	}
+
 	ss << total_count << " sessions are now in memory.\n"
 	   << healthy_sess_count << " sessions are healthy.\n";
 
-	if (g_session_manager.is_in_traffic_jam_control())
+	if (g_realtime_capturer.is_in_traffic_jam_control())
 	{
 		ss << "In provisional traffic jam control.\n";
 	}

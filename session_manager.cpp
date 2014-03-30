@@ -11,15 +11,37 @@
 #include "utils.h"
 #include "cute_logger.h"
 
-using namespace std;
+boost::mutex session_manager::_mutex;
+std::vector<boost::shared_ptr<session_manager> > session_manager::_managers;
 
-session_manager g_session_manager;
+session_manager::session_manager(int asio_idx)
+{
+	_asio_idx = asio_idx;
+}
 
-session_manager::session_manager()
+session_manager::~session_manager()
 {
 }
 
-int session_manager::read_from_pcapfile(const string& path, const string& filter)
+session_manager& session_manager::instance(int idx)
+{
+	if (0 == _managers.size())
+	{
+		boost::lock_guard<boost::mutex> lock(_mutex);
+		if (0 == _managers.size())
+		{
+			_managers.resize(g_configuration.get_asio_thrd_num());
+			for (int i = 0; i < _managers.size(); i++)
+			{
+				_managers[i].reset(new session_manager(i));
+			}
+		}
+	}
+
+	return *_managers[idx].get();
+}
+
+int session_manager::read_from_pcapfile(const std::string& path, const std::string& filter)
 {
 	char ebuf[1024];
 	pcap_t *pcap;
@@ -43,7 +65,7 @@ int session_manager::read_from_pcapfile(const string& path, const string& filter
 		// rather than const char*. To pass the compiling on this case, a cast has to be made.
 		if (pcap_compile(pcap, &fp, (char*)filter.c_str(), 0, 0) == -1)
 		{
-			cerr << pcap_geterr(pcap) << endl;
+			std::cerr << pcap_geterr(pcap) << std::endl;
 			pcap_close(pcap);
 			return -1;
 		}
@@ -76,12 +98,14 @@ int session_manager::read_from_pcapfile(const string& path, const string& filter
 				{
 					uint16_t new_src_port;
 					uint16_t ori_src_port;
+					int asio_idx;
 
 					boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ippkt);
 					ori_src_port = pkt->get_src_port();
 					new_src_port = generate_the_port(ori_src_port);
 					pkt->modify_src_port(new_src_port);
-					dispatch_ip_pkt(pkt);
+					asio_idx = pkt->get_asio_idx_outbound();
+					instance(asio_idx).dispatch_ip_pkt(pkt);
 				}
 			}
 		}
@@ -92,7 +116,12 @@ int session_manager::read_from_pcapfile(const string& path, const string& filter
 	}
 	pcap_close(pcap);
 
-	clean_sick_session();
+	for (int i = 0; i < g_configuration.get_asio_thrd_num(); i++)
+	{
+		instance(i).clean_sick_session();
+	}
+
+	return 0;
 }
 
 void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
@@ -103,7 +132,7 @@ void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 
 	key = pkt->get_sess_key_outbound();
 
-	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
+	tcpsession session(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	// The following map::insert returns a pair, with its member pair::first set to an iterator pointing to
 	// either the newly inserted element or to the element with an equivalent key in the map. The pair::second
 	// element in the pair is set to true if a new element was inserted or false if an equivalent key already
@@ -113,7 +142,7 @@ void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 	ite->second.append_ip_sample(pkt);
 	if (ugly_pair.second)
 	{
-		g_postoffice.register_callback(key, &ite->second);
+		postoffice::instance(_asio_idx).register_callback(key, &ite->second);
 	}
 }
 
@@ -149,7 +178,7 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 
 	key = pkt->get_sess_key_outbound();
 
-	tcpsession session(pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
+	tcpsession session(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
 	if (ugly_pair.second)  // a new tcpsession is created and added.
 	{
@@ -189,7 +218,7 @@ int session_manager::clean_sick_session()
 		else
 		{
 			sick_sess_count++;
-			g_postoffice.deregister_callback(ite->first);
+			postoffice::instance(_asio_idx).deregister_callback(ite->first);
 			_sessions.erase(ite++);
 		}
 
@@ -210,6 +239,7 @@ int session_manager::get_ready()
 	_session_count_limit = g_configuration.get_session_count_limit();
 	_expected_qps = g_configuration.get_expected_qps();
 
+	// there are some preloaded offline traffic.
 	for (SessMap::iterator ite = _sessions.begin();
 			ite != _sessions.end(); ++ite)
 	{
@@ -226,8 +256,4 @@ void session_manager::erase_a_session(uint64_t key)
 	int num;
 	num = _sessions.erase(key);
 	assert(num == 1);
-}
-
-session_manager::~session_manager()
-{
 }

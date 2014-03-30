@@ -22,11 +22,10 @@
 #include <getopt.h>
 #include "misc.h"
 #include "cute_logger.h"
-#include "session_manager.h"
-#include "postoffice.h"
 #include "thetimer.h"
 #include "reactor.h"
 #include "proactor.h"
+#include "politburo.h"
 #include "realtime_capturer.h"
 #include "configuration.h"
 #include "mylua.h"
@@ -183,7 +182,7 @@ int run()
 	pcap_file_path = g_configuration.get_pcap_file_path();
 	if (!pcap_file_path.empty())
 	{
-		ret = g_session_manager.read_from_pcapfile(pcap_file_path, "tcp");
+		ret = g_politburo.read_from_pcapfile(pcap_file_path, "tcp");
 		if (0 != ret)
 		{
 			g_logger.printf("failed to open pcap file %s.\n", pcap_file_path.c_str());
@@ -198,15 +197,17 @@ int run()
     ret = sigprocmask(SIG_BLOCK, &set, NULL);
     assert(ret == 0);
 
-	g_postoffice.get_ready();
 	g_statistics_bureau.get_ready();
 	g_mylua.get_ready();
 	g_testsuite.ready_go();
 	g_cascade.ready_go();
-	g_session_manager.get_ready();
 	g_realtime_capturer.get_ready();
 	g_timer.get_ready();
+	g_politburo.get_ready();
+	// the story actually start from here.
 	g_proactor.get_ready();
+	// for a history reason, reactor once played the most important schedule role.
+	// it's role has actually been replaced by proactor.
 	// the word starts from a big bang.
 	g_reactor.bigbang();
 

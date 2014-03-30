@@ -14,7 +14,7 @@
 class tcp_postman : public postman
 {
 public:
-	tcp_postman(postoffice* po);
+	tcp_postman();
 	virtual ~tcp_postman();
 
 private:

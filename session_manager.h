@@ -13,15 +13,18 @@
 #include "misc.h"
 #include "tcpsession.h"
 
-class session_manager;
-extern session_manager g_session_manager;
+class session_manager
+{
+private:
+	session_manager(int asio_idx);
 
-class session_manager {
 public:
-	session_manager();
 	virtual ~session_manager();
 
-	int read_from_pcapfile(const std::string& path, const std::string& filter);
+public:
+	static session_manager& instance(int idx);
+
+	static int read_from_pcapfile(const std::string& path, const std::string& filter);
 	void inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt);
 	
 	int get_ready();
@@ -75,6 +78,11 @@ private:
 	int  _session_count_limit;
 	int  _healthy_sess_count;  ///< session has all packets needed without lossing packets.
 	bool _traffic_jam;
+
+	int _asio_idx;
+
+	static boost::mutex _mutex;
+	static std::vector<boost::shared_ptr<session_manager> > _managers;
 };
 
 #endif /* _SESSIONMANAGER_H_ */

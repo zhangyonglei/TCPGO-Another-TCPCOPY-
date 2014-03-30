@@ -10,8 +10,7 @@
 #include "configuration.h"
 #include "ip_pkt_hdr_only.h"
 
-tcp_postman::tcp_postman(postoffice* po)
-: postman(po)
+tcp_postman::tcp_postman()
 {
 	_listening_fd = -1;
 	_conn_fd = -1;

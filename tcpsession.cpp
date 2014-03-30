@@ -9,13 +9,13 @@
 #include "tcpsession.h"
 #include "utils.h"
 #include "cute_logger.h"
-#include "thetimer.h"
 #include "session_manager.h"
 #include "configuration.h"
+#include "politburo.h"
 #include "statistics_bureau.h"
 #include "testsuite.h"
 
-tcpsession::tcpsession(uint32_t ip, uint16_t port)
+tcpsession::tcpsession(int asio_idx, uint32_t ip, uint16_t port)
 {
 	struct in_addr inaddr;
 	inaddr.s_addr = ip;
@@ -61,6 +61,7 @@ tcpsession::tcpsession(uint32_t ip, uint16_t port)
 	tcphdr->ack = 0;
 	tcphdr->rst = 1;
 
+	_asio_idx = asio_idx;
 	_ready = false;
 }
 
@@ -78,7 +79,7 @@ void tcpsession::kill_me(cause_of_death cause)
 	{
 		_reset_the_peer = true;
 	}
-	g_session_manager.decrease_healthy_sess_count();
+	session_manager::instance(_asio_idx).decrease_healthy_sess_count();
 }
 
 bool tcpsession::still_alive()
@@ -118,7 +119,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 	if (ippkt->is_rst_set())
 	{
 		_sess_state = ABORT;
-		g_postoffice.register_callback(_session_key, this);
+		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 	}
 
 	if (ippkt->is_syn_set())
@@ -156,12 +157,12 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		assert((*_sliding_window_left_boundary)->is_syn_set());
 
 		_sess_state = SENDING_TRAFFIC;
-		g_postoffice.register_callback(_session_key, this);
-		g_session_manager.increase_healthy_sess_count();
+		postoffice::instance(_asio_idx).register_callback(_session_key, this);
+		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 	}
 }
 
-void tcpsession::injecting_rt_traffic_timeout_checker()
+void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error_code& error)
 {
 	uint64_t now;
 	int timeout;
@@ -180,13 +181,14 @@ void tcpsession::injecting_rt_traffic_timeout_checker()
 	{
 		assert(ACCUMULATING_TRAFFIC == _sess_state);
 		_sess_state = ABORT;
-		g_postoffice.register_callback(_session_key, this);
+		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 	}
 	else
 	{
-		_injecting_rt_traffic_timer_id = g_timer.register_one_shot_timer_event(
-				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this),
-				timeout);
+		_injecting_rt_traffic_timer = g_politburo.enqueue_a_timer_handler(_asio_idx,
+				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout())*10,
+				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this, boost::asio::placeholders::error)
+		);
 	}
 }
 
@@ -296,7 +298,7 @@ void tcpsession::get_ready_for_rt_traffic()
 void tcpsession::get_ready_for_offline_traffic()
 {
 	_sess_state = SENDING_TRAFFIC;
-	g_session_manager.increase_healthy_sess_count();
+	session_manager::instance(_asio_idx).increase_healthy_sess_count();
 	get_ready();
 }
 
@@ -344,9 +346,10 @@ void tcpsession::get_ready()
 
 	if (ACCUMULATING_TRAFFIC == _sess_state)
 	{
-		_injecting_rt_traffic_timer_id = g_timer.register_one_shot_timer_event(
-				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this),
-				g_configuration.get_injecting_rt_traffic_timeout());
+		_injecting_rt_traffic_timer = g_politburo.enqueue_a_timer_handler(_asio_idx,
+				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout())*10,
+				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this, boost::asio::placeholders::error)
+		);
 	}
 
 	_got_syn_pkt = false;
@@ -367,7 +370,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 
 	if (ABORT == _sess_state)
 	{
-		g_timer.remove_the_timer(_injecting_rt_traffic_timer_id);
+		_injecting_rt_traffic_timer->cancel();
 		g_logger.printf("session: %s.%hu aborts.\n", _client_src_ip_str.c_str(), _client_src_port);
 
 		return postoffice_callback_interface::REMOVE;
@@ -406,7 +409,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		}
 		else
 		{
-			g_timer.remove_the_timer(_injecting_rt_traffic_timer_id);
+			_injecting_rt_traffic_timer->cancel();
 			return postoffice_callback_interface::REMOVE;
 		}
 	}

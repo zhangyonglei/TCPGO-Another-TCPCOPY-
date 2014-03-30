@@ -11,6 +11,7 @@
 
 #include "misc.h"
 #include "utils.h"
+#include "configuration.h"
 
 class ip_pkt
 {
@@ -50,19 +51,19 @@ public:
 	uint16_t reset_ip_checksum();
 
 	/**
-	 * invoked by outbound ip packet from host
-	 */
-	uint64_t get_sess_key_outbound()
-	{
-		return make_sess_key(_iphdr->saddr, _tcphdr->source);
-	}
-
-	/**
 	 * invoked by inbound ip packet from peer.
 	 */
 	uint64_t get_sess_key_inbound()
 	{
 		return make_sess_key(_iphdr->daddr, _tcphdr->dest);
+	}
+
+	/**
+	 * invoked by outbound ip packet from host
+	 */
+	uint64_t get_sess_key_outbound()
+	{
+		return make_sess_key(_iphdr->saddr, _tcphdr->source);
 	}
 
 	const struct iphdr* get_iphdr()const
@@ -194,6 +195,16 @@ public:
 	bool should_send_me()const
 	{
 		return _send_me_pls;
+	}
+
+	int get_asio_idx_inbound()
+	{
+		return _tcphdr->dest % g_configuration.get_asio_thrd_num();
+	}
+
+	int get_asio_idx_outbound()
+	{
+		return _tcphdr->source % g_configuration.get_asio_thrd_num();
 	}
 
 protected:
