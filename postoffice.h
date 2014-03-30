@@ -59,6 +59,9 @@ public:
 	void recv_packets_from_wire();
 	void send_packets_to_wire();
 
+	void get_ready(boost::shared_ptr<postman> pm);
+
+private:
 	void employ_a_postman(boost::shared_ptr<postman> pm);
 
 private:
@@ -72,6 +75,7 @@ private:
 	boost::shared_ptr<postman> _postman;  ///< only one post man in this post office.
 
 	int _asio_idx;
+	int _asio_thrd_num;
 
 	static boost::mutex _mutex;
 	static std::vector<boost::shared_ptr<postoffice> > _postoffices;

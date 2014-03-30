@@ -35,8 +35,10 @@ lua_vm_a := $(lua_vm_src)/liblua.a
 
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
-CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -fPIC $(o) $(O) $(W)
-#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -fPIC -Wfatal-errors $(o) $(O) $(W)
+#CPPFLAGS += $(addprefix -I,$(include_dirs)) $(o) $(O) $(W)
+CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG_ $(o) $(O) $(W)
+#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG_ -Wfatal-errors $(o) $(O) $(W)
+#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -Wfatal-errors $(o) $(O) $(W)
 LINKFLAGS := -L$(iniparser) -L$(lua_vm_src) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex -lboost_thread
 LINKFLAGS4LIB := -L$(iniparser) -L$(lua_vm_src) -shared -Wl,-soname,$(soname) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex -lboost_thread
 LINKFLAGS4TEST := -L./$(bins) -l$(libstem) -Wl,-rpath,. 
@@ -85,7 +87,8 @@ test/test.o: test/test.cpp public/misc.h public/horos.h $(libname)
 
 $(bins):
 	-mkdir $@
-	cp my.conf.template $(bins)my.conf
+	cp my.conf.template $(bins)my.conf.template
+	cp my.conf $(bins)my.conf
 	 
 $(deps):
 	-mkdir $@

@@ -59,7 +59,7 @@ void pcaphandler(unsigned char* user, const pcap_pkthdr* hdr, const unsigned cha
 
 void pcap_postman::recv_impl()
 {
-	int n = pcap_dispatch(_pcap_handle, 256, pcaphandler, reinterpret_cast<unsigned char*>(this));
+	int n = pcap_dispatch(_pcap_handle, 512, pcaphandler, reinterpret_cast<unsigned char*>(this));
 }
 
 pcap_postman::pcap_postman()

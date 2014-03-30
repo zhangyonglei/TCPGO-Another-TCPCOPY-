@@ -62,7 +62,7 @@ public:
 
 public:
     /// declares six causes of session death.
-	enum cause_of_death{ACTIVE_CLOSE, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
+	enum cause_of_death{ACTIVE_CLOSE = 1, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
 private:
 	void get_ready();
@@ -109,8 +109,6 @@ private:
 
 	bool still_alive();
 
-	void all_packets_in_sliding_window_should_be_sent();
-
 private:
 	///< The ip packages which will be used to emulate the pseudo-client.
 	std::list<boost::shared_ptr<ip_pkt> >  _ippkts_samples;
@@ -142,7 +140,7 @@ private:
 	int      _response_from_peer_time_out;    ///< in unit of jiffy. refer to class the_timer
 
 	uint64_t _last_recorded_snd_time;    ///< sending speed control and detect disabled tcp session.
-	int      _snd_speed_control;         ///< in unit of jiffy.
+	int      _retransmit_time_interval;         ///< in unit of jiffy.
 	int      _have_to_send_data_within_this_timeperiod;  ///< self-explanatory
 
 	uint64_t _my_fin_acked_time;         ///< don't wanna wait for fin from peer forever

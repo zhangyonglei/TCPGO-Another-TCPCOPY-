@@ -48,6 +48,12 @@ postoffice& postoffice::instance(int idx)
 	return *_postoffices[idx].get();
 }
 
+void postoffice::get_ready(boost::shared_ptr<postman> pm)
+{
+	_asio_thrd_num = g_configuration.get_asio_thrd_num();
+	employ_a_postman(pm);
+}
+
 void postoffice::employ_a_postman(boost::shared_ptr<postman> pm)
 {
 	_postman = pm;
@@ -81,15 +87,19 @@ void postoffice::recv_packets_from_wire()
 	while(true)
 	{
 		gotya = _postman->recv(_asio_idx, pkt);
-		if (!gotya)
-			return;
-
-		// now inform the corresponding receiver the coming ip package.
-		key = pkt->get_sess_key_inbound();
-		ite = _callbacks.find(key);
-		if (ite != _callbacks.end())
+		if (gotya)
 		{
-			(*ite)->got_a_packet(pkt);
+			// now inform the corresponding receiver the coming ip package.
+			key = pkt->get_sess_key_inbound();
+			ite = _callbacks.find(key);
+			if (ite != _callbacks.end())
+			{
+				(*ite)->got_a_packet(pkt);
+			}
+		}
+		else
+		{
+			return;
 		}
 	}
 }
@@ -113,6 +123,10 @@ void postoffice::send_packets_to_wire()
 	concurrency_num = 0;
 	data_has_been_sent = false;
 	concurrency_limit_num = g_configuration.get_concurrency_limit();
+	if (concurrency_limit_num != 1)
+	{
+		concurrency_limit_num = (concurrency_limit_num + _asio_thrd_num)/_asio_thrd_num;
+	}
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{
@@ -158,6 +172,11 @@ void postoffice::send_packets_to_wire()
 			if (pkt->should_send_me())
 			{
 				success = _postman->send(_asio_idx, pkt);
+				// success = _postman->send_sync(pkt);
+			}
+			else
+			{
+
 			}
 
 			if (success)

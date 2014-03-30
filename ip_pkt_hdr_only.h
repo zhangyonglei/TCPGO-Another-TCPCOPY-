@@ -17,6 +17,11 @@ public:
 	ip_pkt_hdr_only();
 	ip_pkt_hdr_only(const char* pkt);
 
+	virtual int get_actual_tot_len()const
+	{
+		return (_iphdr->ihl << 2) + (_tcphdr->doff << 2);
+	}
+
 	virtual ~ip_pkt_hdr_only();
 
 public:

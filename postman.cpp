@@ -74,7 +74,9 @@ void postman::get_ready()
 		_recv_queues[i].reset(new LockFreeQueue());
 		_snd_queues[i].reset(new LockFreeQueue());
 		_count_recv_queues[i].reset(new boost::atomic_int);
+		_count_recv_queues[i]->operator=(0);
 		_count_snd_queues[i].reset(new boost::atomic_int);
+		_count_snd_queues[i]->operator=(0);
 	}
 
 	get_ready4subclass();
@@ -98,6 +100,11 @@ bool postman::recv(int asio_idx, boost::shared_ptr<ip_pkt>& pkt)
 	if (success)
 	{
 		_count_recv_queues[asio_idx]->operator--();
+		// std::cout << "postman::recv _count_recv_queues[asio_idx]  " << *_count_recv_queues[asio_idx] << std::endl;
+	}
+	else
+	{
+	//	std::cout << "postman::recv _count_recv_queues[asio_idx]  " << *_count_recv_queues[asio_idx] << std::endl;
 	}
 
 	return success;
@@ -113,8 +120,17 @@ bool postman::send(int asio_idx, boost::shared_ptr<ip_pkt> pkt)
 	{
 		_count_snd_queues[asio_idx]->operator++();
 	}
+	else
+	{
+	}
 
 	return success;
+}
+
+bool postman::send_sync(boost::shared_ptr<ip_pkt> pkt)
+{
+	send_core(pkt.get());
+	return true;
 }
 
 void postman::recv_thrd_entry()
@@ -138,9 +154,6 @@ void postman::send_impl()
 	bool success;
 	bool need_a_break;
 	boost::shared_ptr<ip_pkt> pkt;
-	struct sockaddr_in dst_addr;
-	const char* starting_addr;
-	int tot_len;
 
 	need_a_break = true;
 
@@ -151,14 +164,9 @@ void postman::send_impl()
 			success = _snd_queues[i]->pop(pkt);
 			if (success)
 			{
-				dst_addr.sin_family = AF_INET;
-				dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
+				send_core(pkt.get());
 
-				starting_addr = pkt->get_starting_addr();
-				tot_len = pkt->get_tot_len();
-
-				sendto(_send_fd, starting_addr, tot_len, 0,
-						reinterpret_cast<struct sockaddr*>(&dst_addr), sizeof(dst_addr));
+				// std::cout << "send_impl  " << *_count_snd_queues[i] << std::endl;
 
 				_count_snd_queues[i]->operator--();
 
@@ -169,8 +177,25 @@ void postman::send_impl()
 
 	if (need_a_break)
 	{
-		boost::this_thread::sleep(boost::posix_time::milliseconds(25));
+		// i need the sending thread keeping busy.
+	//	boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 	}
+}
+
+void postman::send_core(ip_pkt* pkt)
+{
+	struct sockaddr_in dst_addr;
+	const char* starting_addr;
+	int tot_len;
+
+	dst_addr.sin_family = AF_INET;
+	dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
+
+	starting_addr = pkt->get_starting_addr();
+	tot_len = pkt->get_tot_len();
+
+	sendto(_send_fd, starting_addr, tot_len, 0,
+			reinterpret_cast<struct sockaddr*>(&dst_addr), sizeof(dst_addr));
 }
 
 void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
@@ -179,7 +204,7 @@ void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	int asio_idx;
 	while (true && !_done_recv_thrd)
 	{
-		int pkt_tot_len = pkt->get_tot_len();
+		int pkt_tot_len = pkt->get_actual_tot_len();
 		const char* pkt_addr = pkt->get_starting_addr();
 		boost::shared_ptr<MemBlock> mem_block = boost::make_shared<MemBlock>(pkt_tot_len);
 		memcpy(mem_block->data(), pkt_addr, pkt_tot_len);
@@ -194,5 +219,9 @@ void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)
 			// boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 		}
 		_count_recv_queues[asio_idx]->operator++();
+
+		// std::cout << "push_recved_ippkt  " << *_count_recv_queues[asio_idx] << std::endl;
+
+		return;
 	}
 }

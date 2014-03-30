@@ -61,10 +61,12 @@ void politburo::get_ready()
 		break;
 	}
 
+	m->get_ready();
+
 	for (i = 0; i < _asio_thrd_num; i++)
 	{
 		session_manager::instance(i).get_ready();
-		postoffice::instance(i).employ_a_postman(m);
+		postoffice::instance(i).get_ready(m);
 	}
 
 	for (i = 0; i < _asio_thrd_num; i++)
@@ -77,6 +79,7 @@ void politburo::get_ready()
 void politburo::post_the_jobs(int asio_idx)
 {
 	g_realtime_capturer.pluck_out_and_inject_realtime_ippkts(asio_idx, 10);
+
 	postoffice::instance(asio_idx).send_packets_to_wire();
 	postoffice::instance(asio_idx).recv_packets_from_wire();
 
