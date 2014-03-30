@@ -54,7 +54,7 @@ int cute_logger::printf(const char* format, ...)
 		vsnprintf(buff, sizeof(buff), format, ap);
 		va_end(ap);
 		std::cout << buff;
-		fflush(_stream);
+//		fflush(_stream);
 	}
 
 	return ret;

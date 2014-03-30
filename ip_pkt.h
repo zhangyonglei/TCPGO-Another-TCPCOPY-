@@ -87,6 +87,13 @@ public:
 		return _tot_len;
 	}
 
+	// for ip_pkt_hdr_only, the payload is dropped.
+	// ip_pkt_hdr_only will override this method.
+	virtual int get_actual_tot_len()const
+	{
+		return _tot_len;
+	}
+
 	int get_iphdr_len()const
 	{
 		return _iphdr_len;

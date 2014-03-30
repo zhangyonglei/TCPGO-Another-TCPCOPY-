@@ -98,9 +98,9 @@ public:
 		return _injecting_rt_traffic_timeout;
 	}
 
-	int get_snd_speed_control()
+	int get_retransmit_time_interval()
 	{
-		return _snd_speed_control;
+		return _retransmit_time_interval;
 	}
 
 	int get_wait_for_fin_from_peer_time_out()
@@ -179,8 +179,8 @@ public:
 	void set_injecting_rt_traffic_timeout(const std::string& timeout);
 	void set_injecting_rt_traffic_timeout(int timeout);
 
-	void set_snd_speed_control(const std::string& speed_control);
-	void set_snd_speed_control(int speed_control);
+	void set_retransmit_time_interval(const std::string& speed_control);
+	void set_retransmit_time_interval(int speed_control);
 
 	void set_wait_for_fin_from_peer_time_out(const std::string& time_out);
 	void set_wait_for_fin_from_peer_time_out(int time_out);
@@ -228,7 +228,7 @@ private:
 	int  _response_from_peer_time_out;
 	int  _have_to_send_data_within_this_timeperiod;
 	int  _injecting_rt_traffic_timeout;
-	int  _snd_speed_control;
+	int  _retransmit_time_interval;
 	int  _wait_for_fin_from_peer_time_out;
 	bool _enable_active_close;
 	int _expected_qps;

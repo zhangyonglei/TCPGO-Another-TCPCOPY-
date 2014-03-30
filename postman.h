@@ -44,6 +44,12 @@ public:
 	 */
 	virtual bool send(int asio_idx, boost::shared_ptr<ip_pkt> pkt);
 
+	/**
+	 * used for satisfy debug's purpose.
+	 * It only returns when the packet has been send.
+	 */
+	virtual bool send_sync(boost::shared_ptr<ip_pkt> pkt);
+
 protected:
 	// Derived classes must implement the following two virtual functions.
 	virtual void get_ready4subclass() = 0;
@@ -51,6 +57,8 @@ protected:
 
 	// The default implementation utilizes raw socket.
 	virtual void send_impl();
+
+	virtual void send_core(ip_pkt* pkt);
 
 	// push_recved_ippkt blocks until either pkt is pushed to recv queue
 	// or thread is exiting.

@@ -25,13 +25,15 @@ extern cascade g_cascade;
 class cascade
 {
 public:
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<MemBlock>, boost::lockfree::capacity<10240> > LockFreeQueue;
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<MemBlock>, boost::lockfree::capacity<10000> > LockFreeQueue;
 
 public:
 	cascade();
 	virtual ~cascade();
 
 	void ready_go();
+
+	// if the queue is full, this packet will be dropped.
 
 	void push_back(boost::shared_ptr<MemBlock> block);
 

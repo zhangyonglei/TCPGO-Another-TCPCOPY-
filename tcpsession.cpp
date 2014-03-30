@@ -27,7 +27,7 @@ tcpsession::tcpsession(int asio_idx, uint32_t ip, uint16_t port)
 
 	_response_from_peer_time_out = g_configuration.get_response_from_peer_time_out();
 	_have_to_send_data_within_this_timeperiod = g_configuration.get_have_to_send_data_within_this_timeperiod();
-	_snd_speed_control = g_configuration.get_snd_speed_control();
+	_retransmit_time_interval = g_configuration.get_retransmit_time_interval();
 	_wait_for_fin_from_peer_time_out = g_configuration.get_wait_for_fin_from_peer_time_out();
 	_enable_active_close = g_configuration.get_enable_active_close();
 
@@ -72,7 +72,7 @@ tcpsession::~tcpsession()
 void tcpsession::kill_me(cause_of_death cause)
 {
 	_dead = true;
-	g_logger.printf("session: %s.%hu ended.\n", _client_src_ip_str.c_str(), _client_src_port);
+	g_logger.printf("session: %s.%hu ended. reason code: %d\n", _client_src_ip_str.c_str(), _client_src_port, cause);
 	g_testsuite.report_sess_traffic(_client_src_ip_str, _client_src_port, _traffic_history, cause);
 
 	if (PEER_TIME_OUT == cause || DORMANCY == cause)
@@ -85,15 +85,6 @@ void tcpsession::kill_me(cause_of_death cause)
 bool tcpsession::still_alive()
 {
 	return !_dead;
-}
-
-void tcpsession::all_packets_in_sliding_window_should_be_sent()
-{
-	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
-			ite != _sliding_window_right_boundary; ++ite)
-	{
-		(*ite)->mark_me_should_be_sent();
-	}
 }
 
 void tcpsession::append_ip_sample(boost::shared_ptr<ip_pkt> ippkt)
@@ -413,13 +404,19 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		}
 	}
 
+#ifdef _DEBUG_
+	int distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
+#endif
+
 	jiffies = g_timer.get_jiffies();
 
-	// don't send too quickly.
-	if (jiffies - _last_recorded_snd_time <= _snd_speed_control)
+	// the following logic determines that if some packets should be send.
+	// retransmit timer has not expired.
+	if (jiffies - _last_recorded_snd_time <= _retransmit_time_interval)
 	{
 		if (_sliding_window_left_boundary == _sliding_window_right_boundary)
 			return 0;
+
 
 		pkt = _sliding_window_left_boundary->get();
 
@@ -433,8 +430,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 				need_send = true;
 				break;
 			}
-			--ite;
-		}while(ite != _sliding_window_left_boundary);
+		}while(ite-- != _sliding_window_left_boundary);
 
 		// packets in sliding window have all be sent. Have to wait for the send speed control timer
 		// to expire to get the chance of re-transmit.
@@ -447,7 +443,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 			// fall through...............
 		}
 	}
-	else  // send speed control timer has expired.
+	else  // have to perform retransmit
 	{
 		for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
 		{
@@ -455,13 +451,16 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		}
 	}
 
+	// if reach here, some packets should be send.
+
 	fin_has_been_sent = false;
+	// iterate over the sliding window.
 	for(std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
 			ite != _sliding_window_right_boundary;
 			++ite)
 	{
 
-		bool is_syn_set, is_ack_set, is_fin_set, is_rst_set;
+		bool is_syn_set, is_ack_set, is_fin_set, is_rst_set, send_me_pls;
 		int tcp_payload_len;
 
 		pkt = ite->get();
@@ -470,6 +469,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		is_ack_set = pkt->is_ack_set();
 		is_fin_set = pkt->is_fin_set();
 		is_rst_set = pkt->is_rst_set();
+		send_me_pls = pkt->should_send_me();
 
 		tcp_payload_len = pkt->get_tcp_payload_len();
 
@@ -515,7 +515,6 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 			}
 		}
 
-		pkt->mark_me_should_be_sent();
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(*ite);
@@ -932,8 +931,11 @@ void tcpsession::adjust_sliding_window()
 		ippkt_count_walked_through++;
 		++ite;
 	}
+
+#ifdef _DEBUG_
 	distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
 	g_logger.printf("%d packet(s) is(are) in the sliding window.\n", distance);
+#endif
 
 	// should the sliding window size be increased.
 	if (current_sliding_win_size < _advertised_window_size)
@@ -965,10 +967,12 @@ void tcpsession::adjust_sliding_window()
 			}
 		}
 
+#ifdef _DEBUG_
 		distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
 
 		g_logger.printf("sliding window has been expanded to %d packets.\n", distance);
 		g_logger.printf("%d packet(s) is(are) in the _ippkts_samples.\n", _ippkts_samples.size());
+#endif
 	}
 }
 
@@ -1046,6 +1050,4 @@ void tcpsession::refresh_status(boost::shared_ptr<ip_pkt> pkt)
 	_advertised_window_size = pkt->get_win_size();
 
 	adjust_sliding_window();
-
-	all_packets_in_sliding_window_should_be_sent();
 }

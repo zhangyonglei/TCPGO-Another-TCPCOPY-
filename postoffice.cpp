@@ -87,15 +87,19 @@ void postoffice::recv_packets_from_wire()
 	while(true)
 	{
 		gotya = _postman->recv(_asio_idx, pkt);
-		if (!gotya)
-			return;
-
-		// now inform the corresponding receiver the coming ip package.
-		key = pkt->get_sess_key_inbound();
-		ite = _callbacks.find(key);
-		if (ite != _callbacks.end())
+		if (gotya)
 		{
-			(*ite)->got_a_packet(pkt);
+			// now inform the corresponding receiver the coming ip package.
+			key = pkt->get_sess_key_inbound();
+			ite = _callbacks.find(key);
+			if (ite != _callbacks.end())
+			{
+				(*ite)->got_a_packet(pkt);
+			}
+		}
+		else
+		{
+			return;
 		}
 	}
 }
@@ -164,6 +168,11 @@ void postoffice::send_packets_to_wire()
 			if (pkt->should_send_me())
 			{
 				success = _postman->send(_asio_idx, pkt);
+				// success = _postman->send_sync(pkt);
+			}
+			else
+			{
+
 			}
 
 			if (success)
