@@ -126,11 +126,11 @@ void postoffice::send_packets_to_wire()
 			_callbacks.erase(ite++);
 			continue;
 		}
-		else if (postoffice_callback_interface::IGNORE == num)
+/*		else if (postoffice_callback_interface::IGNORE == num)
 		{
-			++ite;
+			++ite;       obsoleted !
 			continue;
-		}
+		}*/
 		else if (0 == num)
 		{
 			++ite;

@@ -29,7 +29,7 @@ public:
 	 * return REMOVE to indicate to remove this postoffice_callback_interface.
 	 * other return values are invalidate.
 	 */
-	enum {IGNORE = -100, REMOVE = -101};
+	enum {/*IGNORE = -100* obsoleted.*/ REMOVE = -101};
 	virtual int pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& pkts) = 0;
 
 	/**
