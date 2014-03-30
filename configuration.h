@@ -72,6 +72,11 @@ public:
 		return _sniff_method;
 	}
 
+	int get_asio_thrd_num()
+	{
+		return _asio_thrd_num;
+	}
+
 	// [SESSION]
 	int get_session_count_limit()
 	{
@@ -155,7 +160,7 @@ public:
 	void set_sniff_method(const std::string& sniff_method);
 	void set_sniff_method(SNIFF_METHOD sniff_method);
 
-	void set_next_hop(const std::string& next_hop);
+	void set_asio_thrd_num(int num);
 
 	// [SESSION]
 	void set_session_count_limit(const std::string& limit);
@@ -212,6 +217,7 @@ private:
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.
 	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
 	SNIFF_METHOD _sniff_method; ///< there are three kinds of methods to sniff the peers response packets.
+	int _asio_thrd_num;      ///< the thread pool for asio.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.

@@ -54,7 +54,7 @@ private:
 	boost::asio::io_service _io_service;
 	boost::asio::io_service::work _work;
 
-	static const int _threads_count = 2;
+	int _threads_count;
 	boost::thread_group _threads;
 
 	typedef boost::asio::ip::tcp::acceptor the_acceptor;

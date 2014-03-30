@@ -8,6 +8,7 @@
 
 #include <boost/enable_shared_from_this.hpp>
 #include "proactor.h"
+#include "configuration.h"
 
 proactor g_proactor;
 
@@ -46,6 +47,7 @@ proactor::~proactor()
 
 void proactor::get_ready()
 {
+	_threads_count = g_configuration.get_asio_thrd_num();
 	for (int i = 0; i < _threads_count; i++)
 	{
 		_threads.create_thread(boost::bind(&boost::asio::io_service::run, &_io_service));

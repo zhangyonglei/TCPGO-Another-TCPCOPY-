@@ -28,6 +28,7 @@ configuration::configuration()
 	set_onoff_random_port(true);
 	set_accidental_death_pcap_file_limit(100);
 	set_sniff_method(SNIFF_RAW);
+	set_asio_thrd_num(-1);   // let the function deduce the best number by itself.
 
 	// [SESSION]
 	set_session_count_limit(10000);
@@ -296,6 +297,23 @@ void configuration::set_sniff_method(const std::string& sniff_method)
 	{
 		_sniff_method = SNIFF_RAW;
 		g_logger.printf("%s is not a illegal sniff_method.\n");
+	}
+}
+
+void configuration::set_asio_thrd_num(int num)
+{
+	if (num <= 0)
+	{
+		int core_num = boost::thread::hardware_concurrency();
+		_asio_thrd_num = core_num - 1;
+		if (_asio_thrd_num < 2)
+		{
+			_asio_thrd_num = 2;
+		}
+	}
+	else
+	{
+		_asio_thrd_num = num;
 	}
 }
 
