@@ -64,10 +64,11 @@ private:
 private:
 	uint16_t _traffic_listening_port;   ///< in host byte order.
 
+	static const int _ippkt_queue_capacity = 400000;
 	/// key is created using make_sess_key(ip, port).
 	std::map<uint64_t, MemPool>  _conns;
-//	boost::lockfree::queue<ip_pkt*> _ippkt_queue;  ///< it's very weird.
-	boost::lockfree::spsc_queue<ip_pkt*, boost::lockfree::capacity<50000> > _ippkt_queue;
+//	boost::lockfree::queue<ip_pkt*> _ippkt_queue;  ///< it's not that efficient as i suppose.
+	boost::lockfree::spsc_queue<ip_pkt*, boost::lockfree::capacity<_ippkt_queue_capacity> > _ippkt_queue;
 	int _count;
 
 	boost::shared_ptr<boost::asio::io_service::strand> _strand;   ///< used to serialize the asynchronous I/O

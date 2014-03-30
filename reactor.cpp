@@ -125,14 +125,7 @@ void reactor::bigbang()
 			}
 		}
 
-		if (!g_session_manager.is_in_traffic_jam_control())
-		{
-			g_realtime_capturer.inject_realtime_ippkts(concurrency / 15);
-		}
-		else
-		{
-			g_realtime_capturer.inject_realtime_ippkts(1);
-		}
+		g_realtime_capturer.inject_realtime_ippkts(5);
 		g_postoffice.send_packets_to_wire();
 		g_postoffice.recv_packets_from_wire();
 

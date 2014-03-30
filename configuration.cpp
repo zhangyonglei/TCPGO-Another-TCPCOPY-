@@ -30,7 +30,7 @@ configuration::configuration()
 	set_sniff_method(SNIFF_RAW);
 
 	// [SESSION]
-	set_session_count_limit(100000);
+	set_session_count_limit(10000);
 	set_response_from_peer_time_out(3 * HZ);
 	set_have_to_send_data_within_this_timeperiod(3 * HZ);
 	set_injecting_rt_traffic_timeout(4000);

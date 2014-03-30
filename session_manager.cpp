@@ -127,7 +127,7 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	int total_count = _sessions.size();
 
 	// hard code the session count ceiling
-	if (_healthy_sess_count >= _expected_qps * 6)
+	if (total_count >= _session_count_limit)
 	{
 		_traffic_jam = true;
 	}
