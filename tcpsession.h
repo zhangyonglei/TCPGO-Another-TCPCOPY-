@@ -71,7 +71,7 @@ private:
 	/// if a tcp segment received, ack cann't be piggybacked by sample, so create a pure ack without payload just
 	/// for the sake of acknowledge.
 	/// b. in the case of passive close. The some logic applies.
-	void create_an_ack_without_payload(uint32_t seq);
+	boost::shared_ptr<ip_pkt> build_an_ack_without_payload(uint32_t seq);
 
 private:
 	/// eleven member functions for their respective TCP state.
@@ -130,7 +130,6 @@ private:
 	uint32_t _expected_next_sequence_from_peer;   ///< in host byte order
 	uint32_t _latest_acked_sequence_by_peer;      ///< in host byte order. It's the seq_ack in the latest peer's response packet.
 	uint32_t _last_seq_beyond_fin_at_localhost_side;   ///< in host byte order
-	uint32_t _last_sent_byte_seq_beyond;          ///< in host byte order. The sequence of the last sent byte + 1
 	uint32_t _expected_last_ack_seq_from_peer;    ///< in host byte order
 	int _advertised_window_size;                  ///< in host byte order
 	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_left_boundary;  ///< closed interval (including)

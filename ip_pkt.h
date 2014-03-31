@@ -12,6 +12,7 @@
 #include "misc.h"
 #include "utils.h"
 #include "configuration.h"
+#include "thetimer.h"
 
 class ip_pkt
 {
@@ -214,6 +215,16 @@ public:
 		return _tcphdr->source % g_configuration.get_asio_thrd_num();
 	}
 
+	uint64_t get_last_recorded_snd_time()
+	{
+		return _last_recorded_snd_time;
+	}
+
+	void set_last_recorded_snd_time()
+	{
+		_last_recorded_snd_time = g_timer.get_jiffies();
+	}
+
 protected:
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.
@@ -248,6 +259,8 @@ protected:
 
 	bool _send_me_pls;           ///< a tag used to indicate that the packet should be send.
 	int _sent_counter;           ///< record how many times this ip packet has been sent.
+
+	uint64_t _last_recorded_snd_time; ///< self-explanatory
 
 	/// the following variables are for debug's convenience.
 	std::string _src_addr;

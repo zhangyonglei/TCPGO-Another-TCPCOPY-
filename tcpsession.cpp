@@ -309,7 +309,6 @@ void tcpsession::get_ready()
 	_latest_acked_sequence_by_peer = 0;
 	_expected_last_ack_seq_from_peer = 0;
 	_last_seq_beyond_fin_at_localhost_side = 0;
-	_last_sent_byte_seq_beyond = 0;
 	_advertised_window_size = 1000*1000*1000;
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	if (!_ippkts_samples.empty())
@@ -355,9 +354,11 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	ip_pkt* pkt;
 	uint64_t jiffies;
 	bool fin_has_been_sent;
+	bool pkt_has_been_sent;
 	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	pkts.clear();
+	jiffies = g_timer.get_jiffies();
 
 	if (ABORT == _sess_state)
 	{
@@ -408,51 +409,20 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	int distance = std::distance(_sliding_window_left_boundary, _sliding_window_right_boundary);
 #endif
 
-	jiffies = g_timer.get_jiffies();
-
 	// the following logic determines that if some packets should be send.
 	// retransmit timer has not expired.
-	if (jiffies - _last_recorded_snd_time <= _retransmit_time_interval)
+	for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
 	{
-		if (_sliding_window_left_boundary == _sliding_window_right_boundary)
-			return 0;
-
-
-		pkt = _sliding_window_left_boundary->get();
-
-		bool need_send = false;
-		ite = _sliding_window_right_boundary;
-		--ite;
-		do
+		ip_pkt* pkt = ite->get();
+		if (jiffies - pkt->get_last_recorded_snd_time() > _retransmit_time_interval)
 		{
-			if ((*ite)->should_send_me())
-			{
-				need_send = true;
-				break;
-			}
-		}while(ite-- != _sliding_window_left_boundary);
-
-		// packets in sliding window have all be sent. Have to wait for the send speed control timer
-		// to expire to get the chance of re-transmit.
-		if (!need_send)
-		{
-			return 0;
-		}
-		else
-		{
-			// fall through...............
-		}
-	}
-	else  // have to perform retransmit
-	{
-		for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
-		{
-			(*ite)->mark_me_should_be_sent();
+			pkt->mark_me_should_be_sent();
 		}
 	}
 
 	// if reach here, some packets should be send.
 
+	pkt_has_been_sent = false;
 	fin_has_been_sent = false;
 	// iterate over the sliding window.
 	for(std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
@@ -481,17 +451,20 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 			}
 			else   // passive close
 			{
-				// halt my FIN and wait for FIN from the peer.
 				if (_current_state != ESTABLISHED)
 				{
 					fin_has_been_sent = true;
 				}
-				else
+				else // halt my FIN and wait for FIN from the peer.
 				{
+					// _current_state == ESTABLISHED
+					// though FIN packet is in the sliding window, the following break
+					// cause it be halted. FIN will not be pushed into sending
+					// vector returned from within this method call.
 					break;
 				}
 			}
-		}
+		} // end of if(is_fin_set)
 
 		// if this is a pure ack
 		if (is_ack_set && 0 == tcp_payload_len && !is_syn_set && !is_rst_set && !is_fin_set )
@@ -518,7 +491,11 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(*ite);
-		_last_sent_byte_seq_beyond = pkt->get_seq() + 1;
+
+		if (send_me_pls)
+		{
+			pkt_has_been_sent = true;
+		}
 	} // end the loop of the sliding window
 
 	count = pkts.size();
@@ -576,7 +553,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		kill_me(ACTIVE_CLOSE);
 	}
 
-	if (count > 0)
+	if (pkt_has_been_sent)
 	{
 		_last_recorded_snd_time = jiffies;
 	}
@@ -659,14 +636,11 @@ void tcpsession::got_a_packet(boost::shared_ptr<ip_pkt> ippkt)
 	}
 }
 
-void tcpsession::create_an_ack_without_payload(uint32_t seq)
+boost::shared_ptr<ip_pkt> tcpsession::build_an_ack_without_payload(uint32_t seq)
 {
 	struct tcphdr* tcphdr;
 	char buff[40];
 	memcpy(buff, _pure_ack_template, sizeof(buff));
-
-	if (!_ippkts_samples.empty())
-		return;
 
 	tcphdr = (struct tcphdr*)(buff + 20);
 	tcphdr->seq = htons(seq);
@@ -674,8 +648,7 @@ void tcpsession::create_an_ack_without_payload(uint32_t seq)
 
 	boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(buff);
 
-	_ippkts_samples.push_back(pkt);
-	assert(!tcphdr->fin);
+	return pkt;
 }
 
 void tcpsession::closed_state_handler(boost::shared_ptr<ip_pkt> pkt)
@@ -702,13 +675,13 @@ void tcpsession::syn_sent_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		if (pkt->is_ack_set())
 		{
 			_current_state = tcpsession::ESTABLISHED;
-			g_logger.printf("session %s.%hu moves to state ESTABLISHED from state SYN_SENT.\n",
+			g_logger.printf("session: %s.%hu moves to state ESTABLISHED from state SYN_SENT.\n",
 					_client_src_ip_str.c_str(), _client_src_port);
 		}
 		else
 		{
 			_current_state = tcpsession::SYN_RCVD; // rarely happens.
-			g_logger.printf("session %s.%hu moves to state SYN_RCVD from state SYN_SENT.\n",
+			g_logger.printf("session: %s.%hu moves to state SYN_RCVD from state SYN_SENT.\n",
 					_client_src_ip_str.c_str(), _client_src_port);
 		}
 	}
@@ -723,6 +696,21 @@ void tcpsession::established_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		g_logger.printf("session %s.%hu moves to state CLOSE_WAIT from state ESTABLISHED.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 	}
+	else
+	{
+		// only a fin packet is in ip_pkts_samples and _enable_active_close is not allowed.
+		if (_ippkts_samples.front()->is_fin_set() && !_enable_active_close)
+		{
+			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
+			_traffic_history.push_back(pure_ack);
+			pure_ack->rebuild(g_configuration.get_dst_addr().c_str(),
+						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			_ippkts_samples.push_back(pure_ack);
+			_sliding_window_left_boundary = _ippkts_samples.begin();
+			_sliding_window_right_boundary = _sliding_window_left_boundary;
+			++_sliding_window_right_boundary;
+		}
+	}
 	refresh_status(pkt);
 }
 
@@ -733,7 +721,8 @@ void tcpsession::close_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 
 	if (0 != pkt->get_tcp_payload_len() && _ippkts_samples.empty() )
 	{
-		create_an_ack_without_payload(_latest_acked_sequence_by_peer);
+		boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
+		_ippkts_samples.push_back(pure_ack);
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
@@ -796,7 +785,11 @@ void tcpsession::fin_wait_1_state_handler(boost::shared_ptr<ip_pkt> pkt)
 	refresh_status(pkt);
 	if (my_fin_has_been_acked)
 	{
-		create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+		if (_ippkts_samples.empty())
+		{
+			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+			_ippkts_samples.push_back(pure_ack);
+		}
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
@@ -829,7 +822,11 @@ void tcpsession::fin_wait_2_state_handler(boost::shared_ptr<ip_pkt> pkt)
 
 	if (pkt->get_tcp_payload_len())
 	{
-		create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+		if (_ippkts_samples.empty())
+		{
+			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+			_ippkts_samples.push_back(pkt);
+		}
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
@@ -849,7 +846,11 @@ void tcpsession::closing_state_handler(boost::shared_ptr<ip_pkt> pkt)
 	}
 	refresh_status(pkt);
 
-	create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+	if (_ippkts_samples.empty())
+	{
+		boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+		_ippkts_samples.push_back(pure_ack);
+	}
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
@@ -858,7 +859,11 @@ void tcpsession::time_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	refresh_status(pkt);
 
-	create_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+	if (_ippkts_samples.empty())
+	{
+		boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
+		_ippkts_samples.push_back(pure_ack);
+	}
 	_sliding_window_left_boundary = _ippkts_samples.begin();
 	_sliding_window_right_boundary = _ippkts_samples.end();
 }
