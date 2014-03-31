@@ -15,6 +15,7 @@ ip_pkt::ip_pkt()
 	_sent_counter = 0;
 	_send_me_pls = true;
 	_outbound = true;
+	_last_recorded_snd_time = 0;
 }
 
 ip_pkt::ip_pkt(const char* pkt)

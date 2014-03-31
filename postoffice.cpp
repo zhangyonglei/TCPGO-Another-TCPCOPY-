@@ -171,8 +171,9 @@ void postoffice::send_packets_to_wire()
 			success = false;
 			if (pkt->should_send_me())
 			{
-				success = _postman->send(_asio_idx, pkt);
-				// success = _postman->send_sync(pkt);
+				// success = _postman->send(_asio_idx, pkt);
+				// std::cout << pkt->get_sent_counter() << "-----\n";
+				success = _postman->send_sync(pkt);
 			}
 			else
 			{
@@ -183,6 +184,7 @@ void postoffice::send_packets_to_wire()
 			{
 				pkt->mark_me_has_been_sent();
 				pkt->increment_sent_counter();
+				pkt->set_last_recorded_snd_time();
 			}
 			else
 			{
