@@ -36,8 +36,8 @@ lua_vm_a := $(lua_vm_src)/liblua.a
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) $(o) $(O) $(W)
-CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG $(o) $(O) $(W)
-#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g  $(o) $(O) $(W)
+#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG $(o) $(O) $(W)
+CPPFLAGS += $(addprefix -I,$(include_dirs)) -g  $(o) $(O) $(W)
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG_ -Wfatal-errors $(o) $(O) $(W)
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -Wfatal-errors $(o) $(O) $(W)
 LINKFLAGS := -L$(iniparser) -L$(lua_vm_src) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex -lboost_thread

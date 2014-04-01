@@ -127,11 +127,13 @@ void ip_pkt::warm_up()
 	_syn_flag = _tcphdr->syn;
 	_fin_flag = _tcphdr->fin;
 
+#ifdef _DEBUG
 	struct in_addr inaddr;
 	inaddr.s_addr = _iphdr->saddr;
 	_src_addr = inet_ntoa(inaddr);
 	inaddr.s_addr = _iphdr->daddr;
 	_dst_addr = inet_ntoa(inaddr);
+#endif
 
 	if (g_configuration.get_dst_port() == get_dst_port())
 	{

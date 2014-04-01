@@ -150,6 +150,7 @@ public:
 		return _fin_flag;
 	}
 
+#ifdef _DEBUG
 	const std::string get_src_addr()const
 	{
 		return _src_addr;
@@ -159,6 +160,7 @@ public:
 	{
 		return _dst_addr;
 	}
+#endif
 
 	// in host byte order
 	uint16_t get_src_port()const
@@ -263,9 +265,11 @@ protected:
 
 	uint64_t _last_recorded_snd_time; ///< self-explanatory
 
+#ifdef _DEBUG
 	/// the following variables are for debug's convenience.
 	std::string _src_addr;
 	std::string _dst_addr;
+#endif
 };
 
 #endif /* _IPPKG_H_ */

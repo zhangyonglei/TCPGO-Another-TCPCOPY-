@@ -234,8 +234,8 @@ int32_t tcpsession::sanitize()
 		// remove  corrupted sample, this case occurs rarely.
 		else if (tot_len != iphdr_len + tcphdr_len + tcp_payload_len)
 		{
-			std::cerr << "detected corrupted ip packet." << pkt->get_src_addr() << " : " << pkt->get_src_port()
-							<< " --> " << pkt->get_dst_addr() << " : " << pkt->get_dst_port() << std::endl;
+			//std::cerr << "detected corrupted ip packet." << pkt->get_src_addr() << " : " << pkt->get_src_port()
+							//<< " --> " << pkt->get_dst_addr() << " : " << pkt->get_dst_port() << std::endl;
 			++ite;
 		}
 		else
@@ -760,13 +760,13 @@ void tcpsession::established_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		// only a fin packet is in ip_pkts_samples and _enable_active_close is not allowed.
 		if (_ippkts_samples.front()->is_fin_set() && !_enable_active_close)
 		{
-//			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
-//			pure_ack->rebuild(g_configuration.get_dst_addr().c_str(),
-//						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
-//			_ippkts_samples.push_front(pure_ack);
-//			_sliding_window_left_boundary = _ippkts_samples.begin();
-//			_sliding_window_right_boundary = _sliding_window_left_boundary;
-//			++_sliding_window_right_boundary;
+			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
+			pure_ack->rebuild_num(g_configuration.get_dst_addr_uint32(),
+						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+			_ippkts_samples.push_front(pure_ack);
+			_sliding_window_left_boundary = _ippkts_samples.begin();
+			_sliding_window_right_boundary = _sliding_window_left_boundary;
+			++_sliding_window_right_boundary;
 		}
 	}
 	refresh_status(pkt);
