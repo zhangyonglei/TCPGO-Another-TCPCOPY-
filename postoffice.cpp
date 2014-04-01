@@ -122,7 +122,11 @@ void postoffice::send_packets_to_wire()
 
 	concurrency_num = 0;
 	data_has_been_sent = false;
-	concurrency_limit_num = (g_configuration.get_concurrency_limit() + _asio_thrd_num)/_asio_thrd_num;
+	concurrency_limit_num = g_configuration.get_concurrency_limit();
+	if (concurrency_limit_num != 1)
+	{
+		concurrency_limit_num = (concurrency_limit_num + _asio_thrd_num)/_asio_thrd_num;
+	}
 	// practically, loop through all the tcpsessions.
 	for(ite = _callbacks.begin(); ite != _callbacks.end(); )
 	{

@@ -64,6 +64,33 @@ public:
     /// declares six causes of session death.
 	enum cause_of_death{ACTIVE_CLOSE = 1, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
+	const char* map_cause_code_to_str(tcpsession::cause_of_death casue)
+	{
+		switch(casue)
+		{
+		case ACTIVE_CLOSE:
+			return "ACTIVE_CLOSE";
+
+		case PASSIVE_CLOSE:
+			return "PASSIVE_CLOSE";
+
+		case PEER_TIME_OUT:
+			return "PEER_TIME_OUT";
+
+		case DORMANCY:
+			return "DORMANCY";
+
+		case RESET:
+			return "RESET";
+
+		case NO_FIN_FROM_PEER:
+			return "NO_FIN_FROM_PEER";
+
+		default:
+			abort();
+		}
+	}
+
 private:
 	void get_ready();
 

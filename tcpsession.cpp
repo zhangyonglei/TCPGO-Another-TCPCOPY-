@@ -84,8 +84,9 @@ void tcpsession::kill_me(cause_of_death cause)
 #endif
 
 	_dead = true;
-	g_logger.printf("session: %s.%hu ended. reason code: %d\n", _client_src_ip_str.c_str(), _client_src_port, cause);
-	g_testsuite.report_sess_traffic(_client_src_ip_str, _client_src_port, _traffic_history, cause);
+	g_logger.printf("session: %s.%hu ended. reason %s\n",
+			_client_src_ip_str.c_str(), _client_src_port, map_cause_code_to_str(cause));
+	g_testsuite.report_sess_traffic(_asio_idx, _client_src_ip_str, _client_src_port, _traffic_history, cause);
 
 	if (PEER_TIME_OUT == cause || DORMANCY == cause)
 	{

@@ -47,12 +47,20 @@ testsuite::~testsuite()
 void testsuite::ready_go()
 {
 	_done = false;
-	_count_jobs = 0;
 	_current_traffic_on_test = NULL;
 
 	if (!g_configuration.get_lua_scripts_home())
 	{
 		return;
+	}
+
+	_asio_thrd_num = g_configuration.get_asio_thrd_num();
+	_queue_jobs.resize(_asio_thrd_num);
+	_queue_counts.resize(_asio_thrd_num);
+	for (int i = 0; i < _asio_thrd_num; i++)
+	{
+		_queue_jobs[i].reset(new LockFreeQueue());
+		_queue_counts[i].reset(new boost::atomic_int);
 	}
 
 //	if (NULL == _pcap_handle)
@@ -70,17 +78,19 @@ void testsuite::stop()
 	_tester.join();
 }
 
-void testsuite::report_sess_traffic(const std::string& client_src_ip,
+void testsuite::report_sess_traffic(int asio_idx,
+		                 const std::string& client_src_ip,
 						 uint16_t port,
 						 const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 						 tcpsession::cause_of_death cause)
 {
 	boost::shared_ptr<job_block> job(new job_block(client_src_ip, port, traffic, cause));
-	bool success = _jobs.push(job);
+	bool success = _queue_jobs[asio_idx]->push(job);
 	if (success)
 	{
-		_count_jobs++;
-		if (_count_jobs == 1)
+		_queue_counts[asio_idx]->operator++();
+		// here is a time window that the calling thread will be switched out.
+		if (*_queue_counts[asio_idx] <= 1)
 		{
 			boost::mutex::scoped_lock lock(_mutex);
 			_con_var.notify_one();
@@ -91,6 +101,7 @@ void testsuite::report_sess_traffic(const std::string& client_src_ip,
 void testsuite::run_worker()
 {
 	bool success;
+	bool have_jobs_done;
 	boost::shared_ptr<job_block> job;
 
 	load_lua_scripts();
@@ -98,45 +109,51 @@ void testsuite::run_worker()
 
 	while (!_done)
 	{
-		success = _jobs.pop(job);
-		if (success)
+		have_jobs_done = false;
+		for (int i = 0; i < _asio_thrd_num; i++)
 		{
-			_count_jobs--;
-			//std::cout << "consumed " << job->_client_str_ip << std::endl;
-			//std::cout << _count_jobs << " left" << std::endl;
-
-			_current_traffic_on_test = &job->_traffic;
-
-			// let's do the job.
-			// this session closes unexpectedly.
-			if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
+			success = _queue_jobs[i]->pop(job);
+			if (success)
 			{
-				std::ostringstream ss;
-				ss << boost::format("%d_accident_death_%s_%d.pcap") % job->_cause % job->_client_str_ip % job->_port;
-				save_traffic(job->_traffic, ss.str(), false);
+				have_jobs_done = true;
+				_queue_counts[i]->operator--();
+				//std::cout << "consumed " << job->_client_str_ip << std::endl;
+				//std::cout << _count_jobs << " left" << std::endl;
+
+				_current_traffic_on_test = &job->_traffic;
+
+				// let's do the job.
+				// this session closes unexpectedly.
+				if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
+				{
+					std::ostringstream ss;
+					ss << boost::format("%d_accident_death_%s_%d.pcap") % job->_cause % job->_client_str_ip % job->_port;
+					save_traffic(job->_traffic, ss.str(), false);
+
+					_current_traffic_on_test = NULL;
+					continue;
+				}
+
+				const std::list<boost::shared_ptr<ip_pkt> >& traffic = job->_traffic;
+				std::vector<char> request;
+				std::vector<char> response;
+				int integrity = split_traffic(traffic, request, response);
+				if (0 == integrity)  // if the traffic lost packet, do_tests won't be performed.
+				{
+					do_tests(job->_client_str_ip, job->_port, request, response);
+				}
 
 				_current_traffic_on_test = NULL;
-				continue;
 			}
+		} // end of for loop all the queues.
 
-			const std::list<boost::shared_ptr<ip_pkt> >& traffic = job->_traffic;
-			std::vector<char> request;
-			std::vector<char> response;
-			int integrity = split_traffic(traffic, request, response);
-			if (0 == integrity)  // if the traffic lost packet, do_tests won't be performed.
-			{
-				do_tests(job->_client_str_ip, job->_port, request, response);
-			}
-
-			_current_traffic_on_test = NULL;
-		}
-		else  // no jobs to be done at present.
+		if (!have_jobs_done && !_done)
 		{
 			boost::mutex::scoped_lock lock(_mutex);
 			_con_var.timed_wait(lock, boost::posix_time::milliseconds(1000));
 			//std::cout << "quit timed_wait" << std::endl;
 		}
-	}
+	}// end of while(!_done) loop
 }
 
 int testsuite::split_traffic(const std::list<boost::shared_ptr<ip_pkt> >& traffic,

@@ -54,7 +54,7 @@ public:
 	/**
 	 * @param port in host byte order
 	 */
-	void report_sess_traffic(const std::string& client_src_ip,
+	void report_sess_traffic(int asio_idx, const std::string& client_src_ip,
 							 uint16_t port,
 							 const std::list<boost::shared_ptr<ip_pkt> >& traffic,
 							 tcpsession::cause_of_death cause);
@@ -89,11 +89,13 @@ private:
 	int save_traffic(const std::string& pcap_file);
 
 private:
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1024> > LockFreeQueue;
-	LockFreeQueue _jobs;
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1000> > LockFreeQueue;
+	std::vector<boost::shared_ptr<LockFreeQueue> > _queue_jobs;
+	std::vector<boost::shared_ptr<boost::atomic_int> > _queue_counts;
+	int _asio_thrd_num;
+
 	boost::thread _tester;
 
-	boost::atomic_int _count_jobs;
 	boost::atomic<bool> _done;
 	boost::mutex _mutex;
 	boost::condition_variable  _con_var;

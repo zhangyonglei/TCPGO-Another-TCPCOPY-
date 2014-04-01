@@ -102,6 +102,10 @@ bool postman::recv(int asio_idx, boost::shared_ptr<ip_pkt>& pkt)
 		_count_recv_queues[asio_idx]->operator--();
 		// std::cout << "postman::recv _count_recv_queues[asio_idx]  " << *_count_recv_queues[asio_idx] << std::endl;
 	}
+	else
+	{
+	//	std::cout << "postman::recv _count_recv_queues[asio_idx]  " << *_count_recv_queues[asio_idx] << std::endl;
+	}
 
 	return success;
 }
@@ -162,13 +166,7 @@ void postman::send_impl()
 			if (success)
 			{
 				send_core(pkt.get());
-
-				// std::cout << "send_impl  " << *_count_snd_queues[i] << std::endl;
-
-				// std::cout << "send_impl  " << *_count_snd_queues[i] << std::endl;
-
 				_count_snd_queues[i]->operator--();
-
 				need_a_break = false;
 			}
 		}while(success);
