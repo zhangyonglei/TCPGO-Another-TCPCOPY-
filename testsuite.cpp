@@ -127,8 +127,9 @@ void testsuite::run_worker()
 				if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
 				{
 					std::ostringstream ss;
+					const char* cause = tcpsession::map_cause_code_to_str(job->_cause);
 					ss << boost::format("%s_accident_death_%s_%d.pcap") %
-							tcpsession::map_cause_code_to_str(job->_cause) % job->_client_str_ip % job->_port;
+							cause % job->_client_str_ip % job->_port;
 					save_traffic(job->_traffic, ss.str(), false);
 
 					_current_traffic_on_test = NULL;

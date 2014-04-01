@@ -76,8 +76,7 @@ tcpsession::~tcpsession()
 }
 
 void tcpsession::kill_me(cause_of_death cause)
-{
-	 _dead = true;
+{    _dead = true;
 	g_logger.printf("session: %s.%hu ended: %s\n",
 			_client_src_ip_str.c_str(), _client_src_port, map_cause_code_to_str(cause));
 	g_testsuite.report_sess_traffic(_asio_idx, _client_src_ip_str, _client_src_port, _traffic_history, cause);
@@ -526,6 +525,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 
 	count = pkts.size();
 
+	// is it the first hand shake
 	if (0 != count && pkts[0]->is_syn_set() && pkts[0]->should_send_me())
 	{
 		_current_state = tcpsession::SYN_SENT;
@@ -535,20 +535,18 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		// So i comment it out.
 		// _last_recorded_recv_time = jiffies;
 	}
-	else
-	{
-		// timeout. No responses has received from peer for a long time.
-		if (_last_recorded_recv_time != -1 &&
-				jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
-		{
-			const char* ip_str;
-			ip_str = _client_src_ip_str.c_str();
-			g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
-			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
-			kill_me(PEER_TIME_OUT);
 
-			return 0;
-		}
+	// timeout. No responses has received from peer for a long time.
+	if (_last_recorded_recv_time != -1 &&
+			jiffies - _last_recorded_recv_time > _response_from_peer_time_out )
+	{
+		const char* ip_str;
+		ip_str = _client_src_ip_str.c_str();
+		g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
+		g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
+		kill_me(PEER_TIME_OUT);
+
+		return 0;
 	}
 
 	if (0 != count && fin_has_been_sent)
@@ -610,6 +608,10 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		{
 			g_statistics_bureau.inc_sess_dormancy_count();
 			kill_me(DORMANCY);
+		}
+		else
+		{
+			// wait for the peer time out.
 		}
 
 		return 0;
