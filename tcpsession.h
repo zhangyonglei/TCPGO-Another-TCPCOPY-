@@ -41,9 +41,10 @@ public:
 
 	/**
 	 * This function will also remove ack packets without playload.
-	 * @return return 0 if the integrity check is passed, otherwise return non-zero error code.
+	 * @return return 0 if all packets in this session is consecutive and other conditions are met,
+	 * otherwise return non-zero error code.
 	 */
-	int check_samples_integrity();
+	int sanitize();
 
 	/**
 	 * This session is for real time traffic.
@@ -64,7 +65,7 @@ public:
     /// declares six causes of session death.
 	enum cause_of_death{ACTIVE_CLOSE = 1, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
 
-	const char* map_cause_code_to_str(tcpsession::cause_of_death casue)
+	static const char* map_cause_code_to_str(tcpsession::cause_of_death casue)
 	{
 		switch(casue)
 		{

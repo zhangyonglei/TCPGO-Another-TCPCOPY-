@@ -77,14 +77,8 @@ tcpsession::~tcpsession()
 
 void tcpsession::kill_me(cause_of_death cause)
 {
-#ifdef _DEBUG
-	_ended_sess_count++;
-	long l = _ended_sess_count;
-	g_logger.printf("%ld sessions have been processed.\n", l);
-#endif
-
-	_dead = true;
-	g_logger.printf("session: %s.%hu ended. reason %s\n",
+	 _dead = true;
+	g_logger.printf("session: %s.%hu ended: %s\n",
 			_client_src_ip_str.c_str(), _client_src_port, map_cause_code_to_str(cause));
 	g_testsuite.report_sess_traffic(_asio_idx, _client_src_ip_str, _client_src_port, _traffic_history, cause);
 
@@ -93,6 +87,12 @@ void tcpsession::kill_me(cause_of_death cause)
 		_reset_the_peer = true;
 	}
 	session_manager::instance(_asio_idx).decrease_healthy_sess_count();
+
+#ifdef _DEBUG
+	_ended_sess_count++;
+	long l = _ended_sess_count;
+	g_logger.printf("%ld sessions have been processed.\n", l);
+#endif
 }
 
 bool tcpsession::still_alive()
@@ -148,7 +148,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 	complete = false;
 	if (_got_syn_pkt && _got_fin_pkt)
 	{
-		complete = (0 == check_samples_integrity());
+		complete = (0 == sanitize());
 	}
 
 	if (complete)
@@ -196,7 +196,7 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	}
 }
 
-int32_t tcpsession::check_samples_integrity()
+int32_t tcpsession::sanitize()
 {
 	int32_t size_saved, size_now;
 	int32_t i;   // for the convenience of debug.
@@ -210,15 +210,16 @@ int32_t tcpsession::check_samples_integrity()
 	// used to elicit an ACK from the receiver.
 	for(ite = _ippkts_samples.begin(); ite != _ippkts_samples.end();)
 	{
-		int tot_len = (*ite)->get_tot_len();
-		int iphdr_len = (*ite)->get_iphdr_len();
-		int tcphdr_len = (*ite)->get_tcphdr_len();
-		bool fin_set = (*ite)->is_fin_set();
-		bool ack_set = (*ite)->is_ack_set();
-		bool syn_set = (*ite)->is_syn_set();
-		bool rst_set = (*ite)->is_rst_set();
+		ip_pkt* pkt = ite->get();
+		int tot_len = pkt->get_tot_len();
+		int iphdr_len = pkt->get_iphdr_len();
+		int tcphdr_len = pkt->get_tcphdr_len();
+		bool fin_set = pkt->is_fin_set();
+		bool ack_set = pkt->is_ack_set();
+		bool syn_set = pkt->is_syn_set();
+		bool rst_set = pkt->is_rst_set();
 
-		tcp_payload_len = (*ite)->get_tcp_payload_len();
+		tcp_payload_len = pkt->get_tcp_payload_len();
 
 		// remove usefuless samples
 		if (0 == tcp_payload_len && !syn_set && !fin_set ) // && !rst_set)  // rst is not allowed any more.
@@ -228,8 +229,8 @@ int32_t tcpsession::check_samples_integrity()
 		// remove  corrupted sample, this case occurs rarely.
 		else if (tot_len != iphdr_len + tcphdr_len + tcp_payload_len)
 		{
-			std::cerr << "detected corrupted ip packet." << (*ite)->get_src_addr() << " : " << (*ite)->get_src_port()
-							<< " --> " << (*ite)->get_dst_addr() << " : " << (*ite)->get_dst_port() << std::endl;
+			std::cerr << "detected corrupted ip packet." << pkt->get_src_addr() << " : " << pkt->get_src_port()
+							<< " --> " << pkt->get_dst_addr() << " : " << pkt->get_dst_port() << std::endl;
 			++ite;
 		}
 		else
@@ -263,7 +264,8 @@ int32_t tcpsession::check_samples_integrity()
 	++i;
 	for (; ite != _ippkts_samples.end(); ++ite, ++i)
 	{
-		seq = (*ite)->get_seq();
+		ip_pkt* pkt = ite->get();
+		seq = pkt->get_seq();
 		if(expected_next_seq != seq)
 		{
 			// The last IP packet has rst set. In this case, the seq may be the last seq plus one.
@@ -276,16 +278,26 @@ int32_t tcpsession::check_samples_integrity()
 
 			goto _err;
 		}
-		tcp_payload_len = (*ite)->get_tcp_payload_len();
+		tcp_payload_len = pkt->get_tcp_payload_len();
 		if (tcp_payload_len > 0)
 		{
 			expected_next_seq += tcp_payload_len;
 		}
 
-		if((*ite)->is_fin_set())
+		if(pkt->is_fin_set())
 		{
-			_ippkts_samples.erase(++ite, _ippkts_samples.end());
-			return 0;
+			// from the perspective of most servers, it makes non sense for the client to
+			// make a quest only but have no interest in the response.
+			// so, for the sake of simplicity, this kind of session is removed.
+			if (0 == pkt->get_tcp_payload_len())
+			{
+				_ippkts_samples.erase(++ite, _ippkts_samples.end());
+				return 0;
+			}
+			else
+			{
+				goto _err;
+			}
 		}
 	}
 
@@ -427,7 +439,8 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	for (ite = _sliding_window_left_boundary; ite != _sliding_window_right_boundary; ++ite)
 	{
 		ip_pkt* pkt = ite->get();
-		if (jiffies - pkt->get_last_recorded_snd_time() > _retransmit_time_interval)
+		uint64_t last_recorded_send_time = pkt->get_last_recorded_snd_time();
+		if (jiffies - last_recorded_send_time > _retransmit_time_interval)
 		{
 			pkt->mark_me_should_be_sent();
 		}
@@ -513,7 +526,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 
 	count = pkts.size();
 
-	if (0 != count && pkts[0]->is_syn_set())
+	if (0 != count && pkts[0]->is_syn_set() && pkts[0]->should_send_me())
 	{
 		_current_state = tcpsession::SYN_SENT;
 		g_logger.printf("session: %s.%hu moves to state SYN_SENT from state CLOSED.\n",
@@ -572,8 +585,33 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	}
 	else if (jiffies - _last_recorded_snd_time > _have_to_send_data_within_this_timeperiod)
 	{
-		g_statistics_bureau.inc_sess_dormancy_count();
-		kill_me(DORMANCY);
+		bool dormancy = false;
+		if (_enable_active_close && _current_state == ESTABLISHED)
+		{
+			dormancy = true;
+		}
+
+		if (!_enable_active_close && _current_state == ESTABLISHED)
+		{
+			if (_sliding_window_left_boundary != _sliding_window_right_boundary)
+			{
+				if (!(*_sliding_window_left_boundary)->is_fin_set())
+				{
+					dormancy = true;
+				}
+			}
+			else
+			{
+				dormancy = true;
+			}
+		}
+
+		if (dormancy)
+		{
+			g_statistics_bureau.inc_sess_dormancy_count();
+			kill_me(DORMANCY);
+		}
+
 		return 0;
 	}
 

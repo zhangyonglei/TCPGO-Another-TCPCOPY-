@@ -49,11 +49,6 @@ void testsuite::ready_go()
 	_done = false;
 	_current_traffic_on_test = NULL;
 
-	if (!g_configuration.get_lua_scripts_home())
-	{
-		return;
-	}
-
 	_asio_thrd_num = g_configuration.get_asio_thrd_num();
 	_queue_jobs.resize(_asio_thrd_num);
 	_queue_counts.resize(_asio_thrd_num);
@@ -61,6 +56,11 @@ void testsuite::ready_go()
 	{
 		_queue_jobs[i].reset(new LockFreeQueue());
 		_queue_counts[i].reset(new boost::atomic_int);
+	}
+
+	if (!g_configuration.get_lua_scripts_home())
+	{
+		return;
 	}
 
 //	if (NULL == _pcap_handle)
@@ -127,7 +127,8 @@ void testsuite::run_worker()
 				if (job->_cause != tcpsession::PASSIVE_CLOSE && job->_cause != tcpsession::ACTIVE_CLOSE)
 				{
 					std::ostringstream ss;
-					ss << boost::format("%d_accident_death_%s_%d.pcap") % job->_cause % job->_client_str_ip % job->_port;
+					ss << boost::format("%s_accident_death_%s_%d.pcap") %
+							tcpsession::map_cause_code_to_str(job->_cause) % job->_client_str_ip % job->_port;
 					save_traffic(job->_traffic, ss.str(), false);
 
 					_current_traffic_on_test = NULL;

@@ -210,7 +210,7 @@ int session_manager::clean_sick_session()
 	for (ite = _sessions.begin(); ite != _sessions.end();)
 	{
 		total_sess_count++;
-		healthy = ite->second.check_samples_integrity();
+		healthy = ite->second.sanitize();
 		if (healthy == 0)
 		{
 			++ite;
