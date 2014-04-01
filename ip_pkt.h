@@ -178,7 +178,8 @@ public:
 	 * stored.
 	 * @param port the dst port in host byte order.
 	 */
-	void rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
+	void rebuild_str(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
+	void rebuild_num(uint32_t addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 
 	void increment_sent_counter()
 	{

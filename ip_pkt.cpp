@@ -178,7 +178,7 @@ uint16_t ip_pkt::reset_ip_checksum()
 	return old_checksum;
 }
 
-void ip_pkt::rebuild(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer)
+void ip_pkt::rebuild_str(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer)
 {
 	int ret;
 	struct in_addr inaddr;
@@ -190,7 +190,12 @@ void ip_pkt::rebuild(const char* addr, unsigned short port, uint32_t expected_ne
 		abort();
 	}
 
-	_iphdr->daddr = *(uint32_t*)&inaddr;
+	rebuild_num(*(uint32_t*)&inaddr, port, expected_next_sequence_from_peer);
+}
+
+void ip_pkt::rebuild_num(uint32_t addr, unsigned short port, uint32_t expected_next_sequence_from_peer)
+{
+	_iphdr->daddr = addr;
 	_tcphdr->dest = htons(port);
 	_tcphdr->window = htons(65535);
 	_tcphdr->ack_seq = htonl(expected_next_sequence_from_peer);

@@ -14,6 +14,7 @@
 #include "tcp_postman.h"
 #include "realtime_capturer.h"
 #include "postoffice.h"
+#include "cute_logger.h"
 
 politburo g_politburo;
 
@@ -80,8 +81,15 @@ void politburo::post_the_jobs(int asio_idx)
 {
 	g_realtime_capturer.pluck_out_and_inject_realtime_ippkts(asio_idx, 10);
 
-	postoffice::instance(asio_idx).send_packets_to_wire();
-	postoffice::instance(asio_idx).recv_packets_from_wire();
+	try
+	{
+		postoffice::instance(asio_idx).send_packets_to_wire();
+		postoffice::instance(asio_idx).recv_packets_from_wire();
+	}
+	catch(std::exception& e)
+	{
+		g_logger.printf("%s", boost::diagnostic_information(e).c_str());
+	}
 
 	_strands[asio_idx]->post(boost::bind(&politburo::post_the_jobs, this, asio_idx));
 }

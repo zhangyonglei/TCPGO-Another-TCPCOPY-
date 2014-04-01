@@ -46,6 +46,11 @@ public:
 		return _dst_addr;
 	}
 
+	uint32_t get_dst_addr_uint32()
+	{
+		return _dst_addr_uint32;
+	}
+
 	// host-byte order.
 	unsigned short get_dst_port()
 	{
@@ -213,6 +218,7 @@ private:
 	// [MAIN]
 	std::string  _pcap_file_path;   ///< load traffic from the pcap file.
 	std::string  _dst_addr;         ///< the desination IP address to which traffic will be forward.
+	uint32_t     _dst_addr_uint32;  ///< the destination IP address in the form of binary representation.
 	unsigned short _dst_port;   ///< the destination port to which traffic will be forward. host-byte order.
 	int _concurrency_limit;     ///< the maximum number of concurrent TCP connections.
 	bool _onoff_random_port; ///< specify if the source port of TCP segment will be replaced with a random number.

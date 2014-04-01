@@ -62,6 +62,7 @@ boost::shared_ptr<boost::asio::deadline_timer> proactor::produce_a_timer()
 boost::shared_ptr<boost::asio::deadline_timer> proactor::produce_a_timer(boost::posix_time::time_duration td)
 {
 	return boost::make_shared<boost::asio::deadline_timer>(boost::ref(_io_service), boost::ref(td));
+//	return boost::make_shared<boost::asio::deadline_timer>(boost::ref(_io_service), boost::posix_time::seconds(35));
 }
 
 void proactor::listen(uint16_t port, acceptor_handler handler)

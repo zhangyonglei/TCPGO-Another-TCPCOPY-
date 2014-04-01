@@ -88,7 +88,18 @@ void configuration::set_pcap_file_path(const std::string& pcap_file_path)
 
 void configuration::set_dst_addr(const std::string& dst_addr)
 {
+	int ret;
+	struct in_addr inaddr;
+	memset(&inaddr, 0, sizeof(inaddr));
+	ret = inet_aton(dst_addr.c_str(), &inaddr);
+	if (ret < 0)
+	{
+		perror(dst_addr.c_str());
+		abort();
+	}
+
 	_dst_addr = dst_addr;
+	_dst_addr_uint32 = *(uint32_t*)&inaddr;
 }
 
 void configuration::set_dst_port(const std::string& dst_port)

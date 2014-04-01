@@ -171,6 +171,11 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	int timeout;
 	sess_state prev_sess_state;
 
+	if (error)
+	{
+		return;
+	}
+
 	if (_sess_state != ACCUMULATING_TRAFFIC)
 		return;
 
@@ -188,8 +193,9 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	}
 	else
 	{
+		std::cout << _client_src_ip_str << " " << _client_src_port << " is about to call g_politburo.enqueue_a_timer_handler.\n";
 		_injecting_rt_traffic_timer = g_politburo.enqueue_a_timer_handler(_asio_idx,
-				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout())*10,
+				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout()*10),
 				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this, boost::asio::placeholders::error)
 		);
 	}
@@ -361,7 +367,7 @@ void tcpsession::get_ready()
 	if (ACCUMULATING_TRAFFIC == _sess_state)
 	{
 		_injecting_rt_traffic_timer = g_politburo.enqueue_a_timer_handler(_asio_idx,
-				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout())*10,
+				boost::posix_time::milliseconds(g_configuration.get_injecting_rt_traffic_timeout()*10),
 				boost::bind(&tcpsession::injecting_rt_traffic_timeout_checker, this, boost::asio::placeholders::error)
 		);
 	}
@@ -411,11 +417,11 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 			boost::shared_ptr<ip_pkt>  pure_rst_pkt0 = boost::make_shared<ip_pkt>(buff0);
 			boost::shared_ptr<ip_pkt>  pure_rst_pkt1 = boost::make_shared<ip_pkt>(buff1);
 
-			pure_rst_pkt0->rebuild(g_configuration.get_dst_addr().c_str(),
+			pure_rst_pkt0->rebuild_num(g_configuration.get_dst_addr_uint32(),
 									g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 			pkts.push_back(pure_rst_pkt0);
 
-			pure_rst_pkt1->rebuild(g_configuration.get_dst_addr().c_str(),
+			pure_rst_pkt1->rebuild_num(g_configuration.get_dst_addr_uint32(),
 									g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 			pkts.push_back(pure_rst_pkt1);
 
@@ -513,7 +519,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 			}
 		}
 
-		pkt->rebuild(g_configuration.get_dst_addr().c_str(),
+		pkt->rebuild_num(g_configuration.get_dst_addr_uint32(),
 					g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(*ite);
 
@@ -754,14 +760,13 @@ void tcpsession::established_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		// only a fin packet is in ip_pkts_samples and _enable_active_close is not allowed.
 		if (_ippkts_samples.front()->is_fin_set() && !_enable_active_close)
 		{
-			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
-			_traffic_history.push_back(pure_ack);
-			pure_ack->rebuild(g_configuration.get_dst_addr().c_str(),
-						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
-			_ippkts_samples.push_back(pure_ack);
-			_sliding_window_left_boundary = _ippkts_samples.begin();
-			_sliding_window_right_boundary = _sliding_window_left_boundary;
-			++_sliding_window_right_boundary;
+//			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_latest_acked_sequence_by_peer);
+//			pure_ack->rebuild(g_configuration.get_dst_addr().c_str(),
+//						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
+//			_ippkts_samples.push_front(pure_ack);
+//			_sliding_window_left_boundary = _ippkts_samples.begin();
+//			_sliding_window_right_boundary = _sliding_window_left_boundary;
+//			++_sliding_window_right_boundary;
 		}
 	}
 	refresh_status(pkt);
