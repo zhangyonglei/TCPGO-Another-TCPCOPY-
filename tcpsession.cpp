@@ -15,6 +15,12 @@
 #include "statistics_bureau.h"
 #include "testsuite.h"
 
+#ifdef _DEBUG
+
+boost::atomic_long tcpsession::_ended_sess_count;
+
+#endif
+
 tcpsession::tcpsession(int asio_idx, uint32_t ip, uint16_t port)
 {
 	struct in_addr inaddr;
@@ -71,6 +77,12 @@ tcpsession::~tcpsession()
 
 void tcpsession::kill_me(cause_of_death cause)
 {
+#ifdef _DEBUG
+	_ended_sess_count++;
+	long l = _ended_sess_count;
+	g_logger.printf("%ld sessions have been processed.\n", l);
+#endif
+
 	_dead = true;
 	g_logger.printf("session: %s.%hu ended. reason code: %d\n", _client_src_ip_str.c_str(), _client_src_port, cause);
 	g_testsuite.report_sess_traffic(_client_src_ip_str, _client_src_port, _traffic_history, cause);

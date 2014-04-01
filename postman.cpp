@@ -118,7 +118,7 @@ bool postman::send(int asio_idx, boost::shared_ptr<ip_pkt> pkt)
 	}
 	else
 	{
-		abort();
+		//abort();
 	}
 
 	return success;
@@ -196,7 +196,6 @@ void postman::send_core(ip_pkt* pkt)
 
 	ret = sendto(_send_fd, starting_addr, tot_len, 0,
 			reinterpret_cast<struct sockaddr*>(&dst_addr), sizeof(dst_addr));
-	assert(ret > 0);
 }
 
 void postman::push_recved_ippkt(boost::shared_ptr<ip_pkt> pkt)

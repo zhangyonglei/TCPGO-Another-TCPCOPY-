@@ -171,6 +171,10 @@ private:
 	bool _ready;  ///< indicate if this tcpsession instance has called get_ready() yet
 
 	int _asio_idx;
+
+#ifdef _DEBUG
+	static boost::atomic_long _ended_sess_count;
+#endif
 };
 
 #endif /* _TCPSESSION_H_ */
