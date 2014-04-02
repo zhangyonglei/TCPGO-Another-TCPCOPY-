@@ -241,9 +241,9 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		ip_pkt* pkt = new ip_pkt(ptr);
 		int asio_idx = pkt->get_asio_idx_outbound();
 
-		while (!_ippkt_queues[asio_idx]->push(pkt))
+		if (!_ippkt_queues[asio_idx]->push(pkt))
 		{
-			std::cout << "one of realtime_capturer's queue is full. _count: " << _queue_sizes[asio_idx] << std::endl;
+			g_logger.printf("one of realtime_capturer's queue is full. _count: %d\n", (int)*_queue_sizes[asio_idx]);
 			_jam_control = true;
 
 			return;

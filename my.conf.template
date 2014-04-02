@@ -1,7 +1,7 @@
 ; the configuration file
 [MAIN]
-;pcap_file_path = /mnt/hgfs/e_drive/projs/traffic.smallsize.pcap
-pcap_file_path = /mnt/hgfs/e_drive/projs/traffic_to_80port.pcap
+pcap_file_path = /mnt/hgfs/e_drive/projs/traffic.smallsize.pcap
+;pcap_file_path = /mnt/hgfs/e_drive/projs/traffic_to_80port.pcap
 ;  pcap_file_path = /mnt/hgfs/e_drive/projs/traffic.huge.10.130.68.100.pcap
 ; the destination address that the traffic will be forwarded to.
 dst_addr = 192.168.44.129
@@ -11,7 +11,7 @@ concurrency_limit = 800
 onoff_random_port = 1
 accidental_death_pcap_file_limit = 1000
 sniff_method = pcap
-asio_thrd_num = -1
+asio_thrd_num = 1
 
 [SESSION]
 ; advanced configuration to tune tcp session.
@@ -24,7 +24,7 @@ wait_for_fin_from_peer_time_out = 2500
 enable_active_close = 0
 
 [TESTSUITE]
-lua_scripts_home = /home/kamus/projs/horoscope/lua_scripts
+;lua_scripts_home = /home/kamus/projs/horoscope/lua_scripts
 ;so_home = /home/kamus/projs/horoscope/so_home
 
 [LOG]

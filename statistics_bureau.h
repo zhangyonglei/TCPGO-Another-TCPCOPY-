@@ -73,6 +73,11 @@ public:
 		_total_processed_sess_count++;
 	}
 
+	void inc_sess_aborted_count()
+	{
+		_total_aborted_sess_count++;
+	}
+
 public:
 	void one_shot_timer_event_handler();
 
@@ -84,6 +89,7 @@ private:
 
 private:
 	boost::atomic_int _total_processed_sess_count;
+	boost::atomic_int _total_aborted_sess_count;
 	boost::atomic_int _sess_active_close_count;
 	boost::atomic_int _sess_passive_close_count;
 	boost::atomic_int _sess_cancelled_by_no_response_count;

@@ -75,7 +75,7 @@ private:
 	uint16_t _traffic_listening_port;   ///< in host byte order.
 
 	static const int _buffer_len_for_traffic = 4096*28;
-	static const int _ippkt_queue_capacity = 100000;
+	static const int _ippkt_queue_capacity = 200000;
 
 	/// key is created using make_sess_key(ip, port).
 	std::map<uint64_t, ConnInfo>  _conns;    // for every connections that supply realtime traffic

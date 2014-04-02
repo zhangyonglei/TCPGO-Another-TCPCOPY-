@@ -89,7 +89,7 @@ private:
 	int save_traffic(const std::string& pcap_file);
 
 private:
-	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<1000> > LockFreeQueue;
+	typedef boost::lockfree::spsc_queue<boost::shared_ptr<job_block>, boost::lockfree::capacity<5000> > LockFreeQueue;
 	std::vector<boost::shared_ptr<LockFreeQueue> > _queue_jobs;
 	std::vector<boost::shared_ptr<boost::atomic_int> > _queue_counts;
 	int _asio_thrd_num;

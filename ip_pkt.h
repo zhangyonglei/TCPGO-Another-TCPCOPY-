@@ -151,12 +151,12 @@ public:
 	}
 
 #ifdef _DEBUG
-	const std::string get_src_addr()const
+	const std::string& get_src_addr()const
 	{
 		return _src_addr;
 	}
 
-	const std::string get_dst_addr()const
+	const std::string& get_dst_addr()const
 	{
 		return _dst_addr;
 	}
@@ -271,5 +271,10 @@ protected:
 	std::string _dst_addr;
 #endif
 };
+
+inline bool operator < (boost::shared_ptr<ip_pkt> left, boost::shared_ptr<ip_pkt> right)
+{
+	return *left < *right;
+}
 
 #endif /* _IPPKG_H_ */

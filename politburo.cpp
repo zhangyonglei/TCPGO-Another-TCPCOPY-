@@ -79,7 +79,7 @@ void politburo::get_ready()
 
 void politburo::post_the_jobs(int asio_idx)
 {
-	g_realtime_capturer.pluck_out_and_inject_realtime_ippkts(asio_idx, 10);
+	g_realtime_capturer.pluck_out_and_inject_realtime_ippkts(asio_idx, 100);
 
 	try
 	{

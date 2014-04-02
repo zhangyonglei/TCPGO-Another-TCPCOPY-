@@ -102,6 +102,9 @@ int session_manager::read_from_pcapfile(const std::string& path, const std::stri
 
 					boost::shared_ptr<ip_pkt> pkt = boost::make_shared<ip_pkt>(ippkt);
 					ori_src_port = pkt->get_src_port();
+					if (ori_src_port < 1000)
+						continue;
+
 					new_src_port = generate_the_port(ori_src_port);
 					pkt->modify_src_port(new_src_port);
 					asio_idx = pkt->get_asio_idx_outbound();

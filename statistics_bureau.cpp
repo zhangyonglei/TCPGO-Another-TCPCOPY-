@@ -22,6 +22,8 @@ statistics_bureau::~statistics_bureau()
 
 void statistics_bureau::get_ready()
 {
+	_total_processed_sess_count = 0;
+	_total_aborted_sess_count = 0;
 	_sess_active_close_count = 0;
 	_sess_passive_close_count = 0;
 	_sess_cancelled_by_no_response_count = 0;
@@ -109,7 +111,8 @@ std::string statistics_bureau::sess_statistics()
 		ss << "In provisional traffic jam control.\n";
 	}
 
-	ss << _total_processed_sess_count << " sessions have been processed.\n"
+	ss << _total_processed_sess_count << " sessions have been processed.(excluding aborted sessions)\n"
+	   << _total_aborted_sess_count << " sessions have aborted.\n"
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
 	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response from peer within "
@@ -125,7 +128,7 @@ std::string statistics_bureau::sess_statistics()
 
 	if (now/HZ/60 > 0)
 	{
-		ss << "Average Connections Per Second in the past 15mins, 5mins, and 1min\n"
+		ss << "Average Connections Per Second in the past 15mins, 5mins, and 1min. (active_closed + passive_closed) / total_processed\n"
 		   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min;
 	}
 	else

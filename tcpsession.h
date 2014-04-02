@@ -62,8 +62,9 @@ public:
 	virtual void got_a_packet(boost::shared_ptr<ip_pkt> ippkt);
 
 public:
-    /// declares six causes of session death.
-	enum cause_of_death{ACTIVE_CLOSE = 1, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER};
+    /// declares causes of session death.
+	/// PHANTOM: is used for debug's purpose.
+	enum cause_of_death{ACTIVE_CLOSE = 1, PASSIVE_CLOSE, PEER_TIME_OUT, DORMANCY, RESET, NO_FIN_FROM_PEER, PHANTOM};
 
 	static const char* map_cause_code_to_str(tcpsession::cause_of_death casue)
 	{
@@ -88,7 +89,7 @@ public:
 			return "NO_FIN_FROM_PEER";
 
 		default:
-			abort();
+			return "PHANTOM";
 		}
 	}
 
@@ -164,6 +165,7 @@ private:
 	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_right_boundary; ///< open interval (excluding)
 
 	uint64_t _last_recorded_recv_time;   ///< used for session timeout
+	uint64_t _last_recorded_recv_time_with_payload; ///< won't count pure ack packet.
 	int      _response_from_peer_time_out;    ///< in unit of jiffy. refer to class the_timer
 
 	uint64_t _last_recorded_snd_time;    ///< sending speed control and detect disabled tcp session.
