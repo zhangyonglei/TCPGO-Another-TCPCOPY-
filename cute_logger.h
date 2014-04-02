@@ -54,7 +54,10 @@ int cute_logger::printf(const char* format, ...)
 		vsnprintf(buff, sizeof(buff), format, ap);
 		va_end(ap);
 		std::cout << buff;
-//		fflush(_stream);
+		// it's assumed if log is duplicated on the screen, then you are expecting to flush
+		// all logs into disk file ASAP to provide more log details for debug.
+		// for the sake of efficiency, don't duplicate logs to screen when it's running on production condition.
+		fflush(_stream);
 	}
 
 	return ret;

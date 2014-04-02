@@ -56,6 +56,16 @@ public:
 	 */
 	void get_ready_for_offline_traffic();
 
+	const std::string& get_client_src_ip_str()const
+	{
+		return _client_src_ip_str;
+	}
+
+	uint16_t get_client_src_port()const
+	{
+		return _client_src_port;
+	}
+
 public:
 	/// refer to the interface postoffice_callback_interface for details.
 	virtual int pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& pkts);

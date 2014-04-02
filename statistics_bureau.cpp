@@ -128,8 +128,9 @@ std::string statistics_bureau::sess_statistics()
 
 	if (now/HZ/60 > 0)
 	{
-		ss << "Average Connections Per Second in the past 15mins, 5mins, and 1min. (active_closed + passive_closed) / total_processed\n"
-		   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min;
+		ss << "Average Connections Per Second in the past 15mins, 5mins, and 1min.\n"
+		   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min
+		   << " (active_closed + passive_closed) / total_processed)";
 	}
 	else
 	{

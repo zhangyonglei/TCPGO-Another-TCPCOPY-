@@ -256,7 +256,12 @@ int session_manager::get_ready()
 
 void session_manager::erase_a_session(uint64_t key)
 {
-	int num;
-	num = _sessions.erase(key);
-	assert(num == 1);
+	SessMap::iterator ite;
+	ite = _sessions.find(key);
+	assert(ite != _sessions.end());
+	_sessions.erase(ite);
+
+	const tcpsession& sess = ite->second;
+	g_logger.printf("session %s.%d is removed from session manager[%d]\n",
+			sess.get_client_src_ip_str().c_str(), sess.get_client_src_port(), _asio_idx);
 }

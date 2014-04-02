@@ -239,7 +239,7 @@ protected:
 	boost::shared_ptr<char> _pkt;
 
 	// true if the packet is bound to the peer or else false if the packet is received from peer
-	bool _outbound;
+	// bool _outbound;
 
 	int  _tot_len;               ///< the IP packet total length.
 	struct iphdr *_iphdr;        ///< pointer to the ip header

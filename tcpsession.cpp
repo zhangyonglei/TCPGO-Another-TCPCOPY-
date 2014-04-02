@@ -121,8 +121,12 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 	if (ippkt->is_rst_set())
 	{
-		_sess_state = ABORT;
+		g_logger.printf("[%d] %s %d calling register_callback. Got RESET.\n", _asio_idx,
+				_client_src_ip_str.c_str(), _client_src_port);
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
+		_sess_state = ABORT;
+
+		return;
 	}
 
 	if (ippkt->is_syn_set())
@@ -162,6 +166,9 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		assert((*_sliding_window_left_boundary)->is_syn_set());
 
 		_sess_state = SENDING_TRAFFIC;
+
+g_logger.printf("%s %d calling register_callback. SENDING_TRAFFIC.\n",_client_src_ip_str.c_str(), _client_src_port);
+
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 	}
@@ -191,6 +198,8 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	{
 		assert(ACCUMULATING_TRAFFIC == _sess_state);
 		_sess_state = ABORT;
+g_logger.printf("%s %d calling register_callback. in_checker.\n",_client_src_ip_str.c_str(), _client_src_port);
+
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		g_logger.printf("session %s.%hu aborts.\n", _client_src_ip_str.c_str(), _client_src_port);
 	}
@@ -546,13 +555,14 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		// _last_recorded_recv_time = jiffies;
 	}
 
-	// timeout. No responses has received from peer for a long time.
+	// timeout. No responses have received from peer for a long time.
 	if (_last_recorded_recv_time_with_payload != -1 &&
-			jiffies - _last_recorded_recv_time_with_payload > _response_from_peer_time_out )
+			jiffies - _last_recorded_recv_time_with_payload > _response_from_peer_time_out)
 	{
 		const char* ip_str;
 		ip_str = _client_src_ip_str.c_str();
-		g_logger.printf("session: %s.%hu time out. I commit a suicide.\n", ip_str, _client_src_port);
+		g_logger.printf("session: %s.%hu no valid payload have received from peer in %d milliseconds. I commit a suicide.\n",
+				_response_from_peer_time_out*10, ip_str, _client_src_port);
 		g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
 		kill_me(PEER_TIME_OUT);
 
@@ -634,7 +644,7 @@ void tcpsession::got_a_packet(boost::shared_ptr<ip_pkt> ippkt)
 {
 	uint64_t jiffies = g_timer.get_jiffies();
 	_last_recorded_recv_time = jiffies;
-	if (0 != ippkt->get_tcp_payload_len())
+	if (0 != ippkt->get_tcp_payload_len() || ippkt->is_syn_set())
 	{
 		_last_recorded_recv_time_with_payload = jiffies;
 	}

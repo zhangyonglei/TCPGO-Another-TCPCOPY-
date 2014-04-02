@@ -114,6 +114,12 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	// do the job
 	parse_buff_and_get_ip_pkts(conn);
 
+	if (_buffer_len_for_traffic == conn._used_len)
+	{
+//		_conns.erase(key);
+//		s->close();
+	}
+
 	if (!_jam_control)
 	{
 		s->async_read_some(buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
@@ -178,7 +184,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 	{
 		for (int i = 0; i < _queue_sizes.size(); i++)
 		{
-			if ( *_queue_sizes[i] < _ippkt_queue_capacity / 30)
+			if ( *_queue_sizes[i] < 100)
 			{
 				_jam_control = false;
 				break;
@@ -226,6 +232,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			break;
 		}
 		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
+		/*  because source port is possibly be modified, so tcp checksum will fail.
 		sum = tcphdr->check;
 		checksum = compute_tcp_checksum(iphdr, tcphdr);
 		tcphdr->check = sum;
@@ -233,7 +240,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		{
 			i++;
 			continue;
-		}
+		}*/
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
