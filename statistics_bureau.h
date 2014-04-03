@@ -84,7 +84,7 @@ public:
 private:
 	void conn_ends_normally()
 	{
-		_conns_completed_stat[_current_slot_index]++;
+		_conns_completed_stats[_current_slot_index]++;
 	}
 
 private:
@@ -99,8 +99,8 @@ private:
 
 	// the following variables are intended for make statistics of normally
 	// ended connections in the past (_TIME_DURATION_IN_MIN-1) minutes.
-	static const int _TIME_DURATION_IN_MIN = 16;
-	int _conns_completed_stat[_TIME_DURATION_IN_MIN];
+	static const int _TIME_DURATION_IN_SECOND = 15 * 60 + 1;
+	int _conns_completed_stats[_TIME_DURATION_IN_SECOND];
 	int _current_slot_index;
 
 	int _asio_thrd_num;
