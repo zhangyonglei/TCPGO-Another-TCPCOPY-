@@ -121,7 +121,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 	if (ippkt->is_rst_set())
 	{
-		g_logger.printf("[%d] %s %d calling register_callback. Got RESET.\n", _asio_idx,
+		g_logger.printf("[%d] %s.%d calling register_callback. Got RESET.\n", _asio_idx,
 				_client_src_ip_str.c_str(), _client_src_port);
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		_sess_state = ABORT;
@@ -167,9 +167,13 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 		_sess_state = SENDING_TRAFFIC;
 
-g_logger.printf("%s %d calling register_callback. SENDING_TRAFFIC.\n",_client_src_ip_str.c_str(), _client_src_port);
+		_injecting_rt_traffic_timer->cancel();
+g_logger.printf("%s.%d calling _injecting_rt_traffic_timer->cancel(). inject_a_realtime_ippkt.\n",_client_src_ip_str.c_str(), _client_src_port);
 
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
+g_logger.printf("%s.%d calling register_callback. SENDING_TRAFFIC.\n",_client_src_ip_str.c_str(), _client_src_port);
+
+
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 	}
 }
@@ -193,13 +197,13 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	now = g_timer.get_jiffies();
 	timeout = g_configuration.get_injecting_rt_traffic_timeout();
 
-	// no incoming real time traffic in a period.
+	// no incoming real time traffic in a period of time.
 	if (now - _last_injecting_rt_traffic_time > timeout)
 	{
 		assert(ACCUMULATING_TRAFFIC == _sess_state);
 		_sess_state = ABORT;
-g_logger.printf("%s %d calling register_callback. in_checker.\n",_client_src_ip_str.c_str(), _client_src_port);
 
+g_logger.printf("%s.%d calling register_callback. in_checker.\n",_client_src_ip_str.c_str(), _client_src_port);
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		g_logger.printf("session %s.%hu aborts.\n", _client_src_ip_str.c_str(), _client_src_port);
 	}
@@ -372,7 +376,7 @@ void tcpsession::get_ready()
 //		// add code to fiddle with every IP packets.
 //	}
 
-	g_logger.printf("session %s.%hu is created.\n", _client_src_ip_str.c_str(), _client_src_port);
+	g_logger.printf("session %s.%hu is created.[%d]\n", _client_src_ip_str.c_str(), _client_src_port, _asio_idx);
 
 	_last_injecting_rt_traffic_time = now;
 
@@ -406,6 +410,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	{
 		g_statistics_bureau.inc_sess_aborted_count();
 		_injecting_rt_traffic_timer->cancel();
+g_logger.printf("%s.%d calling _injecting_rt_traffic_timer. pls_send_these_packets.\n",_client_src_ip_str.c_str(), _client_src_port);
 		return postoffice_callback_interface::REMOVE;
 	}
 	assert(SENDING_TRAFFIC == _sess_state);
@@ -559,10 +564,8 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	if (_last_recorded_recv_time_with_payload != -1 &&
 			jiffies - _last_recorded_recv_time_with_payload > _response_from_peer_time_out)
 	{
-		const char* ip_str;
-		ip_str = _client_src_ip_str.c_str();
 		g_logger.printf("session: %s.%hu no valid payload have received from peer in %d milliseconds. I commit a suicide.\n",
-				_response_from_peer_time_out*10, ip_str, _client_src_port);
+				_client_src_ip_str.c_str(), _client_src_port, _response_from_peer_time_out*10);
 		g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
 		kill_me(PEER_TIME_OUT);
 

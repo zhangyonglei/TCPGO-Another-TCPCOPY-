@@ -57,6 +57,7 @@ void realtime_capturer::pluck_out_and_inject_realtime_ippkts(int asio_idx, int m
 		session_manager::instance(asio_idx).inject_a_realtime_ippkt(smart_pkt);
 		_queue_sizes[asio_idx]->operator--();
 		num++;
+
 		if (num >= most)
 		{
 			return;
@@ -218,6 +219,11 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			continue;
 		}
 		iphdr_len = iphdr->ihl << 2;
+		if (iphdr_len < 20)
+		{
+			i++;
+			continue;
+		}
 		sum = iphdr->check;
 		checksum = compute_ip_checksum(iphdr);
 		iphdr->check = sum;
@@ -244,9 +250,22 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
+//		if (iphdr->)
+//		{
+//			continue;
+//		}
+
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);
 		int asio_idx = pkt->get_asio_idx_outbound();
+
+		// ugly and error-prone c grammar.
+		if (0xff == ((char*)&(pkt->get_iphdr()->saddr))[0] || 0xff == ((char*)&(pkt->get_iphdr()->saddr))[3] ||
+			0x0 == ((char*)&(pkt->get_iphdr()->daddr))[0] || 0x0 == ((char*)&(pkt->get_iphdr()->daddr))[3])
+		{
+			i++;
+			continue;
+		}
 
 		if (!_ippkt_queues[asio_idx]->push(pkt))
 		{
@@ -255,6 +274,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 
 			return;
 		}
+
 		_queue_sizes[asio_idx]->operator++();
 		i += ip_tot_len;
 		sentinel = i;

@@ -210,12 +210,18 @@ public:
 
 	int get_asio_idx_inbound()
 	{
-		return _tcphdr->dest % g_configuration.get_asio_thrd_num();
+		int idx;
+		idx = _tcphdr->dest % g_configuration.get_asio_thrd_num();
+		assert(idx >= 0);
+		return idx;
 	}
 
 	int get_asio_idx_outbound()
 	{
-		return _tcphdr->source % g_configuration.get_asio_thrd_num();
+		int idx;
+		idx = _tcphdr->source % g_configuration.get_asio_thrd_num();
+		assert(idx >= 0);
+		return idx;
 	}
 
 	uint64_t get_last_recorded_snd_time()
