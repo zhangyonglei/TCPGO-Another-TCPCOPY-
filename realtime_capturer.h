@@ -76,6 +76,7 @@ private:
 
 	static const int _buffer_len_for_traffic = 4096*28;
 	static const int _ippkt_queue_capacity = 200000;
+	// static const int _ippkt_queue_capacity = 500; test
 
 	/// key is created using make_sess_key(ip, port).
 	std::map<uint64_t, ConnInfo>  _conns;    // for every connections that supply realtime traffic
@@ -90,6 +91,8 @@ private:
 	boost::shared_ptr<boost::asio::io_service::strand> _strand;   ///< used to serialize the asynchronous I/O
 
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
+
+	uint64_t _pkt_count_received;
 };
 
 #endif /* _REALTIME_CAPTUREER_H_ */

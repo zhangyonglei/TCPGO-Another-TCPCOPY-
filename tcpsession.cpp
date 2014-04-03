@@ -404,7 +404,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	{
 		g_statistics_bureau.inc_sess_aborted_count();
 		_injecting_rt_traffic_timer->cancel();
-g_logger.printf("%s.%d calling _injecting_rt_traffic_timer. pls_send_these_packets.\n",_client_src_ip_str.c_str(), _client_src_port);
+
 		return postoffice_callback_interface::REMOVE;
 	}
 	assert(SENDING_TRAFFIC == _sess_state);

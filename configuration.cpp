@@ -144,7 +144,7 @@ void configuration::set_session_count_limit(const std::string& limit)
 
 void configuration::set_session_count_limit(int limit)
 {
-	if (limit < 500)
+	if (limit < 1)
 	{
 		std::cerr << "SESSION.session_count_limit is too small. " << limit << std::endl;
 		return;

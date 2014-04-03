@@ -239,7 +239,11 @@ int session_manager::get_ready()
 
 	_healthy_sess_count = 0;
 	_traffic_jam = false;
-	_session_count_limit = g_configuration.get_session_count_limit();
+	_session_count_limit = g_configuration.get_session_count_limit() / g_configuration.get_asio_thrd_num();
+	if (_session_count_limit <= 0)
+	{
+		_session_count_limit = 1;
+	}
 	_expected_qps = g_configuration.get_expected_qps();
 
 	// there are some preloaded offline traffic.

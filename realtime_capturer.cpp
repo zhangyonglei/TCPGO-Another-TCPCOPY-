@@ -41,7 +41,7 @@ int realtime_capturer::get_ready()
 	}
 
 	_jam_control = false;
-
+	_pkt_count_received = 0;
 
 	return 0;
 }
@@ -94,15 +94,19 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	// thanks to the shared_ptr, don't have to worry about the fd leak.
 	// if ((boost::asio::error::eof == error) ||
 	   //     (boost::asio::error::connection_reset == error))
+	ip::tcp::endpoint point = s->remote_endpoint();
+
 	if (boost::asio::error::eof == error)
 	{
 		// normal termination
 		_conns.erase(key);
+		g_logger.printf("%s.%hu closed the connection.\n", point.address().to_v4().to_string().c_str(), point.port());
 		return;
 	}
 	else if (error)
 	{
 		_conns.erase(key);
+		g_logger.printf("connection from %s.%hu is broken.\n", point.address().to_v4().to_string().c_str(), point.port());
 	//	throw boost::system::system_error(error);  // some other error.
 		return;
 	}
@@ -131,7 +135,7 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	else
 	{
 		conn._timer->cancel();
-		conn._timer->expires_from_now(boost::posix_time::seconds(1));
+		conn._timer->expires_from_now(boost::posix_time::seconds(2));
 		conn._timer->async_wait(_strand->wrap(
 				boost::bind(&realtime_capturer::delayed_read, this, s, boost::asio::placeholders::error)
 				));
@@ -250,11 +254,6 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port));
 
-//		if (iphdr->)
-//		{
-//			continue;
-//		}
-
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);
 		int asio_idx = pkt->get_asio_idx_outbound();
@@ -272,8 +271,10 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			g_logger.printf("one of realtime_capturer's queue is full. _count: %d\n", (int)*_queue_sizes[asio_idx]);
 			_jam_control = true;
 
-			return;
+			break;
 		}
+
+//		g_logger.printf("%lu packets have received.\n", ++_pkt_count_received);
 
 		_queue_sizes[asio_idx]->operator++();
 		i += ip_tot_len;
