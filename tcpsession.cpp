@@ -121,8 +121,6 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 	if (ippkt->is_rst_set())
 	{
-		g_logger.printf("[%d] %s.%d calling register_callback. Got RESET.\n", _asio_idx,
-				_client_src_ip_str.c_str(), _client_src_port);
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		_sess_state = ABORT;
 
@@ -168,11 +166,8 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		_sess_state = SENDING_TRAFFIC;
 
 		_injecting_rt_traffic_timer->cancel();
-g_logger.printf("%s.%d calling _injecting_rt_traffic_timer->cancel(). inject_a_realtime_ippkt.\n",_client_src_ip_str.c_str(), _client_src_port);
 
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
-g_logger.printf("%s.%d calling register_callback. SENDING_TRAFFIC.\n",_client_src_ip_str.c_str(), _client_src_port);
-
 
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 	}
@@ -203,7 +198,6 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 		assert(ACCUMULATING_TRAFFIC == _sess_state);
 		_sess_state = ABORT;
 
-g_logger.printf("%s.%d calling register_callback. in_checker.\n",_client_src_ip_str.c_str(), _client_src_port);
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		g_logger.printf("session %s.%hu aborts.\n", _client_src_ip_str.c_str(), _client_src_port);
 	}
