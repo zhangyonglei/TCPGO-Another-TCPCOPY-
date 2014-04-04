@@ -208,19 +208,17 @@ public:
 		return _send_me_pls;
 	}
 
-	int get_asio_idx_inbound()
+	unsigned short get_asio_idx_inbound()
 	{
 		int idx;
 		idx = _tcphdr->dest % g_configuration.get_asio_thrd_num();
-		assert(idx >= 0);
 		return idx;
 	}
 
-	int get_asio_idx_outbound()
+	unsigned short get_asio_idx_outbound()
 	{
 		int idx;
 		idx = _tcphdr->source % g_configuration.get_asio_thrd_num();
-		assert(idx >= 0);
 		return idx;
 	}
 
