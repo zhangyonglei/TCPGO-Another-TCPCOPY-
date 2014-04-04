@@ -71,6 +71,10 @@ tcpsession::tcpsession(int asio_idx, uint32_t ip, uint16_t port)
 	_ready = false;
 }
 
+tcpsession::tcpsession()
+{
+}
+
 tcpsession::~tcpsession()
 {
 }
@@ -97,6 +101,42 @@ void tcpsession::kill_me(cause_of_death cause)
 bool tcpsession::still_alive()
 {
 	return !_dead;
+}
+
+boost::shared_ptr<tcpsession> tcpsession::clone()
+{
+	boost::shared_ptr<tcpsession> sess = boost::make_shared<tcpsession>();
+	uint32_t old_src_ip_num = _client_src_ip_num;
+	uint32_t new_src_ip_num = next_avail_ip(old_src_ip_num);
+
+	*sess = *this;
+
+	struct in_addr inaddr;
+	inaddr.s_addr = new_src_ip_num;
+
+	sess->_client_src_ip_num = new_src_ip_num;
+	sess->_client_src_ip_str = inet_ntoa(inaddr);
+
+	sess->_session_key = make_sess_key(new_src_ip_num, htons(_client_src_port));
+
+	sess->_ippkts_samples.clear();
+	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
+			ite != _ippkts_samples.end();
+			++ite)
+	{
+		ip_pkt* pkt = ite->get();
+		boost::shared_ptr<ip_pkt> smart_pkt = pkt->clone();
+		sess->_ippkts_samples.push_back(smart_pkt);
+	}
+
+	sess->_sliding_window_left_boundary = sess->_ippkts_samples.begin();
+	sess->_sliding_window_right_boundary = sess->_sliding_window_left_boundary;
+	sess->_sliding_window_right_boundary.operator++();
+
+	ip_pkt* pkt = sess->_sliding_window_left_boundary->get();
+	assert(pkt->is_syn_set());
+
+	return sess;
 }
 
 void tcpsession::append_ip_sample(boost::shared_ptr<ip_pkt> ippkt)
@@ -170,6 +210,8 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
+
+		session_manager::instance(_asio_idx).clone_sessions(*this);
 	}
 }
 
@@ -467,8 +509,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	fin_has_been_sent = false;
 	// iterate over the sliding window.
 	for(std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
-			ite != _sliding_window_right_boundary;
-			)
+			ite != _sliding_window_right_boundary;)
 	{
 
 		bool is_syn_set, is_ack_set, is_fin_set, is_rst_set, send_me_pls;

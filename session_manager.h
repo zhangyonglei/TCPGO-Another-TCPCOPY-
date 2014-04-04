@@ -56,6 +56,9 @@ public:
 		return _sessions.size();
 	}
 
+	// used for clone.
+	void clone_sessions(tcpsession& sess);
+
 private:
 	/**
 	 * weed out tcpsession with unhealthy IP samples.
@@ -68,7 +71,7 @@ private:
 	void dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt);
 
 private:
-	typedef std::map<uint64_t, tcpsession> SessMap;
+	typedef std::map<uint64_t, boost::shared_ptr<tcpsession> > SessMap;
 	SessMap  _sessions;
 
 	//typedef boost::unordered_map<uint64_t, tcpsession> SessMap;

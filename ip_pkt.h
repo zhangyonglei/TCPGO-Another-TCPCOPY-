@@ -232,6 +232,8 @@ public:
 		_last_recorded_snd_time = g_timer.get_jiffies();
 	}
 
+	boost::shared_ptr<ip_pkt> clone();
+
 protected:
 	/**
 	 * Parse the IP packet data and set the member fields appropriately.

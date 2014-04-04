@@ -99,4 +99,6 @@ unsigned short generate_the_port(unsigned short ori_src_port);
  */
 int find_files(const std::string& dir, const std::string& regexp, std::list<std::string>& files);
 
+uint32_t next_avail_ip(uint32_t orig_ip);
+
 #endif

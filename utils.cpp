@@ -247,3 +247,21 @@ int find_files(const std::string& dir, const std::string& regexp, std::list<std:
 	return retcode;
 }
 
+uint32_t next_avail_ip(uint32_t orig_ip)
+{
+	uint32_t new_ip_num = orig_ip + 0x01000000;
+	while(true)
+	{
+		// The highest order octet (most significant eight bits) in an address was
+		// designated as the network number and the remaining bits were called the
+		// rest field or host identifier and were used for host numbering within a network.
+		// On intel CPU, high order octet resides on low address.
+		char ch = ((char*)&new_ip_num)[0];
+		if (0 != ch && 0xff != ch)
+		{
+			break;
+		}
+		new_ip_num++;
+	}
+	return new_ip_num;
+}

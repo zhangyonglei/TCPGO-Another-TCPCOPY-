@@ -123,6 +123,11 @@ public:
 		return _expected_qps;
 	}
 
+	int get_clone()
+	{
+		return _clone;
+	}
+
 	// [LOG]
 	bool get_log_on()
 	{
@@ -196,6 +201,9 @@ public:
 	void set_expected_qps(const std::string& qps);
 	void set_expected_qps(int qps);
 
+	void set_clone(int clone);
+	void set_clone(const std::string& clone);
+
 	// [LOG]
 	void set_duplicate_log_to_stdout(const std::string& dup);
 	void set_duplicate_log_to_stdout(bool dup);
@@ -237,7 +245,8 @@ private:
 	int  _retransmit_time_interval;
 	int  _wait_for_fin_from_peer_time_out;
 	bool _enable_active_close;
-	int _expected_qps;
+	int  _expected_qps;
+	int  _clone;
 
 	// [LOG]
 	bool _log_on;

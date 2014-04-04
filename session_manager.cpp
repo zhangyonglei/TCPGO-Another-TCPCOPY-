@@ -135,17 +135,17 @@ void session_manager::dispatch_ip_pkt(boost::shared_ptr<ip_pkt> pkt)
 
 	key = pkt->get_sess_key_outbound();
 
-	tcpsession session(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
+	boost::shared_ptr<tcpsession> session = boost::make_shared<tcpsession>(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
 	// The following map::insert returns a pair, with its member pair::first set to an iterator pointing to
 	// either the newly inserted element or to the element with an equivalent key in the map. The pair::second
 	// element in the pair is set to true if a new element was inserted or false if an equivalent key already
 	// existed. (copied from c++ references to clarify the obfuscated map::insert return value.)
-	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
+	ugly_pair = _sessions.insert(std::pair<uint64_t, boost::shared_ptr<tcpsession> >(key, session));
 	ite = ugly_pair.first;
-	ite->second.append_ip_sample(pkt);
+	ite->second->append_ip_sample(pkt);
 	if (ugly_pair.second)
 	{
-		postoffice::instance(_asio_idx).register_callback(key, &ite->second);
+		postoffice::instance(_asio_idx).register_callback(key, ite->second.get());
 	}
 }
 
@@ -181,8 +181,8 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 
 	key = pkt->get_sess_key_outbound();
 
-	tcpsession session(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
-	ugly_pair = _sessions.insert(std::pair<uint64_t, tcpsession>(key, session));
+	boost::shared_ptr<tcpsession> session = boost::make_shared<tcpsession>(pkt->get_asio_idx_outbound(), pkt->get_iphdr()->saddr, pkt->get_tcphdr()->source);
+	ugly_pair = _sessions.insert(std::pair<uint64_t, boost::shared_ptr<tcpsession> >(key, session));
 	if (ugly_pair.second)  // a new tcpsession is created and added.
 	{
 		// traffic control is imposed. New tcpsession is now allowed.
@@ -191,7 +191,7 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 			_sessions.erase(key);
 			return;
 		}
-		ugly_pair.first->second.get_ready_for_rt_traffic();
+		ugly_pair.first->second->get_ready_for_rt_traffic();
 	}
 	else
 	{
@@ -199,7 +199,31 @@ void session_manager::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> pkt)
 	}
 
 	ite = ugly_pair.first;
-	ite->second.inject_a_realtime_ippkt(pkt);
+	ite->second->inject_a_realtime_ippkt(pkt);
+}
+
+void session_manager::clone_sessions(tcpsession& sess)
+{
+	int num = g_configuration.get_clone();
+	std::pair<SessMap::iterator, bool> ugly_pair;
+
+	tcpsession* prev_sess = &sess;
+	for (int i = 0; i < num; i++)
+	{
+		boost::shared_ptr<tcpsession> cloned_sess = prev_sess->clone();
+		uint64_t key = cloned_sess->get_session_key();
+		ugly_pair = _sessions.insert(std::pair<uint64_t, boost::shared_ptr<tcpsession> >(key, cloned_sess));
+		if (ugly_pair.second)
+		{
+			increase_healthy_sess_count();
+			postoffice::instance(_asio_idx).register_callback(key, cloned_sess.get());
+			prev_sess = cloned_sess.get();
+		}
+		else  // cancel the clone process.
+		{
+			return;
+		}
+	}
 }
 
 int session_manager::clean_sick_session()
@@ -213,7 +237,7 @@ int session_manager::clean_sick_session()
 	for (ite = _sessions.begin(); ite != _sessions.end();)
 	{
 		total_sess_count++;
-		healthy = ite->second.sanitize();
+		healthy = ite->second->sanitize();
 		if (healthy == 0)
 		{
 			++ite;
@@ -224,7 +248,6 @@ int session_manager::clean_sick_session()
 			postoffice::instance(_asio_idx).deregister_callback(ite->first);
 			_sessions.erase(ite++);
 		}
-
 	}
 	g_logger.printf("session_manager[%d] has %d sessions, %d of them are sick and are dropped. %d sessions are healthy.\n",
 			_asio_idx, total_sess_count, sick_sess_count, total_sess_count - sick_sess_count);
@@ -251,7 +274,7 @@ int session_manager::get_ready()
 			ite != _sessions.end(); ++ite)
 	{
 		count++;
-		ite->second.get_ready_for_offline_traffic();
+		ite->second->get_ready_for_offline_traffic();
 	}
 	g_logger.printf("%d sessions are ready at current.\n", count);
 
@@ -263,9 +286,10 @@ void session_manager::erase_a_session(uint64_t key)
 	SessMap::iterator ite;
 	ite = _sessions.find(key);
 	assert(ite != _sessions.end());
-	_sessions.erase(ite);
 
-	const tcpsession& sess = ite->second;
+	const tcpsession* sess = ite->second.get();
 	g_logger.printf("session %s.%d is removed from session manager[%d]\n",
-			sess.get_client_src_ip_str().c_str(), sess.get_client_src_port(), _asio_idx);
+			sess->get_client_src_ip_str().c_str(), sess->get_client_src_port(), _asio_idx);
+
+	_sessions.erase(ite);
 }

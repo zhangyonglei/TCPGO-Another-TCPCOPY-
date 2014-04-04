@@ -39,6 +39,7 @@ configuration::configuration()
 	set_wait_for_fin_from_peer_time_out(4 * HZ);
 	set_enable_active_close(false);
 	set_expected_qps(1000);
+	set_clone(0);    // disable clone
 
 	// [TESTSUITE]
 	// if the test suite related path is not specified in configure file,
@@ -243,6 +244,18 @@ void configuration::set_expected_qps(int qps)
 {
 	assert(qps > 0);
 	_expected_qps = qps;
+}
+
+void configuration::set_clone(const std::string& clone)
+{
+	int val = boost::lexical_cast<int>(clone.c_str());
+	set_clone(val);
+}
+
+void configuration::set_clone(int clone)
+{
+	assert(clone >= 0);
+	_clone = clone;
 }
 
 void configuration::set_log_on(const std::string& log_on)
@@ -501,6 +514,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("enable_active_close: %s\n", value.c_str());
 		set_enable_active_close(value);
+	}
+
+	option_name = "clone";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("clone: %s\n", value.c_str());
+		set_clone(value);
 	}
 
 	// the TESTSUITE session

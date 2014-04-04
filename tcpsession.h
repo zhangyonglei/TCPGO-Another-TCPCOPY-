@@ -21,6 +21,7 @@ public:
 	 *@param port in network byte order.
 	 */
 	tcpsession(int asio_idx, uint32_t ip, uint16_t port);
+	tcpsession();
 	virtual ~tcpsession();
 
 	/**
@@ -65,6 +66,14 @@ public:
 	{
 		return _client_src_port;
 	}
+
+	uint64_t get_session_key()
+	{
+		return _session_key;
+	}
+
+	// create a clone of myself, with source IP changed.
+	boost::shared_ptr<tcpsession> clone();
 
 public:
 	/// refer to the interface postoffice_callback_interface for details.

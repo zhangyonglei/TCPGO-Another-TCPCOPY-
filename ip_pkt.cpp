@@ -133,15 +133,6 @@ void ip_pkt::warm_up()
 	inaddr.s_addr = _iphdr->daddr;
 	_dst_addr = inet_ntoa(inaddr);
 #endif
-
-//	if (g_configuration.get_dst_port() == get_dst_port())
-//	{
-//		_outbound = true;
-//	}
-//	else
-//	{
-//		_outbound = false;
-//	}
 }
 
 void ip_pkt::modify_src_port(uint16_t src_port)
@@ -203,4 +194,25 @@ void ip_pkt::rebuild_num(uint32_t addr, unsigned short port, uint32_t expected_n
 	warm_up();
 	reset_ip_checksum();
 	reset_tcp_checksum();
+}
+
+boost::shared_ptr<ip_pkt> ip_pkt::clone()
+{
+	boost::shared_ptr<ip_pkt> cloned_pkt = boost::make_shared<ip_pkt>();
+	int ip_tot_len = get_actual_tot_len();
+
+	cloned_pkt->_pkt.reset(new char[ip_tot_len]);
+
+	memcpy((char*)cloned_pkt->_pkt.get(), _pkt.get(), ip_tot_len);
+
+	uint32_t org_ip_num = _iphdr->saddr;
+	uint32_t new_ip_num = next_avail_ip(org_ip_num);
+	struct iphdr* iphdr = (struct iphdr*)cloned_pkt->_pkt.get();
+	iphdr->saddr = new_ip_num;
+
+	cloned_pkt->warm_up();
+	cloned_pkt->_sent_counter = 0;
+	cloned_pkt->_send_me_pls = true;
+
+	return cloned_pkt;
 }
