@@ -242,7 +242,8 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			break;
 		}
 		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
-		/*  because source port is possibly be modified, so tcp checksum will fail.
+		/* the following code snippet sould be optimized ! TODO.
+		 * because source port is possibly be modified in the following code, so tcp checksum will fail.
 		sum = tcphdr->check;
 		checksum = compute_tcp_checksum(iphdr, tcphdr);
 		tcphdr->check = sum;
@@ -252,7 +253,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			continue;
 		}*/
 		src_port = ntohs(tcphdr->source);
-		tcphdr->source = htons(generate_the_port(src_port));
+		tcphdr->source = htons(generate_the_port(src_port)); // modify the source port.
 
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);

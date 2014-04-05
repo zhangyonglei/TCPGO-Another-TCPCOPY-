@@ -148,7 +148,6 @@ uint16_t ip_pkt::reset_tcp_checksum()
 
 	ptr = (char*)_tcphdr + 16;  // 16 is the offset of checksum in tcp header
 	old_checksum = *(uint16_t*)(ptr);
-	memset(ptr, 0, 2);
 	new_checksum = compute_tcp_checksum(_iphdr, _tcphdr);
 	memcpy(ptr, &new_checksum, 2);
 

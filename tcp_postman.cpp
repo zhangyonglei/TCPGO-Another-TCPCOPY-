@@ -32,7 +32,7 @@ tcp_postman::~tcp_postman()
 
 void tcp_postman::get_ready4subclass()
 {
-	int opt, ret;
+	int opt, ret, flags;
 	struct sockaddr_in addr;
 
 	assert(-1 == _listening_fd);
@@ -68,6 +68,19 @@ void tcp_postman::get_ready4subclass()
 		abort();
 	}
 
+//	flags = fcntl(_listening_fd, F_GETFL, 0);
+//	if (flags < 0)
+//	{
+//		perror("fcntl");
+//		abort();
+//	}
+//
+//	if (fcntl(_listening_fd, F_SETFL, flags|O_NONBLOCK) < 0)
+//	{
+//		perror("fcntl");
+//		abort();
+//	}
+
 	if (bind(_listening_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
 	{
 		perror("bind");
@@ -83,15 +96,40 @@ void tcp_postman::get_ready4subclass()
 
 void tcp_postman::recv_impl()
 {
-	_conn_fd = accept(_listening_fd, NULL, NULL);
 	if (_conn_fd < 0)
 	{
-		perror("accept");
-		return;
+		_conn_fd = accept(_listening_fd, NULL, NULL);
+
+		if (_conn_fd > 0)
+		{
+			_last_recorded_recv_time = g_timer.get_jiffies();
+			int flags = fcntl(_conn_fd, F_GETFL, 0);
+			if (flags < 0)
+			{
+				perror("fcntl");
+				_conn_fd = -1;
+				return;
+			}
+
+			if (fcntl(_conn_fd, F_SETFL, flags|O_NONBLOCK) < 0)
+			{
+				perror("fcntl");
+				_conn_fd = -1;
+				return;
+			}
+		}
+		else
+		{
+			perror("accept");
+		}
 	}
 
-	// blocks until a error happened or the connection is closed.
-	save_peer_response_to_buffer();
+	if (_conn_fd > 0)
+	{
+		save_peer_response_to_buffer();
+	}
+
+	boost::this_thread::sleep(boost::posix_time::milliseconds(1)) ;
 }
 
 void tcp_postman::save_peer_response_to_buffer()
@@ -113,6 +151,19 @@ void tcp_postman::save_peer_response_to_buffer()
 		}
 		else if (ret <= 0)
 		{
+			uint64_t now = g_timer.get_jiffies();
+			// in the case the other side of this tcp connection performs close() or quit,
+			// but on this side, we don't know for some reasons.
+			if (now - _last_recorded_recv_time > HZ*5)
+			{
+				goto _quit;
+			}
+
+			if (errno == EAGAIN)
+			{
+				return;
+			}
+
 			if (ret == 0 && buff_available_len == 0)
 			{
 				const char* hint = "Make sure the two options have been specified:\n"
@@ -126,8 +177,11 @@ void tcp_postman::save_peer_response_to_buffer()
 				char *ptr = strerror_r(errno, buff, sizeof(buff));
 				write(_conn_fd, ptr, strlen(ptr));
 			}
+
+_quit:
 			close(_conn_fd);
 			_conn_fd = -1;
+			_buffer_used_len = 0;
 
 			return;
 		}
@@ -169,9 +223,9 @@ void tcp_postman::parse_buffer_and_get_all_ip_pkts()
 			i++;
 			continue;
 		}
-		sum = iphdr->check;
+
 		checksum = compute_ip_checksum(iphdr);
-		iphdr->check = sum;
+		sum = iphdr->check;
 		if (checksum != sum)
 		{
 			i++;
@@ -190,24 +244,25 @@ void tcp_postman::parse_buffer_and_get_all_ip_pkts()
 		}
 
 		tcphdr = (struct tcphdr*)(ptr + iphdr->ihl*4);
-		if (!_hdr_only)
-		{
-			//sum = tcphdr->check;
-			//checksum = compute_tcp_checksum(iphdr, tcphdr);
-			//tcphdr->check = sum;
-			//if (checksum != sum)
-			//{
-				// TODO. It's weird the checksum always failed here.
-				// I just let it pass as an expedient at present.
-				//			i++;
-				//			continue;
-			//}
-		}
-
 		if (tcphdr->source != dst_port_in_netbyte_order)
 		{
 			i++;
 			continue;
+		}
+
+		if (!_hdr_only)
+		{
+			// most kernel has the TCP checksum offload option turned on.
+			// so, if horos, or tcpgo, runs on the same machine as the testing
+			// server, the tcp checksum will fail.
+//			sum = tcphdr->check;
+//			checksum = compute_tcp_checksum(iphdr, tcphdr);
+//			tcphdr->check = sum;
+//			if (checksum != sum)
+//			{
+//				 i++;
+//				 continue;
+//			}
 		}
 
 		if (!_hdr_only)

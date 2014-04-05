@@ -60,20 +60,19 @@ uint16_t compute_tcp_checksum(const struct iphdr *iphdr,
 {
 	int i, need_pad, loop_size;
 	int tot_tcpsgmt_len;
-	int pseudo_hdr_len;
 	int tot_ipsegmt_len;
 	uint16_t word16;
-	uint16_t buff[12];
-	uint16_t* ptr2buff;
+	const int PSEUDO_HDR_SIZE = 6;
+	uint16_t pseudo_hdr[PSEUDO_HDR_SIZE];  /// the 12-byte tcp preudo header
 	uint32_t sum, sum_saved;
 	const uint16_t* tcpmem;
 
 	const uint8_t* src_addr;
 	const uint8_t* dst_addr;
 
-	tcpmem = (uint16_t*) tcphdr;
+	tcpmem = (uint16_t*)tcphdr;
 	sum_saved = tcphdr->check;
-	*(unsigned short*) (&tcphdr->check) = 0;
+	*(unsigned short*)&tcphdr->check = 0;  // to discard the const qualifier.
 
 	tot_ipsegmt_len = ntohs(iphdr->tot_len);
 	tot_tcpsgmt_len = tot_ipsegmt_len - ((iphdr->ihl) << 2);
@@ -82,30 +81,25 @@ uint16_t compute_tcp_checksum(const struct iphdr *iphdr,
 	//initialize sum to zero
 	sum = 0;
 
-	memcpy(buff, &iphdr->saddr, 4);
-	memcpy(buff + 2, &iphdr->daddr, 4);
-	buff[4] = htons((unsigned short) (iphdr->protocol));
-	buff[5] = htons((unsigned short) tot_tcpsgmt_len);
-	pseudo_hdr_len = sizeof(buff) / sizeof(buff[0]);
-	ptr2buff = buff;
-	while (pseudo_hdr_len > 1)
+	memcpy(pseudo_hdr, &iphdr->saddr, 4);
+	memcpy(pseudo_hdr + 2, &iphdr->daddr, 4);
+	pseudo_hdr[4] = htons((unsigned short) (iphdr->protocol));
+	pseudo_hdr[5] = htons((unsigned short) tot_tcpsgmt_len);
+	for (int i = 0; i < PSEUDO_HDR_SIZE; i++)
 	{
-		sum += *(uint16_t*) ptr2buff;
-		ptr2buff++;
-		pseudo_hdr_len -= 2;
+		sum += pseudo_hdr[i];
 	}
 
 	while (tot_tcpsgmt_len > 1)
 	{
-		sum += *(uint16_t*) tcpmem;
+		sum += *(uint16_t*)tcpmem;
 		tcpmem++;
 		tot_tcpsgmt_len -= 2;
 	}
 
 	if (tot_tcpsgmt_len) /* take care of left over byte */
-	{ //notice: i think there lives a bug 'cos the btye after mem is possibly not zero.
+	{
 		sum += (uint16_t) * (uint8_t *) tcpmem;
-
 	}
 
 	// keep only the last 16 bits of the 32 bit calculated sum and add the carries
@@ -114,7 +108,7 @@ uint16_t compute_tcp_checksum(const struct iphdr *iphdr,
 
 	sum = ~sum;
 
-	*(unsigned short*) &(tcphdr->check) = sum_saved;
+	*(unsigned short*)&(tcphdr->check) = sum_saved;
 
 	return ((unsigned short) sum);
 }

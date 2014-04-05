@@ -212,6 +212,19 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 
 		session_manager::instance(_asio_idx).clone_sessions(*this);
+
+		// testing code ... REMOVE ME
+		for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
+				ite != _ippkts_samples.end();
+				++ite)
+		{
+			if ("192.168.44.129" == (*ite)->get_src_addr())
+			{
+				int n = 10;
+				n++;
+				n++;
+			}
+		}
 	}
 }
 
@@ -438,6 +451,19 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	bool fin_has_been_sent;
 	bool pkt_will_be_sent;
 	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
+
+	// testing code ... REMOVE ME
+	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
+			ite != _ippkts_samples.end();
+			++ite)
+	{
+		if ("192.168.44.129" == (*ite)->get_src_addr())
+		{
+			int n = 10;
+			n++;
+			n++;
+		}
+	}
 
 	pkts.clear();
 	jiffies = g_timer.get_jiffies();
@@ -706,7 +732,7 @@ void tcpsession::got_a_packet(boost::shared_ptr<ip_pkt> ippkt)
 {
 	uint64_t jiffies = g_timer.get_jiffies();
 	_last_recorded_recv_time = jiffies;
-	if (0 != ippkt->get_tcp_payload_len() || ippkt->is_syn_set())
+	if (0 != ippkt->get_tcp_payload_len() || ippkt->is_syn_set() || ippkt->is_fin_set())
 	{
 		_last_recorded_recv_time_with_payload = jiffies;
 	}
@@ -971,7 +997,7 @@ void tcpsession::fin_wait_2_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		if (_ippkts_samples.empty())
 		{
 			boost::shared_ptr<ip_pkt> pure_ack = build_an_ack_without_payload(_last_seq_beyond_fin_at_localhost_side);
-			_ippkts_samples.push_back(pkt);
+			_ippkts_samples.push_back(pure_ack);
 		}
 		_sliding_window_left_boundary = _ippkts_samples.begin();
 		_sliding_window_right_boundary = _ippkts_samples.end();

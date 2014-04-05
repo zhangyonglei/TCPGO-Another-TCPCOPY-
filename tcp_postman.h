@@ -35,10 +35,11 @@ private:
 	int _listening_fd;
 	int _conn_fd;
 	static const int _listening_port = 1992;
-	static const int _buffer_block_len = 4096*50;
+	static const int _buffer_block_len = 4096*10;
 	char _buffer_block[_buffer_block_len];
 	int _buffer_used_len;
 	bool _hdr_only;    ///< if capture IP and TCP header only when sniff the traffic from peer.
+	uint64_t _last_recorded_recv_time;
 };
 
 #endif /* _TCPPOSTMAN_H_ */
