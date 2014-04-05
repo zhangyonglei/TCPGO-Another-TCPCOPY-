@@ -68,8 +68,6 @@ void realtime_capturer::pluck_out_and_inject_realtime_ippkts(int asio_idx, int m
 
 void realtime_capturer::handle_accept(boost::shared_ptr<boost::asio::ip::tcp::socket> s, const boost::system::error_code& error)
 {
-	using namespace boost::asio;
-
 	uint64_t key = generate_sess_key(s);
 	ConnInfo& conn = _conns[key];
 
@@ -77,7 +75,7 @@ void realtime_capturer::handle_accept(boost::shared_ptr<boost::asio::ip::tcp::so
 	conn._used_len = 0;
 	conn._timer = g_proactor.produce_a_timer();
 
-	s->async_read_some(buffer(conn._memblock),
+	s->async_read_some(boost::asio::buffer(conn._memblock),
 			_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
 						boost::asio::placeholders::error,
 						boost::asio::placeholders::bytes_transferred)));
@@ -87,14 +85,12 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 									const boost::system::error_code& error,
 									std::size_t bytes_transferred)
 {
-	using namespace boost::asio;
-
 	uint64_t key = generate_sess_key(s);
 
 	// thanks to the shared_ptr, don't have to worry about the fd leak.
 	// if ((boost::asio::error::eof == error) ||
 	   //     (boost::asio::error::connection_reset == error))
-	ip::tcp::endpoint point = s->remote_endpoint();
+	boost::asio::ip::tcp::endpoint point = s->remote_endpoint();
 
 	if (boost::asio::error::eof == error)
 	{
@@ -127,7 +123,7 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 
 	if (!_jam_control)
 	{
-		s->async_read_some(buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
+		s->async_read_some(boost::asio::buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
 				_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
 								boost::asio::placeholders::error,
 								boost::asio::placeholders::bytes_transferred)));
@@ -157,7 +153,7 @@ void realtime_capturer::delayed_read(boost::shared_ptr<boost::asio::ip::tcp::soc
 	ConnInfo& conn = _conns[key];
 	MemBlock& mb = conn._memblock;
 
-	s->async_read_some(buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
+	s->async_read_some(boost::asio::buffer(mb.data() + conn._used_len, mb.size() - conn._used_len),
 			_strand->wrap(boost::bind(&realtime_capturer::handle_read, this, s,
 							boost::asio::placeholders::error,
 							boost::asio::placeholders::bytes_transferred)));
@@ -165,10 +161,8 @@ void realtime_capturer::delayed_read(boost::shared_ptr<boost::asio::ip::tcp::soc
 
 uint64_t realtime_capturer::generate_sess_key(boost::shared_ptr<boost::asio::ip::tcp::socket> s)
 {
-	using namespace boost::asio;
-
-	ip::tcp::socket::endpoint_type point = s->remote_endpoint();
-	ip::address_v4 addr = point.address().to_v4();
+	boost::asio::ip::tcp::socket::endpoint_type point = s->remote_endpoint();
+	boost::asio::ip::address_v4 addr = point.address().to_v4();
 	unsigned short port = point.port();
 	uint64_t key = make_sess_key(addr.to_ulong(), port);
 

@@ -67,7 +67,8 @@ boost::shared_ptr<boost::asio::deadline_timer> proactor::produce_a_timer(boost::
 
 void proactor::listen(uint16_t port, acceptor_handler handler)
 {
-	using boost::asio::ip::tcp;
+	// Failed to compile using old compiler. I'm forced to use the verbose grammar.
+	// using boost::asio::ip::tcp;
 
 	if (_listeners.find(port) != _listeners.end())
 	{
@@ -79,11 +80,11 @@ void proactor::listen(uint16_t port, acceptor_handler handler)
 	// construct an acceptor opened on the given endpoint.
 	boost::shared_ptr<the_acceptor> a;
 	a.reset(
-			new the_acceptor(_io_service, tcp::endpoint(tcp::v4(), port))
+			new the_acceptor(_io_service, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 	);
 
 	// start the async accept.
-	boost::shared_ptr<tcp::socket> s = boost::make_shared<tcp::socket>(boost::ref(_io_service));
+	boost::shared_ptr<boost::asio::ip::tcp::socket> s = boost::make_shared<boost::asio::ip::tcp::socket>(boost::ref(_io_service));
 	a->async_accept(*s, boost::bind(&proactor::handle_accept_proxy,
 			this, a, s, handler, boost::asio::placeholders::error));
 
@@ -95,9 +96,7 @@ void proactor::handle_accept_proxy(boost::shared_ptr<boost::asio::ip::tcp::accep
 			acceptor_handler h,
 			const boost::system::error_code& error)
 {
-	using boost::asio::ip::tcp;
-
-	boost::shared_ptr<tcp::socket> socket = boost::make_shared<tcp::socket>(boost::ref(_io_service));
+	boost::shared_ptr<boost::asio::ip::tcp::socket> socket = boost::make_shared<boost::asio::ip::tcp::socket>(boost::ref(_io_service));
 	a->async_accept(*socket, boost::bind(&proactor::handle_accept_proxy,
 			this, a, socket, h, boost::asio::placeholders::error));
 
