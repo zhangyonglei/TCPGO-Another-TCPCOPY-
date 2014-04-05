@@ -436,7 +436,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	ip_pkt* pkt;
 	uint64_t jiffies;
 	bool fin_has_been_sent;
-	bool pkt_has_been_sent;
+	bool pkt_will_be_sent;
 	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
 
 	pkts.clear();
@@ -505,7 +505,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 
 	// if reach here, some packets should be send.
 
-	pkt_has_been_sent = false;
+	pkt_will_be_sent = false;
 	fin_has_been_sent = false;
 	// iterate over the sliding window.
 	for(std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _sliding_window_left_boundary;
@@ -574,9 +574,16 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 						g_configuration.get_dst_port(), _expected_next_sequence_from_peer);
 		pkts.push_back(*ite);
 
-		if (send_me_pls && 0 != pkt->get_tcp_payload()) // cannot count pure ack
+		if (send_me_pls)
 		{
-			pkt_has_been_sent = true;
+			if (pkt->is_syn_set() || pkt->is_fin_set())
+			{
+				pkt_will_be_sent = true;
+			}
+			else if (0 != pkt->get_tcp_payload_len()) // cannot count pure ack
+			{
+				pkt_will_be_sent = true;
+			}
 		}
 
 		++ite;
@@ -607,6 +614,22 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		return 0;
 	}
 
+	if (0 != count && pkts[0]->is_syn_set())
+	{
+		ip_pkt* pkt = pkts[0].get();
+		int syn_sent_count = pkt->get_sent_counter();
+		uint64_t handshake_time_elapsed = _retransmit_time_interval * syn_sent_count;
+		if (handshake_time_elapsed > _response_from_peer_time_out)
+		{
+			g_logger.printf("session: %s.%hu %d SYNs have been sent without elicited SYN-ACK from peer in %d milliseconds. I commit a suicide.\n",
+					_client_src_ip_str.c_str(), _client_src_port, syn_sent_count, _response_from_peer_time_out*10);
+			g_statistics_bureau.inc_sess_cancelled_by_no_response_count();
+			kill_me(PEER_TIME_OUT);
+
+			return 0;
+		}
+	}
+
 	if (0 != count && fin_has_been_sent)
 	{
 		const ip_pkt* pkt = pkts[count-1].get();
@@ -635,13 +658,14 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		kill_me(ACTIVE_CLOSE);
 	}
 
-	if (pkt_has_been_sent)
+	if (pkt_will_be_sent)
 	{
 		_last_recorded_snd_time = jiffies;
 	}
 	else if (jiffies - _last_recorded_snd_time > _have_to_send_data_within_this_timeperiod)
 	{
 		bool dormancy = false;
+
 		if (_enable_active_close && _current_state == ESTABLISHED)
 		{
 			dormancy = true;

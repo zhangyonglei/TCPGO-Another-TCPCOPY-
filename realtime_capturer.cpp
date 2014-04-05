@@ -260,6 +260,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 
 		// ugly and error-prone c grammar.
 		if (0xff == ((char*)&(pkt->get_iphdr()->saddr))[0] || 0xff == ((char*)&(pkt->get_iphdr()->saddr))[3] ||
+			127 == ((char*)&(pkt->get_iphdr()->saddr))[3] ||
 			0x0 == ((char*)&(pkt->get_iphdr()->daddr))[0] || 0x0 == ((char*)&(pkt->get_iphdr()->daddr))[3])
 		{
 			i++;
