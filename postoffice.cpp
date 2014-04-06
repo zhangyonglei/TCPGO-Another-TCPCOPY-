@@ -184,13 +184,13 @@ void postoffice::send_packets_to_wire()
 			if (success)
 			{
 				g_statistics_bureau.inc_total_transmit_count();
-				if (0 == pkt->get_sent_counter())   // the first time to send this packet.
+				if (0 == pkt->get_send_counter())   // the first time to send this packet.
 				{
 					g_statistics_bureau.inc_unique_transmit_count();
 				}
 
 				pkt->mark_me_has_been_sent();
-				pkt->increment_sent_counter();
+				pkt->increment_send_counter();
 				pkt->set_last_recorded_snd_time();
 			}
 			else

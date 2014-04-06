@@ -183,14 +183,14 @@ public:
 	void rebuild_str(const char* addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 	void rebuild_num(uint32_t addr, unsigned short port, uint32_t expected_next_sequence_from_peer);
 
-	void increment_sent_counter()
+	void increment_send_counter()
 	{
-		_sent_counter++;
+		_send_counter++;
 	}
 
-	int get_sent_counter()
+	int get_send_counter()
 	{
-		return _sent_counter;
+		return _send_counter;
 	}
 
 	void mark_me_has_been_sent()
@@ -267,7 +267,7 @@ protected:
 	bool _fin_flag;              ///< no explanation.
 
 	bool _send_me_pls;           ///< a tag used to indicate that the packet should be send.
-	int _sent_counter;           ///< record how many times this ip packet has been sent.
+	int _send_counter;           ///< record how many times this ip packet has been sent.
 
 	uint64_t _last_recorded_snd_time; ///< self-explanatory
 

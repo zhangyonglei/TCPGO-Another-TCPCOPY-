@@ -555,7 +555,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		if (is_ack_set && 0 == tcp_payload_len && !is_syn_set && !is_rst_set && !is_fin_set )
 		{
 			int sent_count;
-			sent_count = pkt->get_sent_counter();
+			sent_count = pkt->get_send_counter();
 
 			if (0 == sent_count)  // record the pure ack that will be send.
 			{
@@ -624,7 +624,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	if (0 != count && pkts[0]->is_syn_set())
 	{
 		ip_pkt* pkt = pkts[0].get();
-		int syn_sent_count = pkt->get_sent_counter();
+		int syn_sent_count = pkt->get_send_counter();
 		uint64_t handshake_time_elapsed = _retransmit_time_interval * syn_sent_count;
 		if (handshake_time_elapsed > _response_from_peer_time_out)
 		{

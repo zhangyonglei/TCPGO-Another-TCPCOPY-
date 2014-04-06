@@ -33,6 +33,6 @@ void ip_pkt_hdr_only::cp(const char* pkt)
 	_pkt.reset(new char[len]);
 	memcpy((char*)_pkt.get(), pkt, len);
 	warm_up();
-	_sent_counter = 0;
+	_send_counter = 0;
 	_send_me_pls = true;
 }

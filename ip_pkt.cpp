@@ -12,7 +12,7 @@
 
 ip_pkt::ip_pkt()
 {
-	_sent_counter = 0;
+	_send_counter = 0;
 	_send_me_pls = true;
 	_last_recorded_snd_time = 0;
 }
@@ -96,7 +96,7 @@ void ip_pkt::cp(const char* pkt)
 	assert(NULL != _pkt);
 	memcpy((char*)_pkt.get(), pkt, ip_tot_len);
 	warm_up();
-	_sent_counter = 0;
+	_send_counter = 0;
 	_send_me_pls = true;
 }
 
@@ -210,7 +210,7 @@ boost::shared_ptr<ip_pkt> ip_pkt::clone()
 	iphdr->saddr = new_ip_num;
 
 	cloned_pkt->warm_up();
-	cloned_pkt->_sent_counter = 0;
+	cloned_pkt->_send_counter = 0;
 	cloned_pkt->_send_me_pls = true;
 
 	return cloned_pkt;
