@@ -15,6 +15,7 @@
 #include "rawsock_postman.h"
 #include "pcap_postman.h"
 #include "tcp_postman.h"
+#include "statistics_bureau.h"
 
 boost::mutex postoffice::_mutex;
 std::vector<boost::shared_ptr<postoffice> > postoffice::_postoffices;
@@ -171,9 +172,9 @@ void postoffice::send_packets_to_wire()
 			success = false;
 			if (pkt->should_send_me())
 			{
-				// success = _postman->send(_asio_idx, pkt);
+				success = _postman->send(_asio_idx, pkt);
 				// std::cout << pkt->get_sent_counter() << "-----\n";
-				success = _postman->send_sync(pkt);
+				// success = _postman->send_sync(pkt);
 			}
 			else
 			{
@@ -182,6 +183,12 @@ void postoffice::send_packets_to_wire()
 
 			if (success)
 			{
+				g_statistics_bureau.inc_total_transmit_count();
+				if (0 == pkt->get_sent_counter())   // the first time to send this packet.
+				{
+					g_statistics_bureau.inc_unique_transmit_count();
+				}
+
 				pkt->mark_me_has_been_sent();
 				pkt->increment_sent_counter();
 				pkt->set_last_recorded_snd_time();

@@ -78,6 +78,21 @@ public:
 		_total_aborted_sess_count++;
 	}
 
+	void inc_total_transmit_count()
+	{
+		_total_transmit_count++;
+	}
+
+	void inc_unique_transmit_count()
+	{
+		_unique_transmit_count++;
+	}
+
+	void inc_total_sess_time_duration(uint64_t time)
+	{
+		_total_sess_time_duration += time;
+	}
+
 public:
 	void one_shot_timer_event_handler();
 
@@ -96,6 +111,9 @@ private:
 	boost::atomic_int _sess_active_close_timeout_count;
 	boost::atomic_int _sess_killed_by_reset_count;
 	boost::atomic_int _sess_dormancy_count;
+	boost::atomic_int _total_transmit_count;   ///< include retransmit.
+	boost::atomic_int _unique_transmit_count;
+	boost::atomic_long _total_sess_time_duration;
 
 	// the following variables are intended for make statistics of normally
 	// ended connections in the past (_TIME_DURATION_IN_MIN-1) minutes.

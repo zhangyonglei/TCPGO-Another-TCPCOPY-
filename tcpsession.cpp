@@ -403,6 +403,8 @@ void tcpsession::get_ready()
 		// empty
 		_sliding_window_right_boundary = _ippkts_samples.end();
 	}
+
+	_syn_sending_time = -1;
 	_last_recorded_recv_time = -1;
 	_last_recorded_recv_time_with_payload = -1;
 	_last_recorded_snd_time = now;
@@ -438,6 +440,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	bool fin_has_been_sent;
 	bool pkt_will_be_sent;
 	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
+	uint64_t now = g_timer.get_jiffies();
 
 	pkts.clear();
 	jiffies = g_timer.get_jiffies();
@@ -594,6 +597,10 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	// is it the first hand shake
 	if (0 != count && pkts[0]->is_syn_set() && pkts[0]->should_send_me())
 	{
+		if (-1 == _syn_sending_time)
+		{
+			_syn_sending_time = now;
+		}
 		_current_state = tcpsession::SYN_SENT;
 		g_logger.printf("session: %s.%hu moves to state SYN_SENT from state CLOSED.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
@@ -655,6 +662,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 		// Give only one chance for peer's FIN to be acked.
 		g_logger.printf("session %s.%hu exits from state TIME_WAIT.\n", _client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_active_close_count();
+		g_statistics_bureau.inc_total_sess_time_duration(now - _syn_sending_time);
 		kill_me(ACTIVE_CLOSE);
 	}
 
@@ -877,9 +885,11 @@ void tcpsession::close_wait_state_handler(boost::shared_ptr<ip_pkt> pkt)
 void tcpsession::last_ack_state_handler(boost::shared_ptr<ip_pkt> pkt)
 {
 	uint32_t ack_seq;
+	uint64_t now;
 
 	refresh_status(pkt);
 
+	now = g_timer.get_jiffies();
 	ack_seq = pkt->get_ack_seq();
 	if (pkt->is_ack_set() && seq_before_eq(_expected_last_ack_seq_from_peer, ack_seq))
 	{
@@ -887,6 +897,7 @@ void tcpsession::last_ack_state_handler(boost::shared_ptr<ip_pkt> pkt)
 		g_logger.printf("session %s.%hu moves to state CLOSED from state LAST_ACK.\n",
 				_client_src_ip_str.c_str(), _client_src_port);
 		g_statistics_bureau.inc_sess_passive_close_count();
+		g_statistics_bureau.inc_total_sess_time_duration(now - _syn_sending_time);
 		_traffic_history.push_back(pkt);
 		kill_me(PASSIVE_CLOSE);
 		return;

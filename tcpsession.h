@@ -183,6 +183,8 @@ private:
 	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_left_boundary;  ///< closed interval (including)
 	std::list<boost::shared_ptr<ip_pkt> >::iterator _sliding_window_right_boundary; ///< open interval (excluding)
 
+	uint64_t _syn_sending_time;       ///< record the first time the syn is sent.
+
 	uint64_t _last_recorded_recv_time;   ///< used for session timeout
 	uint64_t _last_recorded_recv_time_with_payload; ///< won't count pure ack packet.
 	int      _response_from_peer_time_out;    ///< in unit of jiffy. refer to class the_timer
