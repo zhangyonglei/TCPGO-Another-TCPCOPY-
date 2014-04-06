@@ -212,19 +212,6 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 		session_manager::instance(_asio_idx).increase_healthy_sess_count();
 
 		session_manager::instance(_asio_idx).clone_sessions(*this);
-
-		// testing code ... REMOVE ME
-		for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
-				ite != _ippkts_samples.end();
-				++ite)
-		{
-			if ("192.168.44.129" == (*ite)->get_src_addr())
-			{
-				int n = 10;
-				n++;
-				n++;
-			}
-		}
 	}
 }
 
@@ -451,19 +438,6 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	bool fin_has_been_sent;
 	bool pkt_will_be_sent;
 	std::list<boost::shared_ptr<ip_pkt> >::iterator ite;
-
-	// testing code ... REMOVE ME
-	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
-			ite != _ippkts_samples.end();
-			++ite)
-	{
-		if ("192.168.44.129" == (*ite)->get_src_addr())
-		{
-			int n = 10;
-			n++;
-			n++;
-		}
-	}
 
 	pkts.clear();
 	jiffies = g_timer.get_jiffies();

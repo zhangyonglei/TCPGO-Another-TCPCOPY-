@@ -172,7 +172,7 @@ std::string statistics_bureau::sess_statistics()
 	ss << "Average Connections Per Second in the past 15mins, 5mins, 1min, 15seconds, 5seconds, 1second:\n"
 	   << conns_per_second_in_15mins << " " << conns_per_second_in_5mins << " " << conns_per_second_in_1min << " "
 	   << conns_per_second_in_15seconds << " " << conns_per_second_in_5seconds << " " << conns_per_second_in_1second << " "
-	   << " (active_closed + passive_closed) / total_processed)";
+	   << " (active_closed + passive_closed) / time elapsed in second)";
 
 	return ss.str();
 }

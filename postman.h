@@ -69,7 +69,7 @@ private:
 	void send_thrd_entry();
 
 private:
-	static const int QueueCapacity = 20000;
+	static const int QueueCapacity = 1000000;
 	typedef boost::lockfree::spsc_queue<boost::shared_ptr<ip_pkt>, boost::lockfree::capacity<QueueCapacity> > LockFreeQueue;
 
 	std::vector<boost::shared_ptr<LockFreeQueue> > _recv_queues;
