@@ -148,6 +148,7 @@ void tcp_postman::save_peer_response_to_buffer()
 		{
 			_buffer_used_len += ret;
 			parse_buffer_and_get_all_ip_pkts();
+			_last_recorded_recv_time = g_timer.get_jiffies();
 		}
 		else if (ret <= 0)
 		{
