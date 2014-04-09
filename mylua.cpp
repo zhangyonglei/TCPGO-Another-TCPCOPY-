@@ -313,8 +313,8 @@ int mylua::load_lua_module(const std::string& module_path)
 	return retcode;
 }
 
-void mylua::run_lua_tests(const std::string& client_str_ip, const std::vector<char>& request,
-		                  const std::vector<char>& response)
+void mylua::run_lua_tests(const std::string& client_str_ip, uint16_t port,
+						  const std::vector<char>& request, const std::vector<char>& response)
 {
 	for (std::vector<std::string>::iterator ite = _lua_modules.begin();
 		 ite != _lua_modules.end();
@@ -325,9 +325,10 @@ void mylua::run_lua_tests(const std::string& client_str_ip, const std::vector<ch
 		lua_getfield(_lua_state, -1, "main");        // [FRAMES2] push the module's main function on the stack
 		lua_remove(_lua_state, -2);                  // [FRAMES1] remove the module "lua table" on the -2 level of the stack
 		lua_pushstring(_lua_state, client_str_ip.c_str());       // [FRAMES2] push the second parameter
+		lua_pushinteger(_lua_state, port);
 		lua_pushlstring(_lua_state, &request[0], request.size());// [FRAMES3] push the first parameter
 		lua_pushlstring(_lua_state, &response[0], response.size());// [FRAMES4] push the third parameter
-		lua_pcall(_lua_state, 3, 0, 0); // int lua_pcall(lua_State *L, int nargs, int nresults, int msgh);
+		lua_pcall(_lua_state, 4, 0, 0); // int lua_pcall(lua_State *L, int nargs, int nresults, int msgh);
 
 		lua_settop(_lua_state, 0);
 	}

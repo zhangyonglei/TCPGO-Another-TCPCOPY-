@@ -349,7 +349,7 @@ int testsuite::save_traffic(const std::string& pcap_file)
 void testsuite::do_tests(const std::string& client_str_ip, uint16_t port,
 					     const std::vector<char>& request, const std::vector<char>& response)
 {
-	g_mylua.run_lua_tests(client_str_ip, request, response);
+	g_mylua.run_lua_tests(client_str_ip, port, request, response);
 }
 
 void testsuite::load_lua_scripts()
@@ -378,5 +378,6 @@ void testsuite::load_shared_objects()
 		ite != shared_objs.end();
 		++ite)
 	{
+		// dummy
 	}
 }

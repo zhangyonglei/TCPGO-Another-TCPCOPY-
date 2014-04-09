@@ -62,7 +62,7 @@ public:
 	 * return 0 on success, non-zero if failed.
 	 */
 	int load_lua_module(const std::string& module_path);
-	void run_lua_tests(const std::string& client_str_ip,
+	void run_lua_tests(const std::string& client_str_ip, uint16_t port,
 			           const std::vector<char>& request, const std::vector<char>& response);
 
 private:
