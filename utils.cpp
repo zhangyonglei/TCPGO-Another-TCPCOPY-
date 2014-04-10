@@ -250,7 +250,7 @@ uint32_t next_avail_ip(uint32_t orig_ip)
 		// designated as the network number and the remaining bits were called the
 		// rest field or host identifier and were used for host numbering within a network.
 		// On intel CPU, high order octet resides on low address.
-		char ch = ((char*)&new_ip_num)[0];
+		unsigned char ch = ((unsigned char*)&new_ip_num)[0];
 		if (0 != ch && 0xff != ch)
 		{
 			break;
