@@ -6,8 +6,8 @@ function m.main(client_ip, port, req, resp)
 		return
 	end
 
-	local req_file_name = client_ip .. port .. "_req"
-	local resp_file_name = client_ip .. port .. "_resp"
+	local req_file_name = client_ip .. "_" .. port .. ".req"
+	local resp_file_name = client_ip .. "_" .. port .. ".resp"
 
 	local req_file_handle = io.open(req_file_name .. ".tmp", "w+")	
 	local resp_file_handle = io.open(resp_file_name .. ".tmp", "w+")
@@ -23,5 +23,3 @@ function m.main(client_ip, port, req, resp)
 end
 
 return m
-
-
