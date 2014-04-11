@@ -93,6 +93,8 @@ private:
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
 
 	uint64_t _pkt_count_received;
+
+	int  _pkt_pass_rate;
 };
 
 #endif /* _REALTIME_CAPTUREER_H_ */

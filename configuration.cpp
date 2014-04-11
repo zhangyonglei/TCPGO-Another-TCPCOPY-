@@ -29,6 +29,7 @@ configuration::configuration()
 	set_accidental_death_pcap_file_limit(100);
 	set_sniff_method(SNIFF_RAW);
 	set_asio_thrd_num(-1);   // let the function deduce the best number by itself.
+	set_pkt_pass_rate(1000);  // let all the packages pass.
 
 	// [SESSION]
 	set_session_count_limit(10000);
@@ -348,6 +349,26 @@ void configuration::set_asio_thrd_num(int num)
 	}
 }
 
+void configuration::set_pkt_pass_rate(const std::string& rate)
+{
+	int val;
+	val = boost::lexical_cast<int>(rate.c_str());
+	set_pkt_pass_rate(val);
+}
+
+void configuration::set_pkt_pass_rate(int rate)
+{
+	_pkt_pass_rate = rate;
+	if (_pkt_pass_rate < 0)
+	{
+		_pkt_pass_rate = 0;
+	}
+	else if (_pkt_pass_rate > 1000)
+	{
+		_pkt_pass_rate = 1000;
+	}
+}
+
 void configuration::set_sniff_method(SNIFF_METHOD sniff_method)
 {
 	_sniff_method = sniff_method;
@@ -450,6 +471,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("asio_thrd_num: %s\n", value.c_str());
 		set_asio_thrd_num(value);
+	}
+
+	option_name = "pkt_pass_rate";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("pkt_pass_rate: %s\n", value.c_str());
+		set_pkt_pass_rate(value);
 	}
 
 	// the session section

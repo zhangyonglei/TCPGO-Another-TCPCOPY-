@@ -60,7 +60,7 @@ $(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a) $(lua_vm_a)
 
 $(projname_alias) : $(projname)
 	-$(RM) $(projname_alias)
-	-ln -s $(projname) $(projname_alias)
+	-ln $(projname) $(projname_alias)
 
 $(iniparser_a) : 
 	make -C $(iniparser)

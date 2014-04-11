@@ -30,6 +30,8 @@ int realtime_capturer::get_ready()
 	_strand.reset(new boost::asio::strand(g_proactor.get_io_service()));
 
 	_asio_thrd_num = g_configuration.get_asio_thrd_num();
+	_pkt_pass_rate = g_configuration.get_pkt_pass_rate();
+
 	_ippkt_queues.resize(_asio_thrd_num);
 	_queue_sizes.resize(_asio_thrd_num);
 
@@ -248,6 +250,12 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		}*/
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port)); // modify the source port.
+		if ((tcphdr->source % 1000 + 1) > _pkt_pass_rate)
+		{
+			i += ip_tot_len;
+			sentinel = i;
+			continue;
+		}
 
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);

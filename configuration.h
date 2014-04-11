@@ -82,6 +82,11 @@ public:
 		return _asio_thrd_num;
 	}
 
+	int get_pkt_pass_rate()
+	{
+		return _pkt_pass_rate;
+	}
+
 	// [SESSION]
 	int get_session_count_limit()
 	{
@@ -173,6 +178,9 @@ public:
 	void set_asio_thrd_num(int num);
 	void set_asio_thrd_num(const std::string& num);
 
+	void set_pkt_pass_rate(int rate);
+	void set_pkt_pass_rate(const std::string& rate);
+
 	// [SESSION]
 	void set_session_count_limit(const std::string& limit);
 	void set_session_count_limit(int limit);
@@ -233,6 +241,7 @@ private:
 	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
 	SNIFF_METHOD _sniff_method; ///< there are three kinds of methods to sniff the peers response packets.
 	int _asio_thrd_num;      ///< the thread pool for asio.
+	int _pkt_pass_rate;          ///< in unit of permillage.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.
