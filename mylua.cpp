@@ -412,7 +412,7 @@ void mylua::accept_conn(int fd)
 
 	g_reactor.register_evt(_console_connected_fd, reactor::MYPOLLIN, this);
 
-	welcome = "Welcome to the horos console v"VERSION_NUM"\n";
+	welcome = "Welcome to the horos console v"VERSION_NUM". kamuszhou@qq.com\n";
 	write(_console_connected_fd, welcome.c_str(), welcome.length());
 	print_console_prompt(_console_connected_fd, false);
 }

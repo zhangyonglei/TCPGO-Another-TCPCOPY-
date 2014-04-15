@@ -13,6 +13,7 @@ onoff_random_port = 1
 accidental_death_pcap_file_limit = 1000
 sniff_method = pcap
 asio_thrd_num = -1
+pkt_pass_rate = 1000
 
 [SESSION]
 ; advanced configuration to tune tcp session.
@@ -22,7 +23,7 @@ have_to_send_data_within_this_timeperiod = 2000
 injecting_rt_traffic_timeout = 1300
 retransmit_time_interval = 10
 wait_for_fin_from_peer_time_out = 2500
-enable_active_close = 1
+enable_active_close = 0
 clone = 0
 
 [TESTSUITE]

@@ -1,13 +1,13 @@
 local m = {}
 
-function m.main(client_ip, port, req, resp)
+function m.main(client_ip, client_port, req, resp)
 	local r = math.random(1, 1000)
 	if r > 10 then
 		return
 	end
 
-	local req_file_name = client_ip .. "_" .. port .. ".req"
-	local resp_file_name = client_ip .. "_" .. port .. ".resp"
+	local req_file_name = client_ip .. "_" .. client_port .. ".req"
+	local resp_file_name = client_ip .. "_" .. client_port .. ".resp"
 
 	local req_file_handle = io.open(req_file_name .. ".tmp", "w+")	
 	local resp_file_handle = io.open(resp_file_name .. ".tmp", "w+")
