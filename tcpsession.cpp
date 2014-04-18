@@ -163,6 +163,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 	{
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		_sess_state = ABORT;
+		_injecting_rt_traffic_timer->cancel();
 
 		return;
 	}
@@ -503,7 +504,6 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	if (ABORT == _sess_state)
 	{
 		g_statistics_bureau.inc_sess_aborted_count();
-		_injecting_rt_traffic_timer->cancel();
 
 		return postoffice_callback_interface::REMOVE;
 	}
