@@ -149,6 +149,8 @@ std::string statistics_bureau::sess_statistics()
 		healthy_sess_count += session_manager::instance(i).get_healthy_sess_count();
 	}
 
+	ss << std::setprecision(4) << std::fixed;
+
 	ss << total_count << " sessions are now in memory.\n"
 	   << healthy_sess_count << " sessions are healthy.\n";
 
@@ -168,7 +170,7 @@ std::string statistics_bureau::sess_statistics()
 	   << _sess_dormancy_count << " sessions ended prematurely because no traffice has been sent to peer within "
 	                                           << have_to_send_data_within_this_timeperiod * 10 << " milliseconds.\n"
 	   << _sess_killed_by_reset_count << " sessions were killed by RESET.\n"
-	   << "Average Session Time Duration: " << (double)_total_sess_time_duration * 10 / (double)(_sess_passive_close_count + _sess_active_close_count) << " millisconds.\n"
+	   << "Average Session Time Duration: " << (double)_total_sess_time_duration * 10 / (double)(_sess_passive_close_count + _sess_active_close_count) << " milliseconds.\n"
 	   << "Retransmit Rate: " << (double)(_total_transmit_count - _unique_transmit_count) / (double)_unique_transmit_count << "\n"
 	   << "Success Rate: " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "\n"
 
