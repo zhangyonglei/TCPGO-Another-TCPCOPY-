@@ -195,7 +195,7 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 	if (complete)
 	{
-	//	complete = (0 == request_pattern_checker());
+		complete = (0 == request_pattern_checker());
 	}
 
 	if (complete)
