@@ -133,7 +133,7 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	else
 	{
 		conn._timer->cancel();
-		conn._timer->expires_from_now(boost::posix_time::seconds(2));
+		conn._timer->expires_from_now(boost::posix_time::seconds(1));
 		conn._timer->async_wait(_strand->wrap(
 				boost::bind(&realtime_capturer::delayed_read, this, s, boost::asio::placeholders::error)
 				));
@@ -185,7 +185,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 	{
 		for (int i = 0; i < _queue_sizes.size(); i++)
 		{
-			if ( *_queue_sizes[i] < 100)
+			if ( *_queue_sizes[i] < 500)
 			{
 				_jam_control = false;
 				break;
@@ -267,6 +267,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 			0x0 == ((unsigned char*)&(pkt->get_iphdr()->daddr))[0] || 0x0 == ((unsigned char*)&(pkt->get_iphdr()->daddr))[3])
 		{
 			i++;
+			delete pkt;
 			continue;
 		}
 
