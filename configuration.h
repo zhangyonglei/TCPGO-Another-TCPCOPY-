@@ -9,6 +9,7 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
+#include <boost/regex.hpp>
 #include "misc.h"
 #include "INIParser.h"
 
@@ -85,6 +86,11 @@ public:
 	int get_pkt_pass_rate()
 	{
 		return _pkt_pass_rate;
+	}
+
+	const boost::optional<boost::regex>& get_request_pattern()
+	{
+		return _request_pattern;
 	}
 
 	// [SESSION]
@@ -212,6 +218,8 @@ public:
 	void set_clone(int clone);
 	void set_clone(const std::string& clone);
 
+	void set_request_pattern(const std::string& pattern);
+
 	// [LOG]
 	void set_duplicate_log_to_stdout(const std::string& dup);
 	void set_duplicate_log_to_stdout(bool dup);
@@ -256,6 +264,7 @@ private:
 	bool _enable_active_close;
 	int  _expected_qps;
 	int  _clone;
+	boost::optional<boost::regex> _request_pattern;
 
 	// [LOG]
 	bool _log_on;

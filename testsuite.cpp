@@ -56,6 +56,7 @@ void testsuite::ready_go()
 	{
 		_queue_jobs[i].reset(new LockFreeQueue());
 		_queue_counts[i].reset(new boost::atomic_int);
+		_queue_counts[i]->operator=(0);
 	}
 
 	if (!g_configuration.get_lua_scripts_home())

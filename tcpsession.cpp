@@ -194,6 +194,11 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 
 	if (complete)
 	{
+	//	complete = (0 == request_pattern_checker());
+	}
+
+	if (complete)
+	{
 		g_logger.printf("session %s.%hu is ready to work.\n", _client_src_ip_str.c_str(), _client_src_port);
 
 		_sliding_window_left_boundary = _ippkts_samples.begin();
@@ -252,7 +257,7 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	}
 }
 
-int32_t tcpsession::sanitize()
+int tcpsession::sanitize()
 {
 	int32_t size_saved, size_now;
 	int32_t i;   // for the convenience of debug.
@@ -359,6 +364,56 @@ int32_t tcpsession::sanitize()
 
 _err:
 	return 1;
+}
+
+int tcpsession::request_pattern_checker()
+{
+	int ret;
+	int request_len = 0;
+	int sentinel = 0;
+	std::vector<char> request_content;
+	char* addr;
+	const boost::optional<boost::regex>& pattern = g_configuration.get_request_pattern();
+
+	// if the pattern is not specified, it's considered as matched.
+	if (!pattern)
+	{
+		ret = 0;
+		return ret;
+	}
+
+	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
+		 ite != _ippkts_samples.end();
+		 ++ite )
+	{
+		ip_pkt* pkt = (*ite).get();
+		request_len += pkt->get_tcp_payload_len();
+	}
+
+	request_content.resize(request_len + 1);
+	request_content[request_len] = 0;
+	addr = request_content.data();
+
+	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
+		 ite != _ippkts_samples.end();
+		 ++ite )
+	{
+		ip_pkt* pkt = (*ite).get();
+		int payload_len = pkt->get_tcp_payload_len();
+		memcpy(addr + sentinel, pkt->get_tcp_payload(), payload_len);
+		sentinel += payload_len;
+	}
+
+	if (regex_search(request_content.data(), *pattern))
+	{
+		ret = 0;
+	}
+	else
+	{
+		ret = -1;
+	}
+
+	return ret;
 }
 
 void tcpsession::get_ready_for_rt_traffic()

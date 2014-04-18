@@ -174,6 +174,12 @@ public:
 		return ntohs(_tcphdr->dest);
 	}
 
+	// in network byte order
+	uint16_t get_dst_port_n()const
+	{
+		return _tcphdr->dest;
+	}
+
 	/**
 	 * replace the original destination IP address and port with new
 	 * dest IP addr and port. checksum will be re-calculated and properly

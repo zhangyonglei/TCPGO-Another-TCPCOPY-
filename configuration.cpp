@@ -61,8 +61,7 @@ bool configuration::check_validity()
 {
 	if (_dst_addr.empty())
 	{
-		g_logger.printf(
-				"dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
+		g_logger.printf("dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
 		abort();
 		return false;
 	}
@@ -257,6 +256,17 @@ void configuration::set_clone(int clone)
 {
 	assert(clone >= 0);
 	_clone = clone;
+}
+
+void configuration::set_request_pattern(const std::string& pattern)
+{
+	if (pattern.empty())
+	{
+		return;
+	}
+
+	_request_pattern = boost::regex(pattern);
+	// _request_pattern = boost::regex("\r\n\r\n");
 }
 
 void configuration::set_log_on(const std::string& log_on)
@@ -551,6 +561,14 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("clone: %s\n", value.c_str());
 		set_clone(value);
+	}
+
+	option_name = "request_pattern";
+	if (config.HasOption(section_name, option_name))
+	{
+		value = config.GetOption(section_name, option_name);
+		g_logger.printf("request_pattern: %s\n", value.c_str());
+		set_request_pattern(value);
 	}
 
 	// the TESTSUITE session

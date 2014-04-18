@@ -187,6 +187,7 @@ void postman::send_core(ip_pkt* pkt)
 	int ret;
 
 	dst_addr.sin_family = AF_INET;
+	dst_addr.sin_port = pkt->get_dst_port_n();
 	dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
 
 	starting_addr = pkt->get_starting_addr();

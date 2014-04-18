@@ -48,6 +48,13 @@ public:
 	int sanitize();
 
 	/**
+	 * This function will check if the request match the pattern specified on conf file.
+	 * @return return 0 if the request matches the pattern.
+	 * otherwise return non-zero.
+	 */
+	int request_pattern_checker();
+
+	/**
 	 * This session is for real time traffic.
 	 */
 	void get_ready_for_rt_traffic();

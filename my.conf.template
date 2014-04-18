@@ -12,7 +12,7 @@ concurrency_limit = 5000
 onoff_random_port = 1
 accidental_death_pcap_file_limit = 1000
 sniff_method = pcap
-asio_thrd_num = -1
+asio_thrd_num = 1
 pkt_pass_rate = 1000
 
 [SESSION]
@@ -25,6 +25,7 @@ retransmit_time_interval = 10
 wait_for_fin_from_peer_time_out = 2500
 enable_active_close = 0
 clone = 0
+; request_pattern = \r\n\r\n$
 
 [TESTSUITE]
 ;lua_scripts_home = /home/kamus/projs/horoscope/lua_scripts
