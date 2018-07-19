@@ -1,7 +1,7 @@
 /*********************************************
  * configuration.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 16 Jan, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -9,7 +9,6 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
-#include <boost/regex.hpp>
 #include "misc.h"
 #include "INIParser.h"
 
@@ -81,16 +80,6 @@ public:
 	int get_asio_thrd_num()
 	{
 		return _asio_thrd_num;
-	}
-
-	int get_pkt_pass_rate()
-	{
-		return _pkt_pass_rate;
-	}
-
-	const boost::optional<boost::regex>& get_request_pattern()
-	{
-		return _request_pattern;
 	}
 
 	// [SESSION]
@@ -184,9 +173,6 @@ public:
 	void set_asio_thrd_num(int num);
 	void set_asio_thrd_num(const std::string& num);
 
-	void set_pkt_pass_rate(int rate);
-	void set_pkt_pass_rate(const std::string& rate);
-
 	// [SESSION]
 	void set_session_count_limit(const std::string& limit);
 	void set_session_count_limit(int limit);
@@ -218,8 +204,6 @@ public:
 	void set_clone(int clone);
 	void set_clone(const std::string& clone);
 
-	void set_request_pattern(const std::string& pattern);
-
 	// [LOG]
 	void set_duplicate_log_to_stdout(const std::string& dup);
 	void set_duplicate_log_to_stdout(bool dup);
@@ -249,7 +233,6 @@ private:
 	int _accidental_death_pcap_file_limit; ///< at least how many accidental death corpses will be saved as pcap file on disk.
 	SNIFF_METHOD _sniff_method; ///< there are three kinds of methods to sniff the peers response packets.
 	int _asio_thrd_num;      ///< the thread pool for asio.
-	int _pkt_pass_rate;          ///< in unit of permillage.
 
 	// [SESSION]
 	/// The following parameters are for tuning tcpsession.
@@ -264,7 +247,6 @@ private:
 	bool _enable_active_close;
 	int  _expected_qps;
 	int  _clone;
-	boost::optional<boost::regex> _request_pattern;
 
 	// [LOG]
 	bool _log_on;

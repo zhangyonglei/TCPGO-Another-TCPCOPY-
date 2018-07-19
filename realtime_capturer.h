@@ -1,7 +1,7 @@
 /*********************************************
  * realtime_capturer.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 27 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -93,8 +93,6 @@ private:
 	boost::shared_ptr<boost::asio::deadline_timer> _deadline_timer;
 
 	uint64_t _pkt_count_received;
-
-	int  _pkt_pass_rate;
 };
 
 #endif /* _REALTIME_CAPTUREER_H_ */

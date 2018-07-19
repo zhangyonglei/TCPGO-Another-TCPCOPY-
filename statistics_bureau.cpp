@@ -1,7 +1,7 @@
 /*********************************************
  * statistics_bureau.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 8 Feb, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -149,8 +149,6 @@ std::string statistics_bureau::sess_statistics()
 		healthy_sess_count += session_manager::instance(i).get_healthy_sess_count();
 	}
 
-	ss << std::setprecision(4) << std::fixed;
-
 	ss << total_count << " sessions are now in memory.\n"
 	   << healthy_sess_count << " sessions are healthy.\n";
 
@@ -164,13 +162,13 @@ std::string statistics_bureau::sess_statistics()
 	   << _sess_active_close_count << " sessions ended via active close.\n"
 	   << _sess_passive_close_count << " sessions ended via passive close.\n"
 	   << _sess_cancelled_by_no_response_count << " sessions ended prematurely because of no response from peer within "
-	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out * 10 << " milliseconds.\n"
+	   	   	   	   	   	   	   	   	   	   	   << response_from_server_time_out << " micro seconds.\n"
 	   << _sess_active_close_timeout_count << " sessions ended prematurely because sended FIN didn't elicit FIN from server within "
-	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out * 10 << " milliseconds.\n"
+	   	   	   	   	   	   	   	   	   	   	   << wait_for_fin_from_server_time_out << " micro seconds.\n"
 	   << _sess_dormancy_count << " sessions ended prematurely because no traffice has been sent to peer within "
-	                                           << have_to_send_data_within_this_timeperiod * 10 << " milliseconds.\n"
+	                                           << have_to_send_data_within_this_timeperiod << " micros seconds.\n"
 	   << _sess_killed_by_reset_count << " sessions were killed by RESET.\n"
-	   << "Average Session Time Duration: " << (double)_total_sess_time_duration * 10 / (double)(_sess_passive_close_count + _sess_active_close_count) << " milliseconds.\n"
+	   << "Average Session Time Duration: " << _total_sess_time_duration * 10 / (_sess_passive_close_count + _sess_active_close_count) << " millisconds.\n"
 	   << "Retransmit Rate: " << (double)(_total_transmit_count - _unique_transmit_count) / (double)_unique_transmit_count << "\n"
 	   << "Success Rate: " << (double)(_sess_passive_close_count + _sess_active_close_count) / (double)_total_processed_sess_count << "\n"
 

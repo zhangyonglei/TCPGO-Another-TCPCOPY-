@@ -1,7 +1,7 @@
 /*********************************************
  * sessionmanager.h
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

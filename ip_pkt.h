@@ -1,7 +1,7 @@
 /*********************************************
  * ippkg.h
  * Author: kamuszhou@tencent.com, 16236914@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: 12 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -172,12 +172,6 @@ public:
 	uint16_t get_dst_port()const
 	{
 		return ntohs(_tcphdr->dest);
-	}
-
-	// in network byte order
-	uint16_t get_dst_port_n()const
-	{
-		return _tcphdr->dest;
 	}
 
 	/**

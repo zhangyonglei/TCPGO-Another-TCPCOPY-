@@ -1,7 +1,7 @@
 /*********************************************
  * postoffice.cpp
  * Author: kamuszhou@tencent.com, 16236914@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: 11 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

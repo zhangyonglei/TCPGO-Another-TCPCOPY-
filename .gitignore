@@ -20,11 +20,9 @@ missing
 *.pcap
 core*
 *.png
-*.jpeg
-*.jpg
-*.gif
 *.html
 *.htm
+*.jam*
 *.pcap
 
 !readline

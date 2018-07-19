@@ -1,7 +1,7 @@
 /*********************************************
  * tcpsession.cpp
  * Author: kamuszhou@tencent.com, 16236914@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -163,7 +163,6 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 	{
 		postoffice::instance(_asio_idx).register_callback(_session_key, this);
 		_sess_state = ABORT;
-		_injecting_rt_traffic_timer->cancel();
 
 		return;
 	}
@@ -191,11 +190,6 @@ void tcpsession::inject_a_realtime_ippkt(boost::shared_ptr<ip_pkt> ippkt)
 	{
 		_ippkts_samples.sort();
 		complete = (0 == sanitize());
-	}
-
-	if (complete)
-	{
-		complete = (0 == request_pattern_checker());
 	}
 
 	if (complete)
@@ -258,7 +252,7 @@ void tcpsession::injecting_rt_traffic_timeout_checker(const boost::system::error
 	}
 }
 
-int tcpsession::sanitize()
+int32_t tcpsession::sanitize()
 {
 	int32_t size_saved, size_now;
 	int32_t i;   // for the convenience of debug.
@@ -367,56 +361,6 @@ _err:
 	return 1;
 }
 
-int tcpsession::request_pattern_checker()
-{
-	int ret;
-	int request_len = 0;
-	int sentinel = 0;
-	std::vector<char> request_content;
-	char* addr;
-	const boost::optional<boost::regex>& pattern = g_configuration.get_request_pattern();
-
-	// if the pattern is not specified, it's considered as matched.
-	if (!pattern)
-	{
-		ret = 0;
-		return ret;
-	}
-
-	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
-		 ite != _ippkts_samples.end();
-		 ++ite )
-	{
-		ip_pkt* pkt = (*ite).get();
-		request_len += pkt->get_tcp_payload_len();
-	}
-
-	request_content.resize(request_len + 1);
-	request_content[request_len] = 0;
-	addr = request_content.data();
-
-	for (std::list<boost::shared_ptr<ip_pkt> >::iterator ite = _ippkts_samples.begin();
-		 ite != _ippkts_samples.end();
-		 ++ite )
-	{
-		ip_pkt* pkt = (*ite).get();
-		int payload_len = pkt->get_tcp_payload_len();
-		memcpy(addr + sentinel, pkt->get_tcp_payload(), payload_len);
-		sentinel += payload_len;
-	}
-
-	if (regex_search(request_content.data(), *pattern))
-	{
-		ret = 0;
-	}
-	else
-	{
-		ret = -1;
-	}
-
-	return ret;
-}
-
 void tcpsession::get_ready_for_rt_traffic()
 {
 	_sess_state = ACCUMULATING_TRAFFIC;
@@ -504,6 +448,7 @@ int tcpsession::pls_send_these_packets(std::vector<boost::shared_ptr<ip_pkt> >& 
 	if (ABORT == _sess_state)
 	{
 		g_statistics_bureau.inc_sess_aborted_count();
+		_injecting_rt_traffic_timer->cancel();
 
 		return postoffice_callback_interface::REMOVE;
 	}

@@ -1,7 +1,7 @@
 /*********************************************
  * mylua.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 24 Jan, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -62,7 +62,7 @@ public:
 	 * return 0 on success, non-zero if failed.
 	 */
 	int load_lua_module(const std::string& module_path);
-	void run_lua_tests(const std::string& client_str_ip, uint16_t port,
+	void run_lua_tests(const std::string& client_str_ip,
 			           const std::vector<char>& request, const std::vector<char>& response);
 
 private:

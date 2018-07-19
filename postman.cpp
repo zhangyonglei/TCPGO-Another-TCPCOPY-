@@ -1,7 +1,7 @@
 /*********************************************
  * postman.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 10 Mar, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -187,7 +187,6 @@ void postman::send_core(ip_pkt* pkt)
 	int ret;
 
 	dst_addr.sin_family = AF_INET;
-	dst_addr.sin_port = pkt->get_dst_port_n();
 	dst_addr.sin_addr.s_addr = pkt->get_iphdr()->daddr;
 
 	starting_addr = pkt->get_starting_addr();

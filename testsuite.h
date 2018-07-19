@@ -1,7 +1,7 @@
 /*********************************************
  * testsuite.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 24 Feb, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

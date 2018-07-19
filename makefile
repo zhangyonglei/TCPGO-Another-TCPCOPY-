@@ -1,5 +1,5 @@
 #created by kamuszhou@tencent.com 16236914@qq.com
-#website: v.qq.com http://blog.ykyi.net
+#website: v.qq.com www.dogeye.net
 
 #projname := $(notdir $(CURDIR))
 bins := bins/
@@ -35,10 +35,10 @@ lua_vm_a := $(lua_vm_src)/liblua.a
 
 VERSION_NUM := 1.0.0
 CXXFLAGS += -fvisibility=hidden 
-#CPPFLAGS += $(addprefix -I,$(include_dirs)) $(o) $(O) $(W) -O2
+CPPFLAGS += $(addprefix -I,$(include_dirs)) $(o) $(O) $(W) -O2
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) $(o) $(O) $(W)
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) -g  $(o) $(O) $(W)
-CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG $(o) $(O) $(W)
+#CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG $(o) $(O) $(W)
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) -g -D_DEBUG -Wfatal-errors $(o) $(O) $(W)
 #CPPFLAGS += $(addprefix -I,$(include_dirs)) -g $(o) $(O) $(W)
 LINKFLAGS := -L$(iniparser) -L$(lua_vm_src) -lpthread -lpcap -ldl -l$(iniparser) -l$(lua_lib) -lboost_filesystem -lboost_regex -lboost_thread
@@ -60,7 +60,7 @@ $(projname) : $(bins) $(deps) $(objs) $(objects) $(iniparser_a) $(lua_vm_a)
 
 $(projname_alias) : $(projname)
 	-$(RM) $(projname_alias)
-	-ln $(projname) $(projname_alias)
+	-ln -s $(projname) $(projname_alias)
 
 $(iniparser_a) : 
 	make -C $(iniparser)

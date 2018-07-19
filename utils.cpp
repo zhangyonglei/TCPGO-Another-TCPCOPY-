@@ -1,7 +1,7 @@
 /*********************************************
  * utils.cpp
  * Author: kamuszhou@tencent.com, 16236914@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: Dec 10, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -250,7 +250,7 @@ uint32_t next_avail_ip(uint32_t orig_ip)
 		// designated as the network number and the remaining bits were called the
 		// rest field or host identifier and were used for host numbering within a network.
 		// On intel CPU, high order octet resides on low address.
-		unsigned char ch = ((unsigned char*)&new_ip_num)[0];
+		char ch = ((char*)&new_ip_num)[0];
 		if (0 != ch && 0xff != ch)
 		{
 			break;

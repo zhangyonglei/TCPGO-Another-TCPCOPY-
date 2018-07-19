@@ -1,7 +1,7 @@
 /*********************************************
  * testsuite.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 24 Feb, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -56,7 +56,6 @@ void testsuite::ready_go()
 	{
 		_queue_jobs[i].reset(new LockFreeQueue());
 		_queue_counts[i].reset(new boost::atomic_int);
-		_queue_counts[i]->operator=(0);
 	}
 
 	if (!g_configuration.get_lua_scripts_home())
@@ -350,7 +349,7 @@ int testsuite::save_traffic(const std::string& pcap_file)
 void testsuite::do_tests(const std::string& client_str_ip, uint16_t port,
 					     const std::vector<char>& request, const std::vector<char>& response)
 {
-	g_mylua.run_lua_tests(client_str_ip, port, request, response);
+	g_mylua.run_lua_tests(client_str_ip, request, response);
 }
 
 void testsuite::load_lua_scripts()
@@ -379,6 +378,5 @@ void testsuite::load_shared_objects()
 		ite != shared_objs.end();
 		++ite)
 	{
-		// dummy
 	}
 }

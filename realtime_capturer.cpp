@@ -1,7 +1,7 @@
 /*********************************************
  * realtime_capturer.cpp
  * Author: kamuszhou@tencent.com 16236914@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 27 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -30,8 +30,6 @@ int realtime_capturer::get_ready()
 	_strand.reset(new boost::asio::strand(g_proactor.get_io_service()));
 
 	_asio_thrd_num = g_configuration.get_asio_thrd_num();
-	_pkt_pass_rate = g_configuration.get_pkt_pass_rate();
-
 	_ippkt_queues.resize(_asio_thrd_num);
 	_queue_sizes.resize(_asio_thrd_num);
 
@@ -133,7 +131,7 @@ void realtime_capturer::handle_read(boost::shared_ptr<boost::asio::ip::tcp::sock
 	else
 	{
 		conn._timer->cancel();
-		conn._timer->expires_from_now(boost::posix_time::seconds(1));
+		conn._timer->expires_from_now(boost::posix_time::seconds(2));
 		conn._timer->async_wait(_strand->wrap(
 				boost::bind(&realtime_capturer::delayed_read, this, s, boost::asio::placeholders::error)
 				));
@@ -185,7 +183,7 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 	{
 		for (int i = 0; i < _queue_sizes.size(); i++)
 		{
-			if ( *_queue_sizes[i] < 500)
+			if ( *_queue_sizes[i] < 100)
 			{
 				_jam_control = false;
 				break;
@@ -250,24 +248,17 @@ void realtime_capturer::parse_buff_and_get_ip_pkts(ConnInfo& conn)
 		}*/
 		src_port = ntohs(tcphdr->source);
 		tcphdr->source = htons(generate_the_port(src_port)); // modify the source port.
-		if ((tcphdr->source % 1000 + 1) > _pkt_pass_rate)
-		{
-			i += ip_tot_len;
-			sentinel = i;
-			continue;
-		}
 
 		// pluck out the incoming ip packet.
 		ip_pkt* pkt = new ip_pkt(ptr);
 		int asio_idx = pkt->get_asio_idx_outbound();
 
 		// ugly and error-prone c grammar.
-		if (0xff == ((unsigned char*)&(pkt->get_iphdr()->saddr))[0] || 0xff == ((unsigned char*)&(pkt->get_iphdr()->saddr))[3] ||
-			127 == ((unsigned char*)&(pkt->get_iphdr()->saddr))[3] ||
-			0x0 == ((unsigned char*)&(pkt->get_iphdr()->daddr))[0] || 0x0 == ((unsigned char*)&(pkt->get_iphdr()->daddr))[3])
+		if (0xff == ((char*)&(pkt->get_iphdr()->saddr))[0] || 0xff == ((char*)&(pkt->get_iphdr()->saddr))[3] ||
+			127 == ((char*)&(pkt->get_iphdr()->saddr))[3] ||
+			0x0 == ((char*)&(pkt->get_iphdr()->daddr))[0] || 0x0 == ((char*)&(pkt->get_iphdr()->daddr))[3])
 		{
 			i++;
-			delete pkt;
 			continue;
 		}
 

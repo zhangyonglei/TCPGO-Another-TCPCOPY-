@@ -1,7 +1,7 @@
 /*********************************************
  * cutelogger.h
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: Dec 10, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -38,6 +38,7 @@ int cute_logger::printf(const char* format, ...)
 {
 	int ret;
 	va_list ap;
+	char buff[2048] = { 0 };
 
 	ret = 0;
 	if (g_configuration.get_log_on())
@@ -50,9 +51,9 @@ int cute_logger::printf(const char* format, ...)
 	if (g_configuration.get_duplicate_log_to_stdout())
 	{
 		va_start(ap, format);
-//		vsnprintf(buff, sizeof(buff), format, ap);
-		vprintf(format, ap);
+		vsnprintf(buff, sizeof(buff), format, ap);
 		va_end(ap);
+		std::cout << buff;
 		// it's assumed if log is duplicated on the screen, then you are expecting to flush
 		// all logs into disk file ASAP to provide more log details for debug.
 		// for the sake of efficiency, don't duplicate logs to screen when it's running on production condition.

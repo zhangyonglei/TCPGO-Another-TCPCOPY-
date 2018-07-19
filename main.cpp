@@ -1,7 +1,7 @@
 /*********************************************
  * main.c
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
- * website: v.qq.com http://blog.ykyi.net
+ * website: v.qq.com www.dogeye.net
  * Created on: Dec 9, 2013
  ********************************************/
  /*
@@ -15,7 +15,7 @@
  *             |/ \_( # |" 
  *            C/ ,--___/
  *
- *      www.tencent.com & http://blog.ykyi.net co-present
+ *      www.tencent.com & www.dogeye.net co-present
  *      Praise Be to the Lord. BUG-FREE CODE !
  */
 
@@ -132,7 +132,7 @@ static void output_version()
 {
 	cout << "Horoscope "VERSION_NUM"\n";
 	cout << "This tool is aimed to replay captured client's requests to server.\n";
-	cout << "Author: kamuszhou http://blog.ykyi.net.\n";
+	cout << "Author: kamuszhou www.dogeye.net.\n";
 	cout << "Copyrights Reserved by Tencent Dec 9 2013 to " << __DATE__ << "\n" << endl;
 }
 

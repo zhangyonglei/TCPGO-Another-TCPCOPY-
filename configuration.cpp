@@ -1,7 +1,7 @@
 /*********************************************
  * configuration.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  http://blog.ykyi.net
+ * website: v.qq.com  www.dogeye.net
  * Created on: 16 Jan, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -29,7 +29,6 @@ configuration::configuration()
 	set_accidental_death_pcap_file_limit(100);
 	set_sniff_method(SNIFF_RAW);
 	set_asio_thrd_num(-1);   // let the function deduce the best number by itself.
-	set_pkt_pass_rate(1000);  // let all the packages pass.
 
 	// [SESSION]
 	set_session_count_limit(10000);
@@ -61,7 +60,8 @@ bool configuration::check_validity()
 {
 	if (_dst_addr.empty())
 	{
-		g_logger.printf("dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
+		g_logger.printf(
+				"dst_addr was not set. Specify -d option on command line or set MAIN.dst_addr in conf file.\n");
 		abort();
 		return false;
 	}
@@ -258,17 +258,6 @@ void configuration::set_clone(int clone)
 	_clone = clone;
 }
 
-void configuration::set_request_pattern(const std::string& pattern)
-{
-	if (pattern.empty())
-	{
-		return;
-	}
-
-	_request_pattern = boost::regex(pattern);
-	// _request_pattern = boost::regex("\r\n\r\n");
-}
-
 void configuration::set_log_on(const std::string& log_on)
 {
 	set_log_on(log_on != "0");
@@ -356,26 +345,6 @@ void configuration::set_asio_thrd_num(int num)
 	else
 	{
 		_asio_thrd_num = num;
-	}
-}
-
-void configuration::set_pkt_pass_rate(const std::string& rate)
-{
-	int val;
-	val = boost::lexical_cast<int>(rate.c_str());
-	set_pkt_pass_rate(val);
-}
-
-void configuration::set_pkt_pass_rate(int rate)
-{
-	_pkt_pass_rate = rate;
-	if (_pkt_pass_rate < 0)
-	{
-		_pkt_pass_rate = 0;
-	}
-	else if (_pkt_pass_rate > 1000)
-	{
-		_pkt_pass_rate = 1000;
 	}
 }
 
@@ -483,14 +452,6 @@ void configuration::readin()
 		set_asio_thrd_num(value);
 	}
 
-	option_name = "pkt_pass_rate";
-	if (config.HasOption(section_name, option_name))
-	{
-		value = config.GetOption(section_name, option_name);
-		g_logger.printf("pkt_pass_rate: %s\n", value.c_str());
-		set_pkt_pass_rate(value);
-	}
-
 	// the session section
 	section_name = "SESSION";
 
@@ -561,14 +522,6 @@ void configuration::readin()
 		value = config.GetOption(section_name, option_name);
 		g_logger.printf("clone: %s\n", value.c_str());
 		set_clone(value);
-	}
-
-	option_name = "request_pattern";
-	if (config.HasOption(section_name, option_name))
-	{
-		value = config.GetOption(section_name, option_name);
-		g_logger.printf("request_pattern: %s\n", value.c_str());
-		set_request_pattern(value);
 	}
 
 	// the TESTSUITE session

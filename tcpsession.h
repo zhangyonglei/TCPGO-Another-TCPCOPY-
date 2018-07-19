@@ -1,7 +1,7 @@
 /*********************************************
  * tcpsession.h
  * Author: kamuszhou@tencent.com, kamuszhou@qq.com
- * website: http://blog.ykyi.net
+ * website: www.dogeye.net
  * Created on: Dec 9, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
@@ -46,13 +46,6 @@ public:
 	 * otherwise return non-zero error code.
 	 */
 	int sanitize();
-
-	/**
-	 * This function will check if the request match the pattern specified on conf file.
-	 * @return return 0 if the request matches the pattern.
-	 * otherwise return non-zero.
-	 */
-	int request_pattern_checker();
 
 	/**
 	 * This session is for real time traffic.
