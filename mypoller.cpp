@@ -1,5 +1,5 @@
 /*********************************************
- * reactor.cpp
+ * poller.cpp
  * Author: kamuszhou@tencent.com,kamuszhou@qq.com
  * website: http://blog.ykyi.net
  * Created on: 13 Dec, 2013
@@ -8,18 +8,14 @@
 
 #include <sys/epoll.h>
 #include "misc.h"
-#include "reactor.h"
+#include "mypoller.h"
 #include "thetimer.h"
-#include "postoffice.h"
-#include "realtime_capturer.h"
-#include "session_manager.h"
-#include "configuration.h"
 
 #define MAX_EVENTS_COUNT 32
 
-reactor g_reactor;
+mypoller g_poller;
 
-reactor::reactor()
+mypoller::mypoller()
 {
 	_stop = false;
 	_epoll_fd = epoll_create(1);
@@ -30,12 +26,12 @@ reactor::reactor()
 	}
 }
 
-reactor::~reactor()
+mypoller::~mypoller()
 {
 	close(_epoll_fd);
 }
 
-void reactor::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
+void mypoller::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
 {
 	struct epoll_event evt;
 
@@ -65,7 +61,7 @@ void reactor::register_evt(int fd, poll_type type, evt_workhorse* workhorse)
 	_workhorses[fd] = workhorse;
 }
 
-void reactor::deregister_evt(int fd)
+void mypoller::deregister_evt(int fd)
 {
 	int ret;
 	ret = epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
@@ -79,14 +75,12 @@ void reactor::deregister_evt(int fd)
 	assert(1 == ret);
 }
 
-void reactor::bigbang()
+void mypoller::bigbang()
 {
 	int nfds, n;
 	int fd;
 	evt_workhorse *workhorse;
 	struct epoll_event  events[MAX_EVENTS_COUNT];
-
-	int concurrency = g_configuration.get_concurrency_limit();
 
 	//sigset_t sigmask;
 	//sigemptyset(&sigmask);
@@ -129,7 +123,7 @@ void reactor::bigbang()
 	}
 }
 
-void reactor::stop()
+void mypoller::stop()
 {
 	_stop = true;
 }

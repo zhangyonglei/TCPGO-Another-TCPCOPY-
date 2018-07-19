@@ -1,7 +1,7 @@
 /*********************************************
  * ippkg.cpp
  * Author: kamuszhou@tencent.com, 16236914@qq.com
- * website: www.dogeye.net
+ * website: http://blog.ykyi.net
  * Created on: 12 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

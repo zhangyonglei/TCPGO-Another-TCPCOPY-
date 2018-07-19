@@ -1,18 +1,18 @@
 /*********************************************
- * reactor.h
+ * poller.h
  * Author: kamuszhou@tencent.com,kamuszhou@qq.com
  * website: http://blog.ykyi.net
  * Created on: 13 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
 
-#ifndef _REACTOR_H_
-#define _REACTOR_H_
+#ifndef _POLLER_H_
+#define _POLLER_H_
 
 #include <map>
 
-class reactor;
-extern reactor g_reactor;
+class mypoller;
+extern mypoller g_poller;
 
 class evt_workhorse
 {
@@ -25,16 +25,15 @@ protected:
 };
 
 /**
- * reactor design pattern.
- * reactor is just a c++ wrapper of epoll.
+ * poller is just a c++ wrapper of epoll.
  */
-class reactor
+class mypoller
 {
 public:
 	enum poll_type{MYPOLLIN, MYPOLLOUT};
 
-	reactor();
-	virtual ~reactor();
+	mypoller();
+	virtual ~mypoller();
 
 	void register_evt(int fd, poll_type type, evt_workhorse* workhorse);
 	void deregister_evt(int fd);
@@ -61,4 +60,4 @@ private:
 	std::map<int, evt_workhorse*> _workhorses;
 };
 
-#endif /* _REACTOR_H_ */
+#endif /* _POLLER_H_ */

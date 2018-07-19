@@ -1,7 +1,7 @@
 /*********************************************
  * statistics_bureau.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  www.dogeye.net
+ * website: v.qq.com  http://blog.ykyi.net
  * Created on: 8 Feb, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

@@ -1,5 +1,5 @@
 #created by kamuszhou@tencent.com 16236914@qq.com
-#website: v.qq.com www.dogeye.net
+#website: v.qq.com http://blog.ykyi.net
 
 #projname := $(notdir $(CURDIR))
 bins := bins/

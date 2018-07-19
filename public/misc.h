@@ -1,5 +1,5 @@
 /************************************************************
- * Author: kamuszhou www.dogeye.net
+ * Author: kamuszhou http://blog.ykyi.net
  * Miscellaneous code ....
  * Praise Be to the Lord. BUG-FREE CODE !
  *************************************************************/

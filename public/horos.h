@@ -1,7 +1,7 @@
 /*********************************************
  * horos.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  www.dogeye.net
+ * website: v.qq.com  http://blog.ykyi.net
  * Created on: 25 Dec, 2013
  * I'm not a christian. I don't celebrate the christmas day.
  * Praise Be to the Lord. BUG-FREE CODE !

@@ -1,7 +1,7 @@
 /****************************************************************
  * statistics_bureau.h
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  www.dogeye.net
+ * website: v.qq.com  http://blog.ykyi.net
  * Created on: 8 Feb, 2014
  * Happy the Chinese new year of Horse.
  * Today is the first working day after spring festival vacation.

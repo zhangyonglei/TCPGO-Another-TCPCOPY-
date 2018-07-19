@@ -1,7 +1,7 @@
 /*********************************************
  * thetimer.cpp
  * Author: kamuszhou@tencent.com,kamuszhou@qq.com
- * website: www.dogeye.net
+ * website: http://blog.ykyi.net
  * Created on: 16 Dec, 2013
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/

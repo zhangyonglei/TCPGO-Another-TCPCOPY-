@@ -1,7 +1,7 @@
 /*********************************************
  * mylua.cpp
  * Author: kamuszhou@tencent.com kamuszhou@qq.com
- * website: v.qq.com  www.dogeye.net
+ * website: v.qq.com  http://blog.ykyi.net
  * Created on: 24 Jan, 2014
  * Praise Be to the Lord. BUG-FREE CODE !
  ********************************************/
