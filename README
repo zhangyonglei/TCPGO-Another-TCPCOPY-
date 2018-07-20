@@ -1,15 +1,17 @@
+(详细使用文档和工作原理文档 follow this URL)[https://cloud.tencent.com/developer/article/1159394]
+
 INSTALL:
 
-1. Install boost library first.
-   a. cd to boost_1_55_0 directory.
-   b. chmod +x bootstrap.sh
-   c. chmod +x tools/build/v2/engine/build.sh
-   d. ./bootstrap.sh --with-libraries=filesystem,regex,thread --prefix=/usr/local
-   e. chmod +x ./b2
-   f. ./b2 install
-   g. ldconfig
+## Install boost library first.
+1. cd to boost_1_55_0 directory.
+2. chmod +x bootstrap.sh
+3. chmod +x tools/build/v2/engine/build.sh
+4. ./bootstrap.sh --with-libraries=filesystem,regex,thread --prefix=/usr/local
+5. chmod +x ./b2
+6. ./b2 install
+7. ldconfig
 
 
-FAQ:
+## FAQ:
 Q: failed to compile lua
 A: If you're running Linux and get compilation errors, make sure you have installed the readline development package. If you get link errors after that, then try "make linux MYLIBS=-ltermcap".
